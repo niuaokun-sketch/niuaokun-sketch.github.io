@@ -2,81 +2,97 @@
 <html lang="zh">
 <head>
     <meta charset="UTF-8">
-    <title>Bear 71 动态追踪地图</title>
+    <title>ECO-RADAR: 交互式生态探测</title>
     <style>
-        /* 1. 全局样式 */
-        body { margin: 0; overflow: hidden; background-color: #ffffff; font-family: 'Courier New', monospace; }
+        /* --- 1. 界面基础 --- */
+        body { margin: 0; overflow: hidden; background-color: #050505; cursor: none; /* 隐藏默认鼠标 */ }
         
-        /* 2. 顶部 UI */
-        #header {
-            position: absolute; top: 0; left: 0; width: 100%; height: 60px;
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 0 40px; box-sizing: border-box;
-            background: rgba(255, 255, 255, 0.9); border-bottom: 1px solid #ddd;
-            z-index: 10; backdrop-filter: blur(5px);
+        /* --- 2. 六边形鼠标光标 --- */
+        #cursor-hex {
+            position: absolute; pointer-events: none; z-index: 1000;
+            width: 60px; height: 60px;
+            left: 0; top: 0;
+            transform: translate(-50%, -50%);
+            /* CSS 画六边形 */
+            clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+            background: rgba(0, 255, 204, 0.1);
+            border: 2px solid #00ffcc; /* 注意：clip-path 会裁剪边框，这里用伪元素模拟边框效果 */
+            display: flex; justify-content: center; align-items: center;
+            transition: width 0.2s, height 0.2s, background 0.2s;
         }
-        .logo { font-weight: 900; font-size: 20px; letter-spacing: 2px; color: #333; }
-        .status { font-size: 12px; color: #666; }
-        .status span { color: #00cc88; font-weight: bold; animation: blink 1s infinite; }
-
-        @keyframes blink { 50% { opacity: 0; } }
-
-        /* 3. 动态标签样式 (核心交互) */
-        .label-container {
-            cursor: pointer;
-            transition: all 0.3s ease; /* 让鼠标滑过的放大更丝滑 */
+        /* 用伪元素画六边形描边 */
+        #cursor-hex::before {
+            content: ''; position: absolute; width: 100%; height: 100%;
+            background: #00ffcc;
+            clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+            z-index: -1; transform: scale(1.05); /* 稍微大一点形成边框 */
         }
-        
-        /* 标签本体 */
-        .label {
-            background-color: #333; 
-            color: #fff;
-            padding: 4px 8px;
-            font-size: 12px;
-            font-weight: bold;
-            border-radius: 2px;
-            white-space: nowrap;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-            border: 1px solid transparent;
+        #cursor-hex::after {
+            content: ''; position: absolute; width: 90%; height: 90%;
+            background: #050505; /* 遮住中间 */
+            clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+            z-index: 0;
+        }
+        /* 准心中间的小点 */
+        #cursor-center {
+            width: 4px; height: 4px; background: #00ffcc; border-radius: 50%; z-index: 2;
         }
 
-        /* 标签下方的三角 */
-        .label::after {
-            content: ''; position: absolute; bottom: -5px; left: 50%;
-            transform: translateX(-50%);
-            border-left: 5px solid transparent;
-            border-right: 5px solid transparent;
-            border-top: 5px solid #333;
+        /* 捕捉状态 */
+        .capturing #cursor-hex {
+            width: 80px; height: 80px;
+            background: rgba(255, 50, 50, 0.2);
         }
+        .capturing #cursor-hex::before { background: #ff3333; }
+        .capturing #cursor-center { background: #ff3333; }
 
-        /* 鼠标滑过时的交互效果 */
-        .label-container:hover .label {
-            background-color: #00ffcc; /* 变亮青色 */
-            color: #000;
-            transform: scale(1.1); /* 放大 */
-            border-color: #000;
-            z-index: 100; /* 浮到最上层 */
+        /* --- 3. 资料面板 --- */
+        #data-panel {
+            position: absolute; right: 20px; top: 50%; transform: translateY(-50%);
+            width: 250px; padding: 20px;
+            background: rgba(0, 20, 10, 0.8);
+            border: 1px solid #00ffcc;
+            color: #00ffcc; font-family: 'Courier New', monospace;
+            display: none; /* 默认隐藏 */
+            backdrop-filter: blur(5px);
+            box-shadow: 0 0 20px rgba(0, 255, 204, 0.2);
         }
-        .label-container:hover .label::after {
-            border-top-color: #00ffcc; /* 三角也变色 */
+        h2 { margin: 0 0 10px 0; font-size: 18px; border-bottom: 1px dashed #00ffcc; padding-bottom: 5px; }
+        .stat-row { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 12px; }
+        .bar { width: 100%; height: 4px; background: #333; margin-top: 2px; }
+        .bar-fill { height: 100%; background: #00ffcc; width: 0%; transition: width 0.5s; }
+
+        /* --- 4. 顶部 UI --- */
+        #ui-header {
+            position: absolute; top: 20px; left: 20px; color: rgba(255,255,255,0.7);
+            font-family: monospace; pointer-events: none;
         }
-
-        /* 针对不同物种的颜色区分 */
-        .type-predator .label { background-color: #cc3333; } /* 捕食者红色 */
-        .type-predator .label::after { border-top-color: #cc3333; }
-        
-        .type-prey .label { background-color: #4488ff; } /* 猎物蓝色 */
-        .type-prey .label::after { border-top-color: #4488ff; }
-
     </style>
 </head>
 <body>
 
-    <div id="header">
-        <div class="logo">ECO-TRACKER /// LIVE</div>
-        <div class="status">SYSTEM: <span>ONLINE</span> | TRACKING: 5 TARGETS</div>
+    <!-- 1. 自定义光标 -->
+    <div id="cursor-hex"><div id="cursor-center"></div></div>
+
+    <!-- 2. UI 元素 -->
+    <div id="ui-header">
+        <h1>ECO-RADAR SYSTEM</h1>
+        <p>MOUSE: Repulsion Field Active<br>TARGET: Tri-Signal Organisms</p>
     </div>
 
+    <!-- 3. 捕捉后的资料面板 -->
+    <div id="data-panel">
+        <h2 id="panel-name">TARGET ACQUIRED</h2>
+        <div class="stat-row"><span>TYPE:</span><span id="panel-type">Unknown</span></div>
+        <div class="stat-row"><span>STATUS:</span><span>MUTATED</span></div>
+        <div style="margin-top:15px">TOXICITY LEVEL:</div>
+        <div class="bar"><div class="bar-fill" id="bar-tox"></div></div>
+        <div style="margin-top:10px">ADAPTABILITY:</div>
+        <div class="bar"><div class="bar-fill" id="bar-adp"></div></div>
+        <p style="font-size:10px; margin-top:15px; opacity:0.7" id="panel-desc">...</p>
+    </div>
+
+    <!-- 4. 核心代码 -->
     <script type="importmap">
         {
             "imports": {
@@ -86,23 +102,66 @@
         }
     </script>
 
+    <!-- 顶点着色器：处理点的位置和排斥逻辑 -->
+    <script type="x-shader/x-vertex" id="vertexShader">
+        uniform float uTime;
+        uniform vec3 uMouse; /* 鼠标在 3D 世界的坐标 */
+        attribute float size;
+        attribute vec3 customColor;
+        varying vec3 vColor;
+
+        void main() {
+            vColor = customColor;
+            vec3 pos = position;
+
+            /* --- 核心算法：鼠标排斥 --- */
+            // 计算点到鼠标的水平距离 (忽略高度 y)
+            float dist = distance(pos.xz, uMouse.xz);
+            float radius = 12.0; // 排斥半径
+            float strength = 8.0; // 排斥力度
+
+            if (dist < radius) {
+                // 计算排斥方向
+                vec3 dir = normalize(pos - uMouse);
+                // 离得越近，推得越远
+                float force = (radius - dist) / radius;
+                // 只在水平方向推开，y轴稍微下压一点形成凹坑感
+                pos.x += dir.x * force * strength;
+                pos.z += dir.z * force * strength;
+                pos.y -= force * 2.0; 
+            }
+
+            vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
+            gl_PointSize = size * (300.0 / -mvPosition.z); // 近大远小
+            gl_Position = projectionMatrix * mvPosition;
+        }
+    </script>
+
+    <!-- 片元着色器：把方点变成圆点 -->
+    <script type="x-shader/x-fragment" id="fragmentShader">
+        uniform vec3 color;
+        varying vec3 vColor;
+
+        void main() {
+            // 计算距离中心的长度，如果大于 0.5 (即在圆外)，就丢弃像素
+            if (length(gl_PointCoord - vec2(0.5, 0.5)) > 0.5) discard;
+            
+            // 简单的光照渐变，让圆点看起来像球
+            vec2 coord = gl_PointCoord - vec2(0.5);
+            float strength = 1.0 - length(coord) * 1.5;
+            
+            gl_FragColor = vec4(vColor * strength * 1.5, 1.0);
+        }
+    </script>
+
     <script type="module">
         import * as THREE from 'three';
         import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-        import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
 
-        // --- 1. 核心数学公式 ---
-        // 这是地形的 DNA。只要有了它，我们就能算出地图上任何一点的高度。
-        // x, z 是水平坐标，返回 y (高度)
-        function getTerrainHeight(x, z) {
-            // 公式：两个正弦波叠加 + 噪点模拟
-            return Math.sin(x * 0.05) * 5 + Math.cos(z * 0.05) * 5;
-        }
-
-        // --- 2. 场景初始化 ---
+        // --- 1. 初始化场景 ---
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0xf0f0f0); 
-        scene.fog = new THREE.FogExp2(0xf0f0f0, 0.012);
+        scene.background = new THREE.Color(0x050505);
+        scene.fog = new THREE.FogExp2(0x050505, 0.02);
 
         const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
         camera.position.set(0, 40, 60);
@@ -111,167 +170,240 @@
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
 
-        const labelRenderer = new CSS2DRenderer();
-        labelRenderer.setSize(window.innerWidth, window.innerHeight);
-        labelRenderer.domElement.style.position = 'absolute';
-        labelRenderer.domElement.style.top = '0px';
-        labelRenderer.domElement.style.pointerEvents = 'none'; // 允许点击穿透
-        document.body.appendChild(labelRenderer.domElement);
+        // --- 2. 交互射线系统 ---
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2(); // 屏幕坐标 (-1 到 1)
+        const mouseWorld = new THREE.Vector3(999, 999, 999); // 3D 世界坐标
+        // 一个不可见的平面，用来检测鼠标在地面上的位置
+        const planeGeo = new THREE.PlaneGeometry(500, 500);
+        const planeMat = new THREE.MeshBasicMaterial({ visible: false });
+        const hitPlane = new THREE.Mesh(planeGeo, planeMat);
+        hitPlane.rotation.x = -Math.PI / 2; // 躺平
+        scene.add(hitPlane);
 
-        // --- 3. 生成地形 (Point Cloud) ---
+        // --- 3. 生成 Shader 地形 ---
         const geometry = new THREE.BufferGeometry();
         const positions = [];
         const colors = [];
-        
-        const width = 200; 
-        const depth = 200; 
-        const gap = 1.5;
+        const sizes = [];
 
-        const colorWater = new THREE.Color(0xaaccff);
-        const colorLand = new THREE.Color(0x88cc44);
-        const colorHigh = new THREE.Color(0xeeeeee); // 雪山
+        const width = 200;
+        const depth = 200;
+        const gap = 1.2; // 基础间距
 
-        for (let x = -width / 2; x < width / 2; x += gap) {
-            for (let z = -depth / 2; z < depth / 2; z += gap) {
-                // 使用完全相同的公式生成地形点
-                let y = getTerrainHeight(x, z);
+        // 颜色定义
+        const colWater = new THREE.Color(0x0088ff); // 亮蓝
+        // 三种绿色
+        const colGrass1 = new THREE.Color(0x228822); // 深绿
+        const colGrass2 = new THREE.Color(0x44aa44); // 中绿
+        const colGrass3 = new THREE.Color(0x66cc66); // 浅绿
+        const colSpecial = new THREE.Color(0xccff00); // 特殊大点
+
+        for (let x = -width/2; x < width/2; x += gap) {
+            for (let z = -depth/2; z < depth/2; z += gap) {
                 
-                // 加一点随机抖动让地形看起来不那么平滑
-                y += (Math.random() - 0.5) * 0.5;
+                // 地形高度算法
+                let y = Math.sin(x * 0.08) * 6 + Math.cos(z * 0.08) * 6;
+                y += Math.sin(x * 0.2 + z * 0.1) * 2; // 增加细节
+                
+                let isWater = y < -2;
+                let addPoint = false;
+                let pSize = 1.0;
+                let pColor = new THREE.Color();
 
-                positions.push(x, y, z);
-
-                // 根据高度染色
-                if (y < -3) {
-                    colors.push(colorWater.r, colorWater.g, colorWater.b);
-                } else if (y > 6) {
-                    colors.push(colorHigh.r, colorHigh.g, colorHigh.b);
+                if (isWater) {
+                    // 🌊 河流：全部保留，圆点大，蓝色
+                    addPoint = true;
+                    pSize = 4.0 + Math.random() * 2.0;
+                    pColor = colWater;
+                    // 让河流稍微平坦一点
+                    y = -2.0 + Math.random() * 0.5; 
                 } else {
-                    colors.push(colorLand.r, colorLand.g, colorLand.b);
+                    // 🌿 草地：稀疏化 (密度更小)
+                    if (Math.random() > 0.6) { // 60% 的概率不生成点
+                        addPoint = true;
+                        
+                        // 随机分配三种绿色
+                        const rand = Math.random();
+                        if (rand > 0.98) {
+                            // ✨ 稀有大绿点
+                            pSize = 6.0;
+                            pColor = colSpecial;
+                            y += 1.0; // 悬浮一点
+                        } else if (rand > 0.6) {
+                            pSize = 1.5;
+                            pColor = colGrass3;
+                        } else if (rand > 0.3) {
+                            pSize = 1.2;
+                            pColor = colGrass2;
+                        } else {
+                            pSize = 1.0;
+                            pColor = colGrass1;
+                        }
+                    }
+                }
+
+                if (addPoint) {
+                    positions.push(x, y, z);
+                    colors.push(pColor.r, pColor.g, pColor.b);
+                    sizes.push(pSize);
                 }
             }
         }
+
         geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-        geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-        const material = new THREE.PointsMaterial({ size: 0.6, vertexColors: true });
-        const terrain = new THREE.Points(geometry, material);
+        geometry.setAttribute('customColor', new THREE.Float32BufferAttribute(colors, 3));
+        geometry.setAttribute('size', new THREE.Float32BufferAttribute(sizes, 1));
+
+        // 核心：Shader 材质
+        const shaderMaterial = new THREE.ShaderMaterial({
+            uniforms: {
+                uTime: { value: 0 },
+                uMouse: { value: new THREE.Vector3(0, 0, 0) },
+                color: { value: new THREE.Color(0xffffff) }
+            },
+            vertexShader: document.getElementById('vertexShader').textContent,
+            fragmentShader: document.getElementById('fragmentShader').textContent,
+            transparent: true,
+            depthWrite: false, // 允许透明叠加
+        });
+
+        const terrain = new THREE.Points(geometry, shaderMaterial);
         scene.add(terrain);
 
-        // --- 4. 动物类 (智能移动的核心) ---
-        class Animal {
-            constructor(name, type, startX, startZ) {
+
+        // --- 4. 动物逻辑 (三角形) ---
+        class TriangleAnimal {
+            constructor(name, type, toxicity, adapt) {
                 this.name = name;
-                this.type = type; // 'predator' or 'prey'
+                this.info = { type, toxicity, adapt };
                 
-                // 4.1 创建视觉组件
-                this.group = new THREE.Group(); // 把线、点、标签打包
+                // 几何体：四面体 (看起来像三角形)
+                const geo = new THREE.ConeGeometry(1.5, 3, 3); 
+                const mat = new THREE.MeshBasicMaterial({ 
+                    color: 0xff3333, 
+                    wireframe: true,
+                    transparent: true, opacity: 0.8
+                });
+                this.mesh = new THREE.Mesh(geo, mat);
                 
-                // 标签 (CSS2D)
-                const div = document.createElement('div');
-                div.className = `label-container type-${type}`;
-                div.innerHTML = `<div class="label">${name}</div>`;
-                // 鼠标交互：必须开启 pointerEvents: auto 才能响应 hover
-                div.style.pointerEvents = 'auto'; 
+                // 随机位置
+                this.mesh.position.set((Math.random()-0.5)*100, 10, (Math.random()-0.5)*100);
+                this.mesh.rotation.x = Math.PI; // 倒过来，尖朝下，像浮标
                 
-                // 点击事件：你可以在这里加点击逻辑
-                div.onclick = () => { alert(`正在追踪: ${this.name}\n状态: 活跃`); };
-
-                const label = new CSS2DObject(div);
-                label.position.set(0, 4, 0); // 标签悬浮高度
-                this.group.add(label);
-
-                // 竖线 (指示杆)
-                const lineGeo = new THREE.BufferGeometry().setFromPoints([
-                    new THREE.Vector3(0, 0, 0),
-                    new THREE.Vector3(0, 4, 0)
-                ]);
-                const lineMat = new THREE.LineBasicMaterial({ color: 0x333333, transparent: true, opacity: 0.5 });
-                this.line = new THREE.Line(lineGeo, lineMat);
-                this.group.add(this.line);
-
-                // 脚下的点
-                const dotGeo = new THREE.SphereGeometry(0.3);
-                const dotMat = new THREE.MeshBasicMaterial({ color: type === 'predator' ? 0xff0000 : 0x0000ff });
-                this.dot = new THREE.Mesh(dotGeo, dotMat);
-                this.group.add(this.dot);
-
-                scene.add(this.group);
-
-                // 4.2 移动逻辑数据
-                this.position = new THREE.Vector3(startX, 0, startZ);
-                this.target = new THREE.Vector3(startX, 0, startZ);
-                this.speed = 0.05 + Math.random() * 0.05; // 随机速度
-                this.waitTime = 0; // 停留时间
+                this.target = this.mesh.position.clone();
+                this.speed = 0.1 + Math.random() * 0.1;
                 
-                this.pickNewTarget();
+                scene.add(this.mesh);
+                this.pickTarget();
             }
 
-            // 随机找一个新的目的地
-            pickNewTarget() {
-                const range = 80; // 活动范围
-                this.target.x = (Math.random() - 0.5) * range;
-                this.target.z = (Math.random() - 0.5) * range;
-                this.waitTime = Math.random() * 100 + 50; // 随机停顿时间
+            pickTarget() {
+                this.target.x = (Math.random()-0.5)*120;
+                this.target.z = (Math.random()-0.5)*120;
             }
 
             update() {
-                // 如果还有等待时间，就发呆
-                if (this.waitTime > 0) {
-                    this.waitTime--;
-                    return;
-                }
-
-                // 计算方向
-                const direction = new THREE.Vector3().subVectors(this.target, this.position);
-                const distance = direction.length();
-
-                if (distance < 0.5) {
-                    // 到达目的地了，休息一下，找下一个点
-                    this.pickNewTarget();
-                } else {
-                    // 移动
-                    direction.normalize();
-                    this.position.x += direction.x * this.speed;
-                    this.position.z += direction.z * this.speed;
-
-                    // ⚠️ 关键：计算贴地高度 ⚠️
-                    // 实时计算当前 x, z 对应的地形高度 y
-                    this.position.y = getTerrainHeight(this.position.x, this.position.z);
-                }
-
-                // 更新视觉组件的位置
-                this.group.position.copy(this.position);
+                // 简单的移动逻辑
+                const dir = new THREE.Vector3().subVectors(this.target, this.mesh.position);
+                if (dir.length() < 1) this.pickTarget();
+                
+                dir.normalize();
+                this.mesh.position.x += dir.x * this.speed;
+                this.mesh.position.z += dir.z * this.speed;
+                
+                // 旋转效果
+                this.mesh.rotation.y += 0.05;
+                
+                // 高度跟随地形 + 悬浮
+                // 这里简单模拟，保持在 y=5 以上
+                this.mesh.position.y = Math.sin(this.mesh.position.x * 0.1) * 5 + 8;
             }
         }
 
-        // --- 5. 创建动物园 ---
-        const animals = [];
-        animals.push(new Animal("BEAR 71", "predator", 0, 0));
-        animals.push(new Animal("WOLF 02", "predator", 20, -20));
-        animals.push(new Animal("DEER 15", "prey", -30, 10));
-        animals.push(new Animal("MOOSE 08", "prey", 40, 40));
-        animals.push(new Animal("COYOTE 99", "predator", -10, -50));
+        const animals = [
+            new TriangleAnimal("SPECIMEN-01", "TURTLE HYBRID", 85, 40),
+            new TriangleAnimal("SPECIMEN-02", "PLASTIC CRAB", 60, 90),
+            new TriangleAnimal("SPECIMEN-03", "OIL BIRD", 95, 20),
+            new TriangleAnimal("SPECIMEN-04", "ACID JELLY", 70, 60),
+            new TriangleAnimal("SPECIMEN-05", "GHOST SEAL", 50, 50)
+        ];
+
+
+        // --- 5. 事件监听 ---
+        const cursor = document.getElementById('cursor-hex');
+        const dataPanel = document.getElementById('data-panel');
+        let lockedAnimal = null;
+
+        document.addEventListener('mousemove', (e) => {
+            // 1. 更新 CSS 光标位置
+            cursor.style.left = e.clientX + 'px';
+            cursor.style.top = e.clientY + 'px';
+
+            // 2. 更新 Shader 里的鼠标位置 (用于排斥效果)
+            mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObject(hitPlane);
+            
+            if (intersects.length > 0) {
+                const point = intersects[0].point;
+                // 把坐标传给 Shader
+                shaderMaterial.uniforms.uMouse.value.copy(point);
+                mouseWorld.copy(point); // 存下来用于捕捉计算
+            }
+        });
 
         // --- 6. 动画循环 ---
         const controls = new OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
-        controls.dampingFactor = 0.05; // 让鼠标滑动更顺滑
-        controls.maxDistance = 120;
-        controls.autoRotate = true;     // 自动缓慢旋转镜头
-        controls.autoRotateSpeed = 0.3; // 转速
         
-        // 监听交互：当用户手动操作时，暂停自动旋转，体验更好
-        controls.addEventListener('start', () => { controls.autoRotate = false; });
-
         function animate() {
             requestAnimationFrame(animate);
+            
+            shaderMaterial.uniforms.uTime.value += 0.01;
 
-            // 更新所有动物的位置
-            animals.forEach(animal => animal.update());
+            // 捕捉逻辑
+            let isCapturing = false;
+            
+            animals.forEach(animal => {
+                animal.update();
+
+                // 检查鼠标和动物的距离 (捕捉判定)
+                const dist = animal.mesh.position.distanceTo(mouseWorld);
+                
+                if (dist < 8) { // 如果准心靠近动物
+                    isCapturing = true;
+                    animal.mesh.scale.set(1.5, 1.5, 1.5); // 动物放大
+                    animal.mesh.material.color.set(0xffffff); // 变白
+                    
+                    if (lockedAnimal !== animal) {
+                        // 更新面板信息
+                        document.getElementById('panel-name').innerText = animal.name;
+                        document.getElementById('panel-type').innerText = animal.info.type;
+                        document.getElementById('panel-desc').innerText = "Analyzing bio-signature... Match found in database.";
+                        document.getElementById('bar-tox').style.width = animal.info.toxicity + '%';
+                        document.getElementById('bar-adp').style.width = animal.info.adapt + '%';
+                        dataPanel.style.display = 'block';
+                        lockedAnimal = animal;
+                    }
+                } else {
+                    animal.mesh.scale.set(1, 1, 1);
+                    animal.mesh.material.color.set(0xff3333);
+                    if (lockedAnimal === animal) {
+                        lockedAnimal = null;
+                        dataPanel.style.display = 'none';
+                    }
+                }
+            });
+
+            // 更新光标样式
+            if (isCapturing) document.body.classList.add('capturing');
+            else document.body.classList.remove('capturing');
 
             controls.update();
             renderer.render(scene, camera);
-            labelRenderer.render(scene, camera);
         }
         animate();
 
@@ -279,9 +411,7 @@
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
-            labelRenderer.setSize(window.innerWidth, window.innerHeight);
         });
-
     </script>
 </body>
 </html>
