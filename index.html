@@ -2,97 +2,114 @@
 <html lang="zh">
 <head>
     <meta charset="UTF-8">
-    <title>ECO-RADAR: 交互式生态探测</title>
+    <title>ECO-MONITOR | 极简生态监测</title>
     <style>
-        /* --- 1. 界面基础 --- */
-        body { margin: 0; overflow: hidden; background-color: #050505; cursor: none; /* 隐藏默认鼠标 */ }
+        /* --- 1. 极简风格 UI --- */
+        body { 
+            margin: 0; overflow: hidden; 
+            background-color: #ffffff; /* 纯白背景 */
+            cursor: none; /* 隐藏默认鼠标 */ 
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+        }
         
-        /* --- 2. 六边形鼠标光标 --- */
+        /* --- 2. 六边形光标 (改为深色以适应白底) --- */
         #cursor-hex {
             position: absolute; pointer-events: none; z-index: 1000;
-            width: 60px; height: 60px;
+            width: 50px; height: 50px;
             left: 0; top: 0;
             transform: translate(-50%, -50%);
-            /* CSS 画六边形 */
+            /* 六边形切割 */
             clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
-            background: rgba(0, 255, 204, 0.1);
-            border: 2px solid #00ffcc; /* 注意：clip-path 会裁剪边框，这里用伪元素模拟边框效果 */
+            background: rgba(0, 0, 0, 0.05); /* 极淡的灰色填充 */
             display: flex; justify-content: center; align-items: center;
-            transition: width 0.2s, height 0.2s, background 0.2s;
+            transition: all 0.2s ease;
         }
-        /* 用伪元素画六边形描边 */
+        /* 描边 */
         #cursor-hex::before {
             content: ''; position: absolute; width: 100%; height: 100%;
-            background: #00ffcc;
+            background: #333; /* 深色边框 */
             clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
-            z-index: -1; transform: scale(1.05); /* 稍微大一点形成边框 */
+            z-index: -1; transform: scale(1.08); 
         }
         #cursor-hex::after {
-            content: ''; position: absolute; width: 90%; height: 90%;
-            background: #050505; /* 遮住中间 */
+            content: ''; position: absolute; width: 92%; height: 92%;
+            background: #fff; /* 中间镂空成白色 */
             clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
             z-index: 0;
         }
-        /* 准心中间的小点 */
         #cursor-center {
-            width: 4px; height: 4px; background: #00ffcc; border-radius: 50%; z-index: 2;
+            width: 4px; height: 4px; background: #333; border-radius: 50%; z-index: 2;
         }
 
         /* 捕捉状态 */
         .capturing #cursor-hex {
-            width: 80px; height: 80px;
-            background: rgba(255, 50, 50, 0.2);
+            width: 70px; height: 70px;
+            transform: translate(-50%, -50%) rotate(30deg);
         }
-        .capturing #cursor-hex::before { background: #ff3333; }
-        .capturing #cursor-center { background: #ff3333; }
+        .capturing #cursor-hex::before { background: #ff4444; }
+        .capturing #cursor-center { background: #ff4444; }
 
-        /* --- 3. 资料面板 --- */
+        /* --- 3. 资料面板 (清新风格) --- */
         #data-panel {
-            position: absolute; right: 20px; top: 50%; transform: translateY(-50%);
-            width: 250px; padding: 20px;
-            background: rgba(0, 20, 10, 0.8);
-            border: 1px solid #00ffcc;
-            color: #00ffcc; font-family: 'Courier New', monospace;
-            display: none; /* 默认隐藏 */
-            backdrop-filter: blur(5px);
-            box-shadow: 0 0 20px rgba(0, 255, 204, 0.2);
+            position: absolute; right: 40px; top: 50%; transform: translateY(-50%);
+            width: 280px; padding: 30px;
+            background: rgba(255, 255, 255, 0.9); /* 白色半透明 */
+            border: 1px solid #ddd;
+            border-left: 5px solid #333;
+            color: #333;
+            display: none; 
+            backdrop-filter: blur(10px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
         }
-        h2 { margin: 0 0 10px 0; font-size: 18px; border-bottom: 1px dashed #00ffcc; padding-bottom: 5px; }
-        .stat-row { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 12px; }
-        .bar { width: 100%; height: 4px; background: #333; margin-top: 2px; }
-        .bar-fill { height: 100%; background: #00ffcc; width: 0%; transition: width 0.5s; }
+        h2 { margin: 0 0 15px 0; font-size: 24px; letter-spacing: -1px; }
+        .tag { 
+            display: inline-block; background: #eee; 
+            padding: 4px 8px; font-size: 10px; border-radius: 4px; 
+            margin-bottom: 20px; font-weight: bold; color: #666;
+        }
+        .stat-item { margin-bottom: 10px; font-size: 12px; }
+        .bar-bg { width: 100%; height: 6px; background: #eee; border-radius: 3px; overflow: hidden; margin-top: 4px;}
+        .bar-fill { height: 100%; background: #333; width: 0%; border-radius: 3px; }
 
         /* --- 4. 顶部 UI --- */
         #ui-header {
-            position: absolute; top: 20px; left: 20px; color: rgba(255,255,255,0.7);
-            font-family: monospace; pointer-events: none;
+            position: absolute; top: 30px; left: 40px; color: #333;
+            pointer-events: none;
         }
+        h1 { margin: 0; font-size: 18px; font-weight: 700; letter-spacing: 1px; }
+        p { margin: 5px 0 0 0; font-size: 12px; color: #999; }
     </style>
 </head>
 <body>
 
-    <!-- 1. 自定义光标 -->
+    <!-- 光标 -->
     <div id="cursor-hex"><div id="cursor-center"></div></div>
 
-    <!-- 2. UI 元素 -->
+    <!-- UI -->
     <div id="ui-header">
-        <h1>ECO-RADAR SYSTEM</h1>
-        <p>MOUSE: Repulsion Field Active<br>TARGET: Tri-Signal Organisms</p>
+        <h1>ECO-MONITOR</h1>
+        <p>Live Data Stream // Sector 7</p>
     </div>
 
-    <!-- 3. 捕捉后的资料面板 -->
+    <!-- 资料面板 -->
     <div id="data-panel">
-        <h2 id="panel-name">TARGET ACQUIRED</h2>
-        <div class="stat-row"><span>TYPE:</span><span id="panel-type">Unknown</span></div>
-        <div class="stat-row"><span>STATUS:</span><span>MUTATED</span></div>
-        <div style="margin-top:15px">TOXICITY LEVEL:</div>
-        <div class="bar"><div class="bar-fill" id="bar-tox"></div></div>
-        <div style="margin-top:10px">ADAPTABILITY:</div>
-        <div class="bar"><div class="bar-fill" id="bar-adp"></div></div>
-        <p style="font-size:10px; margin-top:15px; opacity:0.7" id="panel-desc">...</p>
+        <span class="tag" id="panel-id">ID: 001</span>
+        <h2 id="panel-name">Target Name</h2>
+        
+        <div class="stat-item">
+            TOXICITY
+            <div class="bar-bg"><div class="bar-fill" id="bar-tox" style="background: #ff4444;"></div></div>
+        </div>
+        <div class="stat-item">
+            ADAPTATION
+            <div class="bar-bg"><div class="bar-fill" id="bar-adp" style="background: #44cc88;"></div></div>
+        </div>
+        
+        <p style="font-size:12px; line-height:1.6; color:#666; margin-top:20px;" id="panel-desc">
+            Description text goes here...
+        </p>
     </div>
 
-    <!-- 4. 核心代码 -->
     <script type="importmap">
         {
             "imports": {
@@ -102,10 +119,10 @@
         }
     </script>
 
-    <!-- 顶点着色器：处理点的位置和排斥逻辑 -->
+    <!-- 🌟 扁平化圆点着色器 (无光照，纯色块) -->
     <script type="x-shader/x-vertex" id="vertexShader">
         uniform float uTime;
-        uniform vec3 uMouse; /* 鼠标在 3D 世界的坐标 */
+        uniform vec3 uMouse;
         attribute float size;
         attribute vec3 customColor;
         varying vec3 vColor;
@@ -114,43 +131,44 @@
             vColor = customColor;
             vec3 pos = position;
 
-            /* --- 核心算法：鼠标排斥 --- */
-            // 计算点到鼠标的水平距离 (忽略高度 y)
+            // --- 鼠标交互：平滑避让 ---
+            // 只在 XZ 平面产生推力，保持扁平感
             float dist = distance(pos.xz, uMouse.xz);
-            float radius = 12.0; // 排斥半径
-            float strength = 8.0; // 排斥力度
-
+            float radius = 15.0; // 影响半径
+            
             if (dist < radius) {
-                // 计算排斥方向
                 vec3 dir = normalize(pos - uMouse);
-                // 离得越近，推得越远
                 float force = (radius - dist) / radius;
-                // 只在水平方向推开，y轴稍微下压一点形成凹坑感
-                pos.x += dir.x * force * strength;
-                pos.z += dir.z * force * strength;
-                pos.y -= force * 2.0; 
+                // 更加柔和的推力，点会向四周滑开
+                pos.x += dir.x * force * 5.0; 
+                pos.z += dir.z * force * 5.0;
             }
 
             vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
-            gl_PointSize = size * (300.0 / -mvPosition.z); // 近大远小
+            
+            // 保持点的大小相对稳定，不随距离缩放太剧烈，增加扁平感
+            gl_PointSize = size * (200.0 / -mvPosition.z); 
             gl_Position = projectionMatrix * mvPosition;
         }
     </script>
 
-    <!-- 片元着色器：把方点变成圆点 -->
     <script type="x-shader/x-fragment" id="fragmentShader">
-        uniform vec3 color;
         varying vec3 vColor;
 
         void main() {
-            // 计算距离中心的长度，如果大于 0.5 (即在圆外)，就丢弃像素
-            if (length(gl_PointCoord - vec2(0.5, 0.5)) > 0.5) discard;
+            // --- 绘制完美的扁平圆 ---
+            // 计算像素距离中心的距离
+            float dist = length(gl_PointCoord - vec2(0.5));
             
-            // 简单的光照渐变，让圆点看起来像球
-            vec2 coord = gl_PointCoord - vec2(0.5);
-            float strength = 1.0 - length(coord) * 1.5;
-            
-            gl_FragColor = vec4(vColor * strength * 1.5, 1.0);
+            // 边缘平滑 (Anti-aliasing)
+            // 如果距离大于 0.5，透明度为 0；在 0.4 到 0.5 之间渐变
+            float alpha = 1.0 - smoothstep(0.4, 0.5, dist);
+
+            // 如果完全透明，直接丢弃，优化性能
+            if (alpha < 0.01) discard;
+
+            // 输出纯色，没有高光，没有阴影
+            gl_FragColor = vec4(vColor, alpha); 
         }
     </script>
 
@@ -158,92 +176,99 @@
         import * as THREE from 'three';
         import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-        // --- 1. 初始化场景 ---
+        // --- 1. 场景设置 ---
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x050505);
-        scene.fog = new THREE.FogExp2(0x050505, 0.02);
+        scene.background = new THREE.Color(0xffffff); // 白底
+        scene.fog = new THREE.FogExp2(0xffffff, 0.012); // 白色雾气，让远处消失
 
         const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.set(0, 40, 60);
+        camera.position.set(0, 50, 70); // 俯视视角
 
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
+        // 关键：防止不同屏幕色差
+        renderer.outputColorSpace = THREE.SRGBColorSpace;
         document.body.appendChild(renderer.domElement);
 
-        // --- 2. 交互射线系统 ---
+        // --- 2. 交互射线 ---
         const raycaster = new THREE.Raycaster();
-        const mouse = new THREE.Vector2(); // 屏幕坐标 (-1 到 1)
-        const mouseWorld = new THREE.Vector3(999, 999, 999); // 3D 世界坐标
-        // 一个不可见的平面，用来检测鼠标在地面上的位置
-        const planeGeo = new THREE.PlaneGeometry(500, 500);
-        const planeMat = new THREE.MeshBasicMaterial({ visible: false });
-        const hitPlane = new THREE.Mesh(planeGeo, planeMat);
-        hitPlane.rotation.x = -Math.PI / 2; // 躺平
+        const mouse = new THREE.Vector2();
+        const mouseWorld = new THREE.Vector3(999, 999, 999);
+        const hitPlane = new THREE.Mesh(
+            new THREE.PlaneGeometry(500, 500),
+            new THREE.MeshBasicMaterial({ visible: false })
+        );
+        hitPlane.rotation.x = -Math.PI / 2;
         scene.add(hitPlane);
 
-        // --- 3. 生成 Shader 地形 ---
+        // --- 3. 生成流线型岛屿地形 ---
         const geometry = new THREE.BufferGeometry();
         const positions = [];
         const colors = [];
         const sizes = [];
 
-        const width = 200;
-        const depth = 200;
-        const gap = 1.2; // 基础间距
+        // Bear 71 经典配色
+        const colWater = new THREE.Color("#44AAFF"); // 清新的蓝
+        const colLand1 = new THREE.Color("#88CC44"); // 嫩绿
+        const colLand2 = new THREE.Color("#66AA33"); // 中绿
+        const colLand3 = new THREE.Color("#DDEEAA"); // 浅黄绿 (高地)
 
-        // 颜色定义
-        const colWater = new THREE.Color(0x0088ff); // 亮蓝
-        // 三种绿色
-        const colGrass1 = new THREE.Color(0x228822); // 深绿
-        const colGrass2 = new THREE.Color(0x44aa44); // 中绿
-        const colGrass3 = new THREE.Color(0x66cc66); // 浅绿
-        const colSpecial = new THREE.Color(0xccff00); // 特殊大点
+        // 扩大扫描范围，但只保留圆内的点
+        const range = 180; 
+        const gap = 2.5; // 间距变大，更透气！(之前是1.2)
 
-        for (let x = -width/2; x < width/2; x += gap) {
-            for (let z = -depth/2; z < depth/2; z += gap) {
+        for (let x = -range; x < range; x += gap) {
+            for (let z = -range; z < range; z += gap) {
                 
-                // 地形高度算法
-                let y = Math.sin(x * 0.08) * 6 + Math.cos(z * 0.08) * 6;
-                y += Math.sin(x * 0.2 + z * 0.1) * 2; // 增加细节
+                // 1. 岛屿形状算法 (流线型边界)
+                const distToCenter = Math.sqrt(x*x + z*z);
                 
-                let isWater = y < -2;
-                let addPoint = false;
-                let pSize = 1.0;
+                // 创造不规则边界：基础半径 + 正弦波干扰
+                const maxRadius = 120 + Math.sin(Math.atan2(z, x) * 5.0) * 15.0 + Math.cos(x * 0.1) * 10.0;
+                
+                // 如果超出了不规则边界，就不生成点 -> 形成岛屿形状
+                if (distToCenter > maxRadius) continue;
+
+                // 2. 地形高度 (Perlin Noise 模拟)
+                // 这里用简单的 sin/cos 组合模拟平缓丘陵
+                let y = Math.sin(x * 0.05) * 8 + Math.cos(z * 0.05) * 8;
+                
+                // 3. 决定点的类型
+                let pSize = 0.0;
                 let pColor = new THREE.Color();
+                let keepPoint = false;
 
-                if (isWater) {
-                    // 🌊 河流：全部保留，圆点大，蓝色
-                    addPoint = true;
-                    pSize = 4.0 + Math.random() * 2.0;
-                    pColor = colWater;
-                    // 让河流稍微平坦一点
-                    y = -2.0 + Math.random() * 0.5; 
+                if (y < -3) {
+                    // 🌊 河流/湖泊
+                    // 逻辑：在低洼处，点比较大且颜色统一
+                    if (Math.random() > 0.4) { // 稍微稀疏一点
+                        pSize = 4.0; 
+                        pColor = colWater;
+                        keepPoint = true;
+                    }
                 } else {
-                    // 🌿 草地：稀疏化 (密度更小)
-                    if (Math.random() > 0.6) { // 60% 的概率不生成点
-                        addPoint = true;
+                    // 🌿 草地
+                    // 逻辑：非常稀疏，透气感
+                    if (Math.random() > 0.8) { // 只保留 20% 的点，大间隙！
+                        keepPoint = true;
                         
-                        // 随机分配三种绿色
-                        const rand = Math.random();
-                        if (rand > 0.98) {
-                            // ✨ 稀有大绿点
-                            pSize = 6.0;
-                            pColor = colSpecial;
-                            y += 1.0; // 悬浮一点
-                        } else if (rand > 0.6) {
-                            pSize = 1.5;
-                            pColor = colGrass3;
-                        } else if (rand > 0.3) {
-                            pSize = 1.2;
-                            pColor = colGrass2;
+                        // 随机大小和颜色
+                        const r = Math.random();
+                        if (r > 0.95) {
+                            // 偶发的大绿点
+                            pSize = 5.0;
+                            pColor = colLand1;
+                        } else if (r > 0.6) {
+                            pSize = 2.5;
+                            pColor = colLand2;
                         } else {
-                            pSize = 1.0;
-                            pColor = colGrass1;
+                            pSize = 1.8;
+                            pColor = colLand3;
                         }
                     }
                 }
 
-                if (addPoint) {
+                if (keepPoint) {
                     positions.push(x, y, z);
                     colors.push(pColor.r, pColor.g, pColor.b);
                     sizes.push(pSize);
@@ -255,150 +280,135 @@
         geometry.setAttribute('customColor', new THREE.Float32BufferAttribute(colors, 3));
         geometry.setAttribute('size', new THREE.Float32BufferAttribute(sizes, 1));
 
-        // 核心：Shader 材质
+        // Shader 材质
         const shaderMaterial = new THREE.ShaderMaterial({
             uniforms: {
-                uTime: { value: 0 },
-                uMouse: { value: new THREE.Vector3(0, 0, 0) },
-                color: { value: new THREE.Color(0xffffff) }
+                uMouse: { value: new THREE.Vector3(0, 0, 0) }
             },
             vertexShader: document.getElementById('vertexShader').textContent,
             fragmentShader: document.getElementById('fragmentShader').textContent,
-            transparent: true,
-            depthWrite: false, // 允许透明叠加
+            transparent: true
         });
 
         const terrain = new THREE.Points(geometry, shaderMaterial);
         scene.add(terrain);
 
-
-        // --- 4. 动物逻辑 (三角形) ---
+        // --- 4. 动物 (三角形浮标) ---
         class TriangleAnimal {
-            constructor(name, type, toxicity, adapt) {
+            constructor(name, type, color, startPos) {
                 this.name = name;
-                this.info = { type, toxicity, adapt };
+                this.info = { type: type, desc: "Detected abnormal genetic signature." };
                 
-                // 几何体：四面体 (看起来像三角形)
-                const geo = new THREE.ConeGeometry(1.5, 3, 3); 
-                const mat = new THREE.MeshBasicMaterial({ 
-                    color: 0xff3333, 
-                    wireframe: true,
-                    transparent: true, opacity: 0.8
-                });
+                // 扁平的三角形 (Cone 压扁)
+                const geo = new THREE.ConeGeometry(2, 4, 3);
+                const mat = new THREE.MeshBasicMaterial({ color: color, wireframe: true });
                 this.mesh = new THREE.Mesh(geo, mat);
                 
-                // 随机位置
-                this.mesh.position.set((Math.random()-0.5)*100, 10, (Math.random()-0.5)*100);
-                this.mesh.rotation.x = Math.PI; // 倒过来，尖朝下，像浮标
+                this.mesh.rotation.x = Math.PI; // 倒三角
+                this.mesh.position.copy(startPos);
                 
-                this.target = this.mesh.position.clone();
-                this.speed = 0.1 + Math.random() * 0.1;
+                // 目标移动逻辑
+                this.target = startPos.clone();
+                this.speed = 0.08;
                 
                 scene.add(this.mesh);
                 this.pickTarget();
             }
 
             pickTarget() {
-                this.target.x = (Math.random()-0.5)*120;
-                this.target.z = (Math.random()-0.5)*120;
+                // 在岛屿范围内随机移动
+                const angle = Math.random() * Math.PI * 2;
+                const radius = Math.random() * 80;
+                this.target.x = Math.cos(angle) * radius;
+                this.target.z = Math.sin(angle) * radius;
             }
 
             update() {
-                // 简单的移动逻辑
                 const dir = new THREE.Vector3().subVectors(this.target, this.mesh.position);
                 if (dir.length() < 1) this.pickTarget();
                 
                 dir.normalize();
-                this.mesh.position.x += dir.x * this.speed;
-                this.mesh.position.z += dir.z * this.speed;
+                this.mesh.position.add(dir.multiplyScalar(this.speed));
                 
-                // 旋转效果
-                this.mesh.rotation.y += 0.05;
+                // 缓慢旋转
+                this.mesh.rotation.y += 0.02;
                 
-                // 高度跟随地形 + 悬浮
-                // 这里简单模拟，保持在 y=5 以上
-                this.mesh.position.y = Math.sin(this.mesh.position.x * 0.1) * 5 + 8;
+                // 悬浮高度 (基于地形高度估算)
+                const y = Math.sin(this.mesh.position.x * 0.05) * 8 + Math.cos(this.mesh.position.z * 0.05) * 8;
+                this.mesh.position.y = y + 8; // 悬浮在地形上方 8 单位
             }
         }
 
         const animals = [
-            new TriangleAnimal("SPECIMEN-01", "TURTLE HYBRID", 85, 40),
-            new TriangleAnimal("SPECIMEN-02", "PLASTIC CRAB", 60, 90),
-            new TriangleAnimal("SPECIMEN-03", "OIL BIRD", 95, 20),
-            new TriangleAnimal("SPECIMEN-04", "ACID JELLY", 70, 60),
-            new TriangleAnimal("SPECIMEN-05", "GHOST SEAL", 50, 50)
+            new TriangleAnimal("TURTLE-X", "Mutant Turtle", 0xff4444, new THREE.Vector3(0, 10, 0)),
+            new TriangleAnimal("CRAB-9", "Plastic Crab", 0xffaa00, new THREE.Vector3(30, 10, 20)),
+            new TriangleAnimal("BIRD-OIL", "Oil Cormorant", 0x4444ff, new THREE.Vector3(-30, 10, -30)),
         ];
 
-
-        // --- 5. 事件监听 ---
+        // --- 5. 事件交互 ---
         const cursor = document.getElementById('cursor-hex');
-        const dataPanel = document.getElementById('data-panel');
-        let lockedAnimal = null;
+        const panel = document.getElementById('data-panel');
+        let lockedTarget = null;
 
         document.addEventListener('mousemove', (e) => {
-            // 1. 更新 CSS 光标位置
             cursor.style.left = e.clientX + 'px';
             cursor.style.top = e.clientY + 'px';
 
-            // 2. 更新 Shader 里的鼠标位置 (用于排斥效果)
             mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
             mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
 
             raycaster.setFromCamera(mouse, camera);
             const intersects = raycaster.intersectObject(hitPlane);
-            
             if (intersects.length > 0) {
-                const point = intersects[0].point;
-                // 把坐标传给 Shader
-                shaderMaterial.uniforms.uMouse.value.copy(point);
-                mouseWorld.copy(point); // 存下来用于捕捉计算
+                shaderMaterial.uniforms.uMouse.value.copy(intersects[0].point);
+                mouseWorld.copy(intersects[0].point);
             }
         });
 
-        // --- 6. 动画循环 ---
+        // --- 6. 动画 ---
         const controls = new OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
-        
+        controls.autoRotate = true;
+        controls.autoRotateSpeed = 0.5;
+
+        // 手动操作时停止自动旋转
+        controls.addEventListener('start', () => { controls.autoRotate = false; });
+
         function animate() {
             requestAnimationFrame(animate);
             
-            shaderMaterial.uniforms.uTime.value += 0.01;
-
-            // 捕捉逻辑
             let isCapturing = false;
-            
-            animals.forEach(animal => {
-                animal.update();
 
-                // 检查鼠标和动物的距离 (捕捉判定)
-                const dist = animal.mesh.position.distanceTo(mouseWorld);
+            animals.forEach(anim => {
+                anim.update();
                 
-                if (dist < 8) { // 如果准心靠近动物
+                // 捕捉逻辑
+                const dist = new THREE.Vector2(anim.mesh.position.x, anim.mesh.position.z)
+                    .distanceTo(new THREE.Vector2(mouseWorld.x, mouseWorld.z));
+
+                if (dist < 8) { // 捕捉半径
                     isCapturing = true;
-                    animal.mesh.scale.set(1.5, 1.5, 1.5); // 动物放大
-                    animal.mesh.material.color.set(0xffffff); // 变白
+                    anim.mesh.scale.setScalar(1.5);
                     
-                    if (lockedAnimal !== animal) {
-                        // 更新面板信息
-                        document.getElementById('panel-name').innerText = animal.name;
-                        document.getElementById('panel-type').innerText = animal.info.type;
-                        document.getElementById('panel-desc').innerText = "Analyzing bio-signature... Match found in database.";
-                        document.getElementById('bar-tox').style.width = animal.info.toxicity + '%';
-                        document.getElementById('bar-adp').style.width = animal.info.adapt + '%';
-                        dataPanel.style.display = 'block';
-                        lockedAnimal = animal;
+                    if (lockedTarget !== anim) {
+                        lockedTarget = anim;
+                        // 更新 UI
+                        document.getElementById('panel-id').innerText = "ID: " + Math.floor(Math.random()*1000);
+                        document.getElementById('panel-name').innerText = anim.name;
+                        document.getElementById('panel-desc').innerText = anim.info.desc;
+                        document.getElementById('bar-tox').style.width = Math.random() * 80 + 20 + "%";
+                        document.getElementById('bar-adp').style.width = Math.random() * 80 + 20 + "%";
+                        panel.style.display = 'block';
                     }
                 } else {
-                    animal.mesh.scale.set(1, 1, 1);
-                    animal.mesh.material.color.set(0xff3333);
-                    if (lockedAnimal === animal) {
-                        lockedAnimal = null;
-                        dataPanel.style.display = 'none';
+                    anim.mesh.scale.setScalar(1.0);
+                    if (lockedTarget === anim) {
+                        lockedTarget = null;
+                        panel.style.display = 'none';
                     }
                 }
             });
 
-            // 更新光标样式
             if (isCapturing) document.body.classList.add('capturing');
             else document.body.classList.remove('capturing');
 
