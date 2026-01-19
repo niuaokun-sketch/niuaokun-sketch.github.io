@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh">
-<head>
+<head><script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
     <meta charset="UTF-8">
     <title>ECO-MONITOR | 层次增强版</title>
     <style>
@@ -226,43 +226,141 @@
         scene.add(terrain);
 
         // --- 5. 动物 ---
-        class TriangleAnimal {
-            constructor(name, type, color, startPos) {
-                this.name = name;
-                this.info = { type: type, desc: "Genetic anomaly detected. High priority target." };
-                const geo = new THREE.ConeGeometry(2, 4, 3);
-                const mat = new THREE.MeshBasicMaterial({ color: color, wireframe: true });
-                this.mesh = new THREE.Mesh(geo, mat);
-                this.mesh.rotation.x = Math.PI;
-                this.mesh.position.copy(startPos);
-                this.target = startPos.clone();
-                this.speed = 0.08;
-                scene.add(this.mesh);
-                this.pickTarget();
-            }
-            pickTarget() {
-                const angle = Math.random() * Math.PI * 2;
-                const radius = Math.random() * 80;
-                this.target.x = Math.cos(angle) * radius;
-                this.target.z = Math.sin(angle) * radius;
-            }
-            update() {
-                const dir = new THREE.Vector3().subVectors(this.target, this.mesh.position);
-                if (dir.length() < 1) this.pickTarget();
-                dir.normalize();
-                this.mesh.position.add(dir.multiplyScalar(this.speed));
-                this.mesh.rotation.y += 0.02;
-                const y = getElevation(this.mesh.position.x, this.mesh.position.z);
-                this.mesh.position.y = y + 8;
+      // --- 🌟 核心代码：带变身特效的动物类 ---
+    class MorphingAnimal {
+        constructor(name, normalFile, mutantFile, startPos) {
+            this.name = name;
+            this.group = new THREE.Group();
+            this.group.position.copy(startPos);
+            scene.add(this.group);
+
+            // 状态标记
+            this.isMutated = false;     // 当前是不是变异状态
+            this.isAnimating = false;   // 当前是不是正在播放动画(防止冲突)
+
+            // --- 材质准备 ---
+            // 1. 正常材质 (灰色线框)
+            this.matNormal = new THREE.MeshBasicMaterial({ 
+                color: 0x888888, wireframe: true, transparent: true, opacity: 0.6 
+            });
+            // 2. 变异材质 (红色线框，警示感)
+            this.matMutant = new THREE.MeshBasicMaterial({ 
+                color: 0xff3333, wireframe: true, transparent: true, opacity: 0 
+            });
+            // 3. 闪光材质 (变身瞬间的纯白光)
+            this.matFlash = new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true });
+
+            const loader = new GLTFLoader();
+
+            // --- 加载正常模型 ---
+            loader.load(normalFile, (gltf) => {
+                this.normalMesh = gltf.scene;
+                // 统一替换材质
+                this.normalMesh.traverse((child) => {
+                    if (child.isMesh) child.material = this.matNormal.clone();
+                });
+                // 调整大小 (根据你的模型实际情况微调)
+                this.normalMesh.scale.set(3, 3, 3);
+                this.group.add(this.normalMesh);
+            });
+
+            // --- 加载变异模型 ---
+            loader.load(mutantFile, (gltf) => {
+                this.mutantMesh = gltf.scene;
+                this.mutantMesh.traverse((child) => {
+                    if (child.isMesh) child.material = this.matMutant.clone();
+                });
+                // 初始状态：缩小并隐藏
+                this.mutantMesh.scale.set(0.1, 0.1, 0.1);
+                this.mutantMesh.visible = false; 
+                this.group.add(this.mutantMesh);
+            });
+
+            // 漫游逻辑
+            this.target = startPos.clone();
+            this.pickTarget();
+        }
+
+        pickTarget() {
+            // 随机移动逻辑
+            const angle = Math.random() * Math.PI * 2;
+            const radius = Math.random() * 80;
+            this.target.x = Math.cos(angle) * radius;
+            this.target.z = Math.sin(angle) * radius;
+        }
+
+        update() {
+            // 移动
+            const dir = new THREE.Vector3().subVectors(this.target, this.group.position);
+            if (dir.length() < 1) this.pickTarget();
+            dir.normalize();
+            this.group.position.add(dir.multiplyScalar(0.05));
+            this.group.rotation.y += 0.01;
+
+            // 地形贴合 (如果没有 getElevation 函数，这一行会报错，可以注释掉)
+            if (typeof getElevation === 'function') {
+                const y = getElevation(this.group.position.x, this.group.position.z);
+                this.group.position.y = y + 5;
             }
         }
 
-        const animals = [
-            new TriangleAnimal("TURTLE-X", "Polymer Turtle", 0xff6b6b, new THREE.Vector3(0, 10, 0)),
-            new TriangleAnimal("CRAB-9", "Plastic Crab", 0xffaa00, new THREE.Vector3(30, 10, 20)),
-            new TriangleAnimal("BIRD-OIL", "Oil Cormorant", 0x4444ff, new THREE.Vector3(-30, 10, -30)),
-        ];
+        // 🔥 动画逻辑：变身 (正常 -> 变异)
+        transform() {
+            // 如果已经在变异，或者正在播动画，或者是模型还没加载完，就什么都不做
+            if (this.isMutated || this.isAnimating || !this.normalMesh || !this.mutantMesh) return;
+            
+            this.isAnimating = true;
+            this.isMutated = true;
 
+            const tl = gsap.timeline({
+                onComplete: () => { this.isAnimating = false; } // 动画结束，解锁
+            });
+
+            // 1. 正常版：剧烈抖动 + 闪白光 (模拟数据故障)
+            tl.to(this.normalMesh.position, { x: 0.5, y: 0.5, z: 0.5, duration: 0.05, yoyo: true, repeat: 5 })
+              .to(this.normalMesh.material, { color: '#ffffff', opacity: 1, duration: 0.1 }, 0);
+
+            // 2. 瞬间切换
+            tl.add(() => {
+                this.normalMesh.visible = false; // 藏起正常版
+                this.mutantMesh.visible = true;  // 显示变异版
+                
+                // 让变异版也先闪白光
+                this.mutantMesh.traverse(c => { if(c.isMesh) c.material.color.set(0xffffff); });
+            });
+
+            // 3. 变异版：猛烈弹出 + 变红
+            tl.fromTo(this.mutantMesh.scale, { x: 0.1, y: 0.1, z: 0.1 }, { x: 3, y: 3, z: 3, duration: 0.6, ease: "back.out(1.7)" })
+              .to(this.mutantMesh.children.map(c => c.material.color), { r: 1, g: 0.2, b: 0.2, duration: 0.5 }, "<"); // 变回红色
+        }
+
+        // 🔄 动画逻辑：还原 (变异 -> 正常)
+        revert() {
+            if (!this.isMutated || this.isAnimating || !this.normalMesh || !this.mutantMesh) return;
+            
+            this.isAnimating = true;
+            this.isMutated = false;
+
+            const tl = gsap.timeline({
+                onComplete: () => { this.isAnimating = false; }
+            });
+
+            // 1. 变异版：快速收缩
+            tl.to(this.mutantMesh.scale, { x: 0, y: 0, z: 0, duration: 0.3, ease: "back.in(1.7)" });
+
+            // 2. 切换
+            tl.add(() => {
+                this.mutantMesh.visible = false;
+                this.normalMesh.visible = true;
+                this.normalMesh.scale.set(0.1, 0.1, 0.1); // 准备弹出
+                // 恢复灰色
+                this.normalMesh.traverse(c => { if(c.isMesh) c.material.color.set(0x888888); });
+            });
+
+            // 3. 正常版：Q弹出现
+            tl.to(this.normalMesh.scale, { x: 3, y: 3, z: 3, duration: 0.5, ease: "elastic.out(1, 0.5)" });
+        }
+    }
         // --- 6. 交互逻辑 (跟随鼠标 + 划过变大) ---
         let hoveredTarget = null;
         const mouseWorld = new THREE.Vector3(); 
@@ -298,17 +396,61 @@
             let currentHover = null;
 
             // 1. 动物更新 & 距离检测
+            animals.forEach(anim => {function animate() {
+            requestAnimationFrame(animate);
+
+            // ... (前面的代码保持不变) ...
+
+            let currentHover = null;
+
+            // 遍历所有动物
             animals.forEach(anim => {
-                anim.update();
+                anim.update(); // 让动物继续走
                 
-                // 计算鼠标与动物的水平距离
-                const dist = new THREE.Vector2(anim.mesh.position.x, anim.mesh.position.z)
+                // 计算鼠标和动物的距离
+                const dist = new THREE.Vector2(anim.group.position.x, anim.group.position.z)
                     .distanceTo(new THREE.Vector2(mouseWorld.x, mouseWorld.z));
 
+                // 🎯 如果距离小于 8 (捕捉到了)
                 if (dist < 8) { 
-                    currentHover = anim; 
-                } 
+                    currentHover = anim;
+                    
+                    // 🔥 触发变身动画！🔥
+                    anim.transform();
+
+                } else {
+                    // 🚶 鼠标离开了，还原！
+                    anim.revert();
+                }
             });
+
+            // ... (后面的光标控制代码保持不变) ...
+            
+            // 下面是 UI 面板的逻辑 (配合上面的 currentHover)
+            if (currentHover) {
+                // 如果第一次悬停，更新面板信息
+                if (lockedTarget !== currentHover) {
+                    lockedTarget = currentHover;
+                    document.getElementById('panel-name').innerText = currentHover.name;
+                    // ... 更新其他信息 ...
+                    panel.style.display = 'block';
+                }
+                // 光标变大变红逻辑...
+                cursorGroup.scale.lerp(new THREE.Vector3(2.5, 2.5, 2.5), 0.1);
+                // ...
+            } else {
+                lockedTarget = null;
+                panel.style.display = 'none';
+                // 光标恢复逻辑...
+                cursorGroup.scale.lerp(new THREE.Vector3(1, 1, 1), 0.1);
+                // ...
+            }
+
+            // ...
+            
+            controls.update();
+            renderer.render(scene, camera);
+        }
 
             // 2. 光标跟随逻辑 (始终跟随鼠标)
             // 计算光标的目标位置 (基于鼠标 XZ + 地形高度 Y)
