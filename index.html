@@ -2,20 +2,39 @@
 <html lang="zh">
 <head>
     <meta charset="UTF-8">
-    <title>ECO-MONITOR | 修复版</title>
+    <title>ECO-MONITOR | 全彩动画版</title>
+    <!-- 引入动画库 GSAP -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    
     <style>
+        /* --- 1. 基础样式 --- */
         body { margin: 0; overflow: hidden; background-color: #ffffff; cursor: none; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
-        #data-panel { position: absolute; right: 40px; top: 50%; transform: translateY(-50%); width: 280px; padding: 30px; background: rgba(255, 255, 255, 0.9); border: 1px solid #ddd; border-left: 5px solid #333; color: #333; display: none; backdrop-filter: blur(10px); box-shadow: 0 10px 30px rgba(0,0,0,0.1); z-index: 10; }
-        h2 { margin: 0 0 15px 0; font-size: 24px; letter-spacing: -1px; }
-        .tag { display: inline-block; background: #eee; padding: 4px 8px; font-size: 10px; border-radius: 4px; margin-bottom: 20px; font-weight: bold; color: #666; }
-        .stat-item { margin-bottom: 10px; font-size: 12px; font-weight: bold; color: #555; }
-        .bar-bg { width: 100%; height: 6px; background: #eee; border-radius: 3px; overflow: hidden; margin-top: 4px;}
-        .bar-fill { height: 100%; background: #333; width: 0%; border-radius: 3px; }
+        
+        /* --- 2. 资料面板 --- */
+        #data-panel { 
+            position: absolute; right: 40px; top: 50%; transform: translateY(-50%); 
+            width: 300px; padding: 30px; 
+            background: rgba(255, 255, 255, 0.95); 
+            border: 1px solid #ddd; border-left: 6px solid #333; 
+            color: #333; display: none; 
+            backdrop-filter: blur(15px); 
+            box-shadow: 0 20px 50px rgba(0,0,0,0.15); 
+            z-index: 10; 
+            border-radius: 8px;
+        }
+        h2 { margin: 0 0 10px 0; font-size: 28px; letter-spacing: -1px; text-transform: uppercase;}
+        .tag { display: inline-block; background: #333; color: #fff; padding: 4px 8px; font-size: 10px; border-radius: 4px; margin-bottom: 20px; font-weight: bold; }
+        .stat-item { margin-bottom: 15px; font-size: 12px; font-weight: bold; color: #555; }
+        .bar-bg { width: 100%; height: 8px; background: #eee; border-radius: 4px; overflow: hidden; margin-top: 6px;}
+        .bar-fill { height: 100%; background: #333; width: 0%; border-radius: 4px; transition: width 1s ease-out;}
+        
+        /* --- 3. 顶部标题 --- */
         #ui-header { position: absolute; top: 30px; left: 40px; color: #333; pointer-events: none; z-index: 10; }
-        h1 { margin: 0; font-size: 18px; font-weight: 700; letter-spacing: 1px; }
+        h1 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: 2px; }
         p { margin: 5px 0 0 0; font-size: 12px; color: #999; }
-        #loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #333; font-size: 14px; pointer-events: none; transition: opacity 0.5s; background: rgba(255,255,255,0.8); padding: 10px 20px; border-radius: 20px;}
+        
+        /* --- 加载提示 --- */
+        #loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #333; font-size: 14px; font-weight: bold; pointer-events: none; transition: opacity 0.5s; background: white; padding: 20px 40px; border-radius: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);}
     </style>
 </head>
 <body>
@@ -25,16 +44,17 @@
         <p>Live Bio-Data // Sector 7</p>
     </div>
 
-    <div id="loading">SYSTEM INITIALIZING...<br><span style="font-size:10px; color:#999">Loading 3D Assets</span></div>
+    <div id="loading">LOADING ASSETS...</div>
 
     <div id="data-panel">
         <span class="tag" id="panel-id">ID: 001</span>
         <h2 id="panel-name">Target Name</h2>
-        <div class="stat-item">TOXICITY<div class="bar-bg"><div class="bar-fill" id="bar-tox" style="background: #ff4444;"></div></div></div>
-        <div class="stat-item">ADAPTATION<div class="bar-bg"><div class="bar-fill" id="bar-adp" style="background: #44cc88;"></div></div></div>
-        <p style="font-size:12px; line-height:1.6; color:#666; margin-top:20px;" id="panel-desc">...</p>
+        <div class="stat-item">TOXICITY LEVEL<div class="bar-bg"><div class="bar-fill" id="bar-tox" style="background: #ff4444;"></div></div></div>
+        <div class="stat-item">MUTATION RATE<div class="bar-bg"><div class="bar-fill" id="bar-adp" style="background: #44cc88;"></div></div></div>
+        <p style="font-size:13px; line-height:1.6; color:#666; margin-top:25px;" id="panel-desc">...</p>
     </div>
 
+    <!-- 引入 Three.js -->
     <script type="importmap">
         {
             "imports": {
@@ -44,8 +64,8 @@
         }
     </script>
 
+    <!-- Shader 保持不变 -->
     <script type="x-shader/x-vertex" id="vertexShader">
-        uniform float uTime;
         uniform vec3 uMouse;
         attribute float size;
         attribute vec3 customColor;
@@ -54,12 +74,12 @@
             vColor = customColor;
             vec3 pos = position;
             float dist = distance(pos.xz, uMouse.xz);
-            float radius = 7.0; 
+            float radius = 8.0; 
             if (dist < radius) {
                 vec3 dir = normalize(pos - uMouse);
                 float force = (radius - dist) / radius;
-                pos.x += dir.x * force * 3.0; 
-                pos.z += dir.z * force * 3.0;
+                pos.x += dir.x * force * 4.0; 
+                pos.z += dir.z * force * 4.0;
             }
             vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
             gl_PointSize = size * (200.0 / -mvPosition.z); 
@@ -81,51 +101,52 @@
         import * as THREE from 'three';
         import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
         import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-        // ⬇️ 新增：引入 DRACO 解码器
         import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 
-        // --- 初始化 ---
+        // --- 1. 场景与灯光 (💡 关键修改：增加灯光) ---
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0xffffff);
         scene.fog = new THREE.FogExp2(0xffffff, 0.012);
 
+        // 环境光：基础照明
+        const ambientLight = new THREE.AmbientLight(0xffffff, 2.5); 
+        scene.add(ambientLight);
+
+        // 平行光：模拟太阳，产生阴影感
+        const dirLight = new THREE.DirectionalLight(0xffffff, 3.0);
+        dirLight.position.set(50, 100, 50);
+        scene.add(dirLight);
+
         const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
         camera.position.set(0, 50, 70);
 
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.outputColorSpace = THREE.SRGBColorSpace;
+        renderer.outputColorSpace = THREE.SRGBColorSpace; // 颜色校正
         document.body.appendChild(renderer.domElement);
 
-        // --- 准备加载器 (配置 DRACO) ---
-        const loader = new GLTFLoader();
-        const dracoLoader = new DRACOLoader();
-        // 设置解码器路径 (直接从 CDN 读取)
-        dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
-        loader.setDRACOLoader(dracoLoader);
-
-        // --- 场景元素 ---
+        // --- 2. 3D 光标 ---
         const cursorGroup = new THREE.Group();
         scene.add(cursorGroup);
-        const hexGeometry = new THREE.RingGeometry(2.8, 3.8, 6); 
+        const hexGeometry = new THREE.RingGeometry(3.0, 3.8, 6); 
         const hexMaterial = new THREE.MeshBasicMaterial({ color: 0x333333, side: THREE.DoubleSide });
         const cursorHex = new THREE.Mesh(hexGeometry, hexMaterial);
         cursorHex.rotation.x = -Math.PI / 2;
         cursorGroup.add(cursorHex);
-        
-        const triGeometry = new THREE.ConeGeometry(0.6, 1.8, 3);
+        const triGeometry = new THREE.ConeGeometry(0.8, 2.0, 3);
         const triMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
         const cursorTri = new THREE.Mesh(triGeometry, triMaterial);
         cursorTri.rotation.x = Math.PI; cursorTri.position.y = 5; 
         cursorGroup.add(cursorTri);
 
+        // --- 3. 交互射线 ---
         const raycaster = new THREE.Raycaster();
         const mouse = new THREE.Vector2();
         const hitPlane = new THREE.Mesh(new THREE.PlaneGeometry(500, 500), new THREE.MeshBasicMaterial({ visible: false }));
         hitPlane.rotation.x = -Math.PI / 2;
         scene.add(hitPlane);
 
-        // --- 地形 ---
+        // --- 4. 地形生成 ---
         const geometry = new THREE.BufferGeometry();
         const positions = []; const colors = []; const sizes = [];
         const colWater = new THREE.Color("#99DDFF"); 
@@ -160,7 +181,6 @@
         geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
         geometry.setAttribute('customColor', new THREE.Float32BufferAttribute(colors, 3));
         geometry.setAttribute('size', new THREE.Float32BufferAttribute(sizes, 1));
-
         const shaderMaterial = new THREE.ShaderMaterial({
             uniforms: { uMouse: { value: new THREE.Vector3(0, 0, 0) } },
             vertexShader: document.getElementById('vertexShader').textContent,
@@ -170,85 +190,132 @@
         const terrain = new THREE.Points(geometry, shaderMaterial);
         scene.add(terrain);
 
-        // --- 动物类 ---
+        // --- 5. 动物类 (💡 关键修改：取消材质覆盖，支持自带动画) ---
+        
+        // 准备加载器
+        const loader = new GLTFLoader();
+        const dracoLoader = new DRACOLoader();
+        dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
+        loader.setDRACOLoader(dracoLoader);
+
         class MorphingAnimal {
             constructor(name, normalFile, mutantFile, startPos) {
                 this.name = name;
                 this.group = new THREE.Group();
                 this.group.position.copy(startPos);
                 scene.add(this.group);
-                this.isMutated = false; this.isAnimating = false;
 
-                this.matNormal = new THREE.MeshBasicMaterial({ color: 0x888888, wireframe: true, transparent: true, opacity: 0.6 });
-                this.matMutant = new THREE.MeshBasicMaterial({ color: 0xff3333, wireframe: true, transparent: true, opacity: 0 });
+                this.isMutated = false; 
+                this.isAnimating = false;
+                this.mixers = []; // 存储动画混合器
 
                 // 加载正常版
                 loader.load(normalFile, (gltf) => {
                     this.normalMesh = gltf.scene;
-                    this.normalMesh.traverse((child) => { if (child.isMesh) child.material = this.matNormal.clone(); });
-                    this.normalMesh.scale.set(3, 3, 3);
+                    // ⚠️ 删除覆盖材质的代码，保留原色
+                    this.normalMesh.scale.set(5, 5, 5); // 调整基础大小
                     this.group.add(this.normalMesh);
-                }, undefined, (e) => {
-                    console.error("加载失败:", normalFile, e);
-                    // 弹窗报错 (仅第一次)
-                    if(!window.hasAlerted) { alert("❌ 找不到文件: " + normalFile + "\n请按 F12 看详细错误"); window.hasAlerted = true; }
-                });
+                    
+                    // 如果 GLB 自带动画，播放它
+                    if(gltf.animations.length > 0) {
+                        const m = new THREE.AnimationMixer(this.normalMesh);
+                        m.clipAction(gltf.animations[0]).play();
+                        this.mixers.push(m);
+                    }
+                }, undefined, (e) => console.error("Error:", normalFile));
 
                 // 加载变异版
                 loader.load(mutantFile, (gltf) => {
                     this.mutantMesh = gltf.scene;
-                    this.mutantMesh.traverse((child) => { if (child.isMesh) child.material = this.matMutant.clone(); });
+                    // ⚠️ 保留原色，不覆盖材质
                     this.mutantMesh.scale.set(0.1, 0.1, 0.1);
                     this.mutantMesh.visible = false; 
                     this.group.add(this.mutantMesh);
-                });
+
+                    // 播放变异版动画
+                    if(gltf.animations.length > 0) {
+                        const m = new THREE.AnimationMixer(this.mutantMesh);
+                        m.clipAction(gltf.animations[0]).play();
+                        this.mixers.push(m);
+                    }
+                }, undefined, (e) => console.error("Error:", mutantFile));
 
                 this.target = startPos.clone();
                 this.pickTarget();
             }
+
             pickTarget() {
                 const angle = Math.random() * Math.PI * 2;
                 const radius = Math.random() * 80;
                 this.target.x = Math.cos(angle) * radius;
                 this.target.z = Math.sin(angle) * radius;
             }
-            update() {
+
+            update(delta) {
+                // 更新自带动画
+                this.mixers.forEach(mixer => mixer.update(delta));
+
+                // 如果没有自带动画，手动让它漂浮旋转
+                if (this.normalMesh && this.mixers.length === 0) {
+                    this.normalMesh.rotation.y += 0.01;
+                    // 简单的上下浮动
+                    // this.normalMesh.position.y = Math.sin(Date.now() * 0.002) * 0.5;
+                }
+                if (this.mutantMesh && this.mixers.length === 0) {
+                    this.mutantMesh.rotation.y += 0.02; // 变异版转快点
+                }
+
+                // 移动逻辑
                 const dir = new THREE.Vector3().subVectors(this.target, this.group.position);
                 if (dir.length() < 1) this.pickTarget();
                 dir.normalize();
                 this.group.position.add(dir.multiplyScalar(0.05));
-                this.group.rotation.y += 0.01;
+                
                 const y = getElevation(this.group.position.x, this.group.position.z);
                 this.group.position.y = y + 5;
             }
+
             transform() {
                 if (this.isMutated || this.isAnimating || !this.normalMesh || !this.mutantMesh) return;
                 this.isAnimating = true; this.isMutated = true;
+                
                 const tl = gsap.timeline({ onComplete: () => { this.isAnimating = false; } });
+
+                // 1. 正常版：故障闪烁
                 tl.to(this.normalMesh.position, { x: 0.5, y: 0.5, z: 0.5, duration: 0.05, yoyo: true, repeat: 5 })
-                  .to(this.normalMesh.material, { color: '#ffffff', opacity: 1, duration: 0.1 }, 0);
+                  .to(this.normalMesh.scale, { x: 0.1, y: 0.1, z: 0.1, duration: 0.3, ease: "back.in(1.7)" });
+
+                // 2. 切换到变异版
                 tl.add(() => {
-                    this.normalMesh.visible = false; this.mutantMesh.visible = true;
-                    this.mutantMesh.traverse(c => { if(c.isMesh) c.material.color.set(0xffffff); });
+                    this.normalMesh.visible = false; 
+                    this.mutantMesh.visible = true;
                 });
-                tl.fromTo(this.mutantMesh.scale, { x: 0.1, y: 0.1, z: 0.1 }, { x: 3, y: 3, z: 3, duration: 0.6, ease: "back.out(1.7)" })
-                  .to(this.mutantMesh.children.map(c => c.material.color), { r: 1, g: 0.2, b: 0.2, duration: 0.5 }, "<");
+
+                // 3. 变异版：放大展示！
+                tl.fromTo(this.mutantMesh.scale, { x: 0.1, y: 0.1, z: 0.1 }, { x: 8, y: 8, z: 8, duration: 0.6, ease: "back.out(1.7)" });
             }
+
             revert() {
                 if (!this.isMutated || this.isAnimating || !this.normalMesh || !this.mutantMesh) return;
                 this.isAnimating = true; this.isMutated = false;
+                
                 const tl = gsap.timeline({ onComplete: () => { this.isAnimating = false; } });
-                tl.to(this.mutantMesh.scale, { x: 0, y: 0, z: 0, duration: 0.3, ease: "back.in(1.7)" });
+
+                // 1. 变异版：缩小
+                tl.to(this.mutantMesh.scale, { x: 0.1, y: 0.1, z: 0.1, duration: 0.3, ease: "back.in(1.7)" });
+
+                // 2. 切换回正常版
                 tl.add(() => {
-                    this.mutantMesh.visible = false; this.normalMesh.visible = true;
-                    this.normalMesh.scale.set(0.1, 0.1, 0.1);
-                    this.normalMesh.traverse(c => { if(c.isMesh) c.material.color.set(0x888888); });
+                    this.mutantMesh.visible = false; 
+                    this.normalMesh.visible = true;
                 });
-                tl.to(this.normalMesh.scale, { x: 3, y: 3, z: 3, duration: 0.5, ease: "elastic.out(1, 0.5)" });
+
+                // 3. 正常版：恢复
+                tl.to(this.normalMesh.scale, { x: 5, y: 5, z: 5, duration: 0.5, ease: "elastic.out(1, 0.5)" });
             }
         }
 
-        // --- 动物列表 ---
+        // --- 6. 动物列表 ---
         const animals = [
             new MorphingAnimal("POLYMER TURTLE", "./wugui.glb", "./bwugui.glb", new THREE.Vector3(0, 10, 0)),
             new MorphingAnimal("PLASTIC CRAB", "./xie.glb", "./bxie.glb", new THREE.Vector3(30, 10, 30)),
@@ -261,10 +328,11 @@
             new MorphingAnimal("GHOST SEAL", "./bao.glb", "./bhaibao.glb", new THREE.Vector3(20, 5, -80))
         ];
 
-        // --- 循环 ---
+        // --- 7. 动画循环 ---
         let lockedTarget = null;
         const mouseWorld = new THREE.Vector3(); 
         const panel = document.getElementById('data-panel');
+        const clock = new THREE.Clock(); // 动画时钟
         
         document.addEventListener('mousemove', (e) => {
             mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
@@ -287,11 +355,15 @@
 
         function animate() {
             requestAnimationFrame(animate);
+            const delta = clock.getDelta(); // 获取时间差
+
             let currentHover = null;
+            
             animals.forEach(anim => {
-                anim.update();
+                anim.update(delta); // 传入时间差，更新动画
                 const dist = new THREE.Vector2(anim.group.position.x, anim.group.position.z)
                     .distanceTo(new THREE.Vector2(mouseWorld.x, mouseWorld.z));
+                
                 if (dist < 8) { 
                     currentHover = anim;
                     anim.transform();
@@ -330,12 +402,12 @@
                 hexMaterial.color.set(0x333333);
                 panel.style.display = 'none';
             }
+
             cursorHex.rotation.z += 0.01;
             controls.update();
             renderer.render(scene, camera);
         }
         
-        // 隐藏 loading
         setTimeout(() => { document.getElementById('loading').style.opacity = 0; }, 3000);
         animate();
 
