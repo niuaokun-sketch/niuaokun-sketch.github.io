@@ -2,8 +2,7 @@
 <html lang="zh">
 <head>
     <meta charset="UTF-8">
-    <title>ECO-MONITOR | 种群生态版</title>
-    <!-- 1. 引入动画库 -->
+    <title>ECO-MONITOR | 深度交互版</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
     
     <style>
@@ -13,43 +12,43 @@
         /* 资料面板 */
         #data-panel { 
             position: absolute; right: 40px; top: 50%; transform: translateY(-50%); 
-            width: 280px; padding: 30px; 
+            width: 300px; padding: 30px; 
             background: rgba(255, 255, 255, 0.95); 
-            border: 1px solid #e0e0e0; border-left: 5px solid #333; 
+            border: 1px solid #ddd; border-left: 6px solid #333; 
             color: #333; display: none; 
-            backdrop-filter: blur(10px); 
-            box-shadow: 0 15px 40px rgba(0,0,0,0.1); 
-            z-index: 10; border-radius: 4px;
+            backdrop-filter: blur(15px); 
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2); 
+            z-index: 10; border-radius: 8px;
         }
-        h2 { margin: 0 0 10px 0; font-size: 20px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; }
-        .tag { display: inline-block; background: #333; color: #fff; padding: 3px 6px; font-size: 10px; margin-bottom: 15px; font-weight: bold; }
-        .stat-item { margin-bottom: 10px; font-size: 11px; font-weight: 700; color: #888; letter-spacing: 0.5px; }
-        .bar-bg { width: 100%; height: 6px; background: #eee; border-radius: 3px; overflow: hidden; margin-top: 4px;}
-        .bar-fill { height: 100%; background: #333; width: 0%; border-radius: 3px; transition: width 0.5s; }
+        h2 { margin: 0 0 10px 0; font-size: 26px; letter-spacing: -1px; text-transform: uppercase;}
+        .tag { display: inline-block; background: #333; color: #fff; padding: 4px 8px; font-size: 10px; border-radius: 4px; margin-bottom: 20px; font-weight: bold; }
+        .stat-item { margin-bottom: 15px; font-size: 12px; font-weight: bold; color: #555; }
+        .bar-bg { width: 100%; height: 8px; background: #eee; border-radius: 4px; overflow: hidden; margin-top: 6px;}
+        .bar-fill { height: 100%; background: #ff4444; width: 0%; border-radius: 4px; transition: width 1s ease-out;}
         
         /* 顶部 UI */
-        #ui-header { position: absolute; top: 30px; left: 40px; pointer-events: none; z-index: 10; }
-        h1 { margin: 0; font-size: 18px; font-weight: 900; color: #333; }
-        p { margin: 5px 0 0 0; font-size: 11px; color: #999; }
+        #ui-header { position: absolute; top: 30px; left: 40px; color: #333; pointer-events: none; z-index: 10; }
+        h1 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: 1px; }
+        p { margin: 5px 0 0 0; font-size: 12px; color: #888; font-weight: 600;}
         
-        #loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #ccc; font-size: 12px; pointer-events: none; transition: opacity 0.5s; }
+        #loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #333; font-weight: bold; pointer-events: none; transition: opacity 0.5s; background: white; padding: 20px 40px; border-radius: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
     </style>
 </head>
 <body>
 
     <div id="ui-header">
         <h1>ECO-MONITOR</h1>
-        <p>Swarm Tracking System // Active</p>
+        <p>HOVER to Scan // CLICK to Analyze</p>
     </div>
 
-    <div id="loading">GENERATING ECOSYSTEM...</div>
+    <div id="loading">INITIALIZING SWARM DATA...</div>
 
     <div id="data-panel">
         <span class="tag" id="panel-id">ID: 001</span>
         <h2 id="panel-name">Target</h2>
-        <div class="stat-item">TOXICITY<div class="bar-bg"><div class="bar-fill" id="bar-tox" style="background: #ff4444;"></div></div></div>
-        <div class="stat-item">MUTATION<div class="bar-bg"><div class="bar-fill" id="bar-adp" style="background: #44cc88;"></div></div></div>
-        <p style="font-size:12px; line-height:1.5; color:#666; margin-top:20px;" id="panel-desc">...</p>
+        <div class="stat-item">TOXICITY LEVEL<div class="bar-bg"><div class="bar-fill" id="bar-tox"></div></div></div>
+        <div class="stat-item">MUTATION RATE<div class="bar-bg"><div class="bar-fill" id="bar-adp" style="background: #44cc88;"></div></div></div>
+        <p style="font-size:13px; line-height:1.6; color:#666; margin-top:25px;" id="panel-desc">...</p>
     </div>
 
     <script type="importmap">
@@ -61,7 +60,7 @@
         }
     </script>
 
-    <!-- Shader 地形 (保持不变) -->
+    <!-- Shader 保持不变 -->
     <script type="x-shader/x-vertex" id="vertexShader">
         uniform vec3 uMouse;
         attribute float size;
@@ -104,10 +103,10 @@
         scene.background = new THREE.Color(0xffffff);
         scene.fog = new THREE.FogExp2(0xffffff, 0.015);
 
-        // 灯光 (为了照亮模型)
-        const ambientLight = new THREE.AmbientLight(0xffffff, 2.0); 
+        // 强光照，确保模型颜色鲜艳
+        const ambientLight = new THREE.AmbientLight(0xffffff, 2.5); 
         scene.add(ambientLight);
-        const dirLight = new THREE.DirectionalLight(0xffffff, 2.0);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 2.5);
         dirLight.position.set(50, 80, 50);
         scene.add(dirLight);
 
@@ -122,31 +121,25 @@
         // --- 2. 光标 (六边形) ---
         const cursorGroup = new THREE.Group();
         scene.add(cursorGroup);
-        
-        // 加粗的六边形
         const hexGeometry = new THREE.RingGeometry(3.5, 4.2, 6); 
         const hexMaterial = new THREE.MeshBasicMaterial({ color: 0x333333, side: THREE.DoubleSide, transparent: true, opacity: 0.8 });
         const cursorHex = new THREE.Mesh(hexGeometry, hexMaterial);
         cursorHex.rotation.x = -Math.PI / 2;
         cursorGroup.add(cursorHex);
-        
-        // 上方指示器
         const triGeo = new THREE.ConeGeometry(0.8, 2, 3);
         const triMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
         const cursorTri = new THREE.Mesh(triGeo, triMat);
-        cursorTri.rotation.x = Math.PI; 
-        cursorTri.position.y = 6;
+        cursorTri.rotation.x = Math.PI; cursorTri.position.y = 6;
         cursorGroup.add(cursorTri);
 
-        // 交互射线
         const raycaster = new THREE.Raycaster();
         const mouse = new THREE.Vector2();
-        const mouseWorld = new THREE.Vector3(); // 鼠标在3D世界的真实位置
+        const mouseWorld = new THREE.Vector3(); 
         const hitPlane = new THREE.Mesh(new THREE.PlaneGeometry(500, 500), new THREE.MeshBasicMaterial({ visible: false }));
         hitPlane.rotation.x = -Math.PI / 2;
         scene.add(hitPlane);
 
-        // --- 3. 地形生成 (保持原样) ---
+        // --- 3. 地形生成 ---
         const geometry = new THREE.BufferGeometry();
         const positions = []; const colors = []; const sizes = [];
         const colWater = new THREE.Color("#99DDFF"); 
@@ -190,8 +183,7 @@
         const terrain = new THREE.Points(geometry, shaderMaterial);
         scene.add(terrain);
 
-        // --- 4. 种群系统 (Swarm + Model) ---
-        
+        // --- 4. 种群系统 ---
         const loader = new GLTFLoader();
         const dracoLoader = new DRACOLoader();
         dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
@@ -204,54 +196,42 @@
                 this.group = new THREE.Group();
                 scene.add(this.group);
 
-                this.boids = []; // 存放几何体小弟
-                this.state = 'swarm'; // 状态: swarm(仅几何体), reveal(显示正常模型), mutate(显示变异模型)
-                this.modelGroup = new THREE.Group(); // 存放3D模型
+                this.boids = []; 
+                this.state = 'swarm'; // 状态: swarm, hover(正常), focused(变异)
+                this.modelGroup = new THREE.Group(); 
                 this.group.add(this.modelGroup);
-                this.modelGroup.visible = false; // 默认隐藏模型
+                this.modelGroup.visible = false; 
 
-                // 1. 生成几何体种群 (8-12个)
-                const count = 8 + Math.floor(Math.random() * 5);
-                const boidGeo = new THREE.ConeGeometry(0.8, 2, 4); // 四棱锥
+                // 1. 生成深色几何体群 (增加对比度)
+                const count = 10;
+                const boidGeo = new THREE.ConeGeometry(0.8, 2, 4); 
                 
                 for(let i=0; i<count; i++) {
-                    // 随机颜色：大部分是白色/灰色，少部分是红色(代表潜在变异)
+                    // 颜色加深：深灰 & 深红
                     const isMutant = Math.random() > 0.8;
-                    const color = isMutant ? 0xff4444 : (Math.random()>0.5 ? 0xcccccc : 0xffffff);
+                    const color = isMutant ? 0xcc3333 : (Math.random()>0.5 ? 0x444444 : 0x222222);
                     
-                    const mat = new THREE.MeshBasicMaterial({ color: color, wireframe: true, transparent: true, opacity: 0.6 });
+                    const mat = new THREE.MeshBasicMaterial({ color: color, wireframe: true });
                     const mesh = new THREE.Mesh(boidGeo, mat);
                     
-                    // 随机分布在中心周围
-                    const offset = new THREE.Vector3(
-                        (Math.random()-0.5)*20, 
-                        (Math.random()-0.5)*10, 
-                        (Math.random()-0.5)*20
-                    );
+                    const offset = new THREE.Vector3((Math.random()-0.5)*20, (Math.random()-0.5)*10, (Math.random()-0.5)*20);
                     mesh.position.copy(this.center).add(offset);
-                    mesh.userData = { 
-                        offset: offset, 
-                        speed: 0.02 + Math.random()*0.02,
-                        phase: Math.random() * Math.PI 
-                    };
+                    mesh.userData = { offset: offset, phase: Math.random() * Math.PI };
                     
-                    scene.add(mesh); // 直接加到场景，方便独立控制
+                    scene.add(mesh); 
                     this.boids.push(mesh);
                 }
 
-                // 2. 加载 3D 模型 (隐藏备用)
-                // 正常版
+                // 2. 加载模型
                 loader.load(normalFile, (gltf) => {
                     this.normalMesh = gltf.scene;
                     this.normalMesh.scale.set(5,5,5); 
                     this.modelGroup.add(this.normalMesh);
-                    // 自动播放动画
                     if(gltf.animations.length>0) {
                         this.nmMixer = new THREE.AnimationMixer(this.normalMesh);
                         this.nmMixer.clipAction(gltf.animations[0]).play();
                     }
                 });
-                // 变异版
                 loader.load(mutantFile, (gltf) => {
                     this.mutantMesh = gltf.scene;
                     this.mutantMesh.scale.set(0.1,0.1,0.1); 
@@ -264,107 +244,109 @@
                 });
             }
 
-            update(delta, mousePos) {
+            update(delta) {
                 const time = Date.now() * 0.001;
 
-                // 1. 更新几何体群 (游荡)
+                // 更新几何体
                 this.boids.forEach((boid, i) => {
-                    // 围绕中心游动
-                    boid.position.x = this.center.x + boid.userData.offset.x + Math.sin(time + boid.userData.phase) * 5;
-                    boid.position.z = this.center.z + boid.userData.offset.z + Math.cos(time + boid.userData.phase * 0.5) * 5;
-                    
-                    // 贴地高度
-                    const y = getElevation(boid.position.x, boid.position.z);
-                    boid.position.y = y + 5 + Math.sin(time * 2 + i) * 2;
-                    
-                    // 自转
-                    boid.rotation.y += 0.02;
-                    boid.rotation.x = Math.sin(time + i) * 0.5;
+                    if (this.state === 'focused') {
+                        // 聚焦时几何体隐藏/飞走
+                        boid.visible = false;
+                    } else {
+                        boid.visible = true;
+                        boid.position.x = this.center.x + boid.userData.offset.x + Math.sin(time + boid.userData.phase) * 5;
+                        boid.position.z = this.center.z + boid.userData.offset.z + Math.cos(time + boid.userData.phase * 0.5) * 5;
+                        const y = getElevation(boid.position.x, boid.position.z);
+                        boid.position.y = y + 5 + Math.sin(time * 2 + i) * 2;
+                        boid.rotation.y += 0.02;
+                    }
                 });
 
-                // 2. 更新模型位置 (始终在种群中心)
-                // 让中心也慢慢移动
-                this.center.x += Math.sin(time * 0.2) * 0.05;
-                this.center.z += Math.cos(time * 0.1) * 0.05;
+                // 更新模型位置
                 const centerY = getElevation(this.center.x, this.center.z);
                 this.modelGroup.position.set(this.center.x, centerY + 5, this.center.z);
 
-                // 更新动画混合器
                 if(this.nmMixer) this.nmMixer.update(delta);
                 if(this.mmMixer) this.mmMixer.update(delta);
-
-                // 3. 状态检测
-                const dist = new THREE.Vector2(this.center.x, this.center.z).distanceTo(new THREE.Vector2(mousePos.x, mousePos.z));
-
-                if (dist < 20) {
-                    // 进入范围：显示正常模型，散开几何体
-                    this.reveal(true);
-                    
-                    if (dist < 8) {
-                        // 极近距离：触发变异
-                        this.mutate(true);
-                    } else {
-                        // 稍远：恢复正常模型
-                        this.mutate(false);
-                    }
-                } else {
-                    // 离开范围：隐藏模型，聚拢几何体
-                    this.reveal(false);
-                    this.mutate(false);
-                }
             }
 
-            // 显形逻辑 (Swarm <-> Normal Model)
-            reveal(showModel) {
-                if (showModel && this.state === 'swarm') {
-                    this.state = 'reveal';
+            // 悬停：显示正常模型
+            hover(isHovering) {
+                if (this.state === 'focused') return; // 如果已经聚焦，忽略悬停
+
+                if (isHovering && this.state !== 'hover') {
+                    this.state = 'hover';
                     this.modelGroup.visible = true;
-                    // 动画：模型变大，几何体散开
+                    // 正常模型显现，几何体散开
                     gsap.to(this.modelGroup.scale, {x:1, y:1, z:1, duration:0.5});
-                    this.boids.forEach(b => {
-                        gsap.to(b.scale, {x:0, y:0, z:0, duration:0.3}); // 几何体缩小消失
-                    });
+                    this.boids.forEach(b => gsap.to(b.scale, {x:0, y:0, z:0, duration:0.3}));
                 } 
-                else if (!showModel && this.state !== 'swarm') {
+                else if (!isHovering && this.state === 'hover') {
                     this.state = 'swarm';
                     this.modelGroup.visible = false;
-                    this.boids.forEach(b => {
-                        gsap.to(b.scale, {x:1, y:1, z:1, duration:0.5, delay: 0.2}); // 几何体恢复
-                    });
+                    this.boids.forEach(b => gsap.to(b.scale, {x:1, y:1, z:1, duration:0.5, delay:0.2}));
                 }
             }
 
-            // 变异逻辑 (Normal <-> Mutant)
-            mutate(isMutant) {
-                if (!this.normalMesh || !this.mutantMesh) return;
-
-                if (isMutant && !this.isMutatedState) {
-                    this.isMutatedState = true;
-                    // 变身动画
-                    const tl = gsap.timeline();
-                    tl.to(this.normalMesh.scale, {x:0.1, y:0.1, z:0.1, duration:0.2}) // 正常缩小
-                      .add(()=>{ 
-                          this.normalMesh.visible = false; 
-                          this.mutantMesh.visible = true; 
-                      })
-                      .to(this.mutantMesh.scale, {x:8, y:8, z:8, duration:0.4, ease:"back.out(1.7)"}); // 变异放大
-                } 
-                else if (!isMutant && this.isMutatedState) {
-                    this.isMutatedState = false;
-                    // 还原动画
-                    const tl = gsap.timeline();
-                    tl.to(this.mutantMesh.scale, {x:0.1, y:0.1, z:0.1, duration:0.2})
-                      .add(()=>{ 
-                          this.mutantMesh.visible = false; 
-                          this.normalMesh.visible = true; 
-                      })
-                      .to(this.normalMesh.scale, {x:5, y:5, z:5, duration:0.4});
+            // 点击：聚焦变异
+            focus() {
+                if (this.state === 'focused') return;
+                this.state = 'focused';
+                
+                this.modelGroup.visible = true;
+                
+                // 变身动画序列
+                const tl = gsap.timeline();
+                
+                // 1. 正常模型缩小故障
+                if(this.normalMesh) {
+                    tl.to(this.normalMesh.position, {x:0.5, duration:0.05, yoyo:true, repeat:5})
+                      .to(this.normalMesh.scale, {x:0.1, y:0.1, z:0.1, duration:0.2});
                 }
+                
+                // 2. 变异模型弹出
+                tl.add(() => {
+                    if(this.normalMesh) this.normalMesh.visible = false;
+                    if(this.mutantMesh) this.mutantMesh.visible = true;
+                });
+                
+                if(this.mutantMesh) {
+                    // 放大到 1.5 倍 (相对于正常大小 5 -> 7.5)
+                    tl.fromTo(this.mutantMesh.scale, 
+                        {x:0.1, y:0.1, z:0.1}, 
+                        {x:7.5, y:7.5, z:7.5, duration:0.6, ease:"back.out(1.7)"}
+                    );
+                }
+            }
+
+            // 取消聚焦
+            unfocus() {
+                if (this.state !== 'focused') return;
+                this.state = 'swarm'; // 回到最初状态
+
+                const tl = gsap.timeline();
+                // 变异缩小
+                if(this.mutantMesh) {
+                    tl.to(this.mutantMesh.scale, {x:0.1, y:0.1, z:0.1, duration:0.3});
+                }
+                // 切换回正常(隐藏)
+                tl.add(() => {
+                    if(this.mutantMesh) this.mutantMesh.visible = false;
+                    if(this.normalMesh) {
+                        this.normalMesh.visible = true;
+                        this.normalMesh.scale.set(5,5,5); // 重置大小
+                    }
+                    this.modelGroup.visible = false; // 整个隐藏
+                });
+                // 几何体回来
+                this.boids.forEach(b => {
+                    b.visible = true;
+                    gsap.to(b.scale, {x:1, y:1, z:1, duration:0.5});
+                });
             }
         }
 
         // --- 5. 生成种群 ---
-        // 这里会自动生成几何体群，只有靠近时才加载模型
         const swarms = [
             new SpeciesSwarm("POLYMER TURTLE", "./wugui.glb", "./bwugui.glb", new THREE.Vector3(0, 0, 0)),
             new SpeciesSwarm("PLASTIC CRAB", "./xie.glb", "./bxie.glb", new THREE.Vector3(30, 0, 30)),
@@ -377,10 +359,12 @@
             new SpeciesSwarm("GHOST SEAL", "./bao.glb", "./bhaibao.glb", new THREE.Vector3(20, 0, -80))
         ];
 
-        // --- 6. 主循环 ---
+        // --- 6. 交互逻辑 ---
         const clock = new THREE.Clock();
         const panel = document.getElementById('data-panel');
+        let focusedSwarm = null; // 当前点击锁定的目标
         
+        // 鼠标移动监听
         document.addEventListener('mousemove', (e) => {
             mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
             mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
@@ -389,6 +373,72 @@
             if (intersects.length > 0) {
                 mouseWorld.copy(intersects[0].point);
                 shaderMaterial.uniforms.uMouse.value.copy(intersects[0].point);
+            }
+        });
+
+        // 点击监听 (核心新逻辑)
+        document.addEventListener('click', (e) => {
+            let clickedSwarm = null;
+
+            // 检测是否点击了某个种群附近
+            swarms.forEach(swarm => {
+                const dist = new THREE.Vector2(swarm.center.x, swarm.center.z).distanceTo(new THREE.Vector2(mouseWorld.x, mouseWorld.z));
+                if (dist < 15) { // 点击半径
+                    clickedSwarm = swarm;
+                }
+            });
+
+            if (clickedSwarm) {
+                // 点击了动物 -> 聚焦
+                if (focusedSwarm !== clickedSwarm) {
+                    // 如果之前有聚焦别的，先复原
+                    if(focusedSwarm) focusedSwarm.unfocus();
+                    
+                    focusedSwarm = clickedSwarm;
+                    focusedSwarm.focus();
+
+                    // 镜头推进动画
+                    const targetPos = focusedSwarm.modelGroup.position;
+                    gsap.to(camera.position, {
+                        x: targetPos.x + 20, 
+                        y: targetPos.y + 20, 
+                        z: targetPos.z + 20, 
+                        duration: 1.5, 
+                        ease: "power2.inOut"
+                    });
+                    gsap.to(controls.target, {
+                        x: targetPos.x, 
+                        y: targetPos.y, 
+                        z: targetPos.z, 
+                        duration: 1.5
+                    });
+
+                    // UI 显示
+                    document.getElementById('panel-name').innerText = focusedSwarm.name;
+                    document.getElementById('panel-desc').innerText = "Analyzing genetic structure... CRITICAL ANOMALY DETECTED.";
+                    document.getElementById('bar-tox').style.width = "90%";
+                    document.getElementById('bar-adp').style.width = "85%";
+                    panel.style.display = 'block';
+                }
+            } else {
+                // 点击了空白处 -> 复原
+                if (focusedSwarm) {
+                    focusedSwarm.unfocus();
+                    focusedSwarm = null;
+
+                    // 镜头拉远复原
+                    gsap.to(camera.position, {
+                        x: 0, y: 60, z: 80, 
+                        duration: 1.5, 
+                        ease: "power2.inOut"
+                    });
+                    gsap.to(controls.target, {
+                        x: 0, y: 0, z: 0, 
+                        duration: 1.5
+                    });
+
+                    panel.style.display = 'none';
+                }
             }
         });
 
@@ -403,59 +453,44 @@
             requestAnimationFrame(animate);
             const delta = clock.getDelta();
 
-            // 光标跟随逻辑 (更松弛，不强制锁定)
-            // 默认跟随鼠标
-            let targetX = mouseWorld.x;
-            let targetZ = mouseWorld.z;
-            let targetY = getElevation(targetX, targetZ);
-            let isHovering = false;
-
-            swarms.forEach(swarm => {
-                swarm.update(delta, mouseWorld);
+            // 光标逻辑
+            // 如果聚焦了，光标消失；否则跟随鼠标
+            if (focusedSwarm) {
+                cursorGroup.scale.set(0,0,0);
+            } else {
+                cursorGroup.scale.lerp(new THREE.Vector3(1,1,1), 0.1);
                 
-                // 检测是否在互动范围内
-                const dist = new THREE.Vector2(swarm.center.x, swarm.center.z).distanceTo(new THREE.Vector2(mouseWorld.x, mouseWorld.z));
-                
-                if (dist < 20) {
-                    isHovering = true;
-                    // 如果靠近，UI更新
-                    if(dist < 8) {
-                        // 光标稍微被吸附一点点，但不完全锁定
-                        targetX += (swarm.center.x - targetX) * 0.1; 
-                        targetZ += (swarm.center.z - targetZ) * 0.1;
-                        targetY = swarm.modelGroup.position.y; // 抬高到模型高度
+                // 悬停检测 (仅在未聚焦时)
+                let hoverSwarm = null;
+                swarms.forEach(swarm => {
+                    const dist = new THREE.Vector2(swarm.center.x, swarm.center.z).distanceTo(new THREE.Vector2(mouseWorld.x, mouseWorld.z));
+                    if (dist < 20) hoverSwarm = swarm;
+                    
+                    // 更新每个种群的悬停状态
+                    swarm.hover(dist < 20);
+                    swarm.update(delta);
+                });
 
-                        // 显示面板
-                        panel.style.display = 'block';
-                        document.getElementById('panel-name').innerText = swarm.name;
-                        document.getElementById('panel-desc').innerText = "Analyzing population data... Genetic anomaly verified.";
-                        document.getElementById('bar-tox').style.width = "80%";
-                        document.getElementById('bar-adp').style.width = "65%";
-                        
-                        // 光标变红变大
-                        hexMaterial.color.set(0xff4444);
-                        cursorGroup.scale.lerp(new THREE.Vector3(2, 2, 2), 0.1);
-                    }
+                if (hoverSwarm) {
+                    hexMaterial.color.set(0xff4444);
+                    cursorGroup.scale.lerp(new THREE.Vector3(1.5, 1.5, 1.5), 0.1);
+                } else {
+                    hexMaterial.color.set(0x333333);
                 }
-            });
 
-            if (!isHovering) {
-                panel.style.display = 'none';
-                hexMaterial.color.set(0x333333);
-                cursorGroup.scale.lerp(new THREE.Vector3(1, 1, 1), 0.1);
+                // 光标移动
+                const targetY = getElevation(mouseWorld.x, mouseWorld.z);
+                cursorGroup.position.x += (mouseWorld.x - cursorGroup.position.x) * 0.2;
+                cursorGroup.position.z += (mouseWorld.z - cursorGroup.position.z) * 0.2;
+                cursorGroup.position.y += (targetY - cursorGroup.position.y) * 0.2;
+                cursorHex.rotation.z += 0.01;
             }
-
-            // 平滑移动光标
-            cursorGroup.position.x += (targetX - cursorGroup.position.x) * 0.15;
-            cursorGroup.position.z += (targetZ - cursorGroup.position.z) * 0.15;
-            cursorGroup.position.y += (targetY - cursorGroup.position.y) * 0.15;
-            cursorHex.rotation.z += 0.01;
 
             controls.update();
             renderer.render(scene, camera);
         }
         
-        setTimeout(() => { document.getElementById('loading').style.opacity = 0; }, 2000);
+        setTimeout(() => { document.getElementById('loading').style.opacity = 0; }, 3000);
         animate();
 
         window.addEventListener('resize', () => {
