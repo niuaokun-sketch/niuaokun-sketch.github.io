@@ -2,29 +2,38 @@
 <html lang="zh">
 <head>
     <meta charset="UTF-8">
-    <title>ECO-MONITOR | 终极监视版</title>
+    <title>ECO-MONITOR | 全时监控版</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
     
     <style>
-        /* --- 基础 UI --- */
-        body { margin: 0; overflow: hidden; background-color: #ffffff; cursor: none; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
+        /* --- 1. 基础 UI --- */
+        body { 
+            margin: 0; overflow: hidden; 
+            background-color: #ffffff; 
+            cursor: none; /* 默认隐藏鼠标，用3D光标 */
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+        }
         
-        /* 资料面板 (居中 + 关闭按钮) */
+        /* 🌟 关键修改：鼠标在面板上时显示系统鼠标，且面板居中 */
         #data-panel { 
             position: absolute; 
             left: 50%; top: 50%; 
-            transform: translate(-50%, -50%) scale(0.9); /* 初始稍微缩小 */
+            transform: translate(-50%, -50%) scale(0.9); 
             width: 340px; padding: 40px; 
-            background: rgba(255, 255, 255, 0.9); 
+            background: rgba(255, 255, 255, 0.95); 
             border: 1px solid #ccc; 
-            border-top: 6px solid #333; /* 顶部黑条 */
+            border-top: 6px solid #333; 
             color: #333; display: none; 
             backdrop-filter: blur(20px); 
             box-shadow: 0 30px 80px rgba(0,0,0,0.3); 
             z-index: 100; border-radius: 8px;
-            text-align: center; /* 内容居中 */
-            opacity: 0; /* 配合动画 */
+            text-align: center;
+            opacity: 0; 
             transition: all 0.3s ease;
+            
+            /* 🌟 恢复鼠标指针 */
+            cursor: auto; 
+            pointer-events: auto;
         }
         #data-panel.active { opacity: 1; transform: translate(-50%, -50%) scale(1); }
 
@@ -35,7 +44,7 @@
             border: 2px solid #333; border-radius: 50%;
             display: flex; justify-content: center; align-items: center;
             cursor: pointer; font-weight: bold; font-size: 18px;
-            transition: all 0.2s; pointer-events: auto;
+            transition: all 0.2s;
         }
         .close-btn:hover { background: #333; color: #fff; transform: rotate(90deg); }
 
@@ -47,7 +56,6 @@
         .bar-bg { width: 100%; height: 10px; background: #eee; border-radius: 5px; overflow: hidden; }
         .bar-fill { height: 100%; background: #ff4444; width: 0%; border-radius: 5px; transition: width 1s ease-out;}
         
-        /* 顶部 UI */
         #ui-header { position: absolute; top: 30px; left: 40px; color: #333; pointer-events: none; z-index: 10; }
         h1 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: 1px; }
         p { margin: 5px 0 0 0; font-size: 12px; color: #888; font-weight: 600;}
@@ -59,12 +67,11 @@
 
     <div id="ui-header">
         <h1>ECO-MONITOR</h1>
-        <p>System Ready // Click to Investigate</p>
+        <p>Drone Surveillance // Active</p>
     </div>
 
-    <div id="loading">INITIALIZING DRONE CAMERAS...</div>
+    <div id="loading">DEPLOYING DRONES...</div>
 
-    <!-- 居中面板 -->
     <div id="data-panel">
         <div class="close-btn" onclick="closePanel()">×</div>
         <span class="tag" id="panel-id">ID: 001</span>
@@ -91,7 +98,6 @@
         }
     </script>
 
-    <!-- Shader -->
     <script type="x-shader/x-vertex" id="vertexShader">
         uniform vec3 uMouse;
         attribute float size;
@@ -148,7 +154,7 @@
         renderer.outputColorSpace = THREE.SRGBColorSpace;
         document.body.appendChild(renderer.domElement);
 
-        // --- 2. 3D 光标 (六边形) ---
+        // --- 2. 3D 光标 ---
         const cursorGroup = new THREE.Group();
         scene.add(cursorGroup);
         const hexGeometry = new THREE.RingGeometry(3.5, 4.2, 6); 
@@ -162,36 +168,6 @@
         cursorTri.rotation.x = Math.PI; cursorTri.position.y = 6;
         cursorGroup.add(cursorTri);
 
-        // --- 3. 📷 无人机相机 (The Black Camera) ---
-        const droneGroup = new THREE.Group();
-        scene.add(droneGroup);
-        droneGroup.visible = false; // 默认隐藏
-
-        // 机身
-        const camBody = new THREE.Mesh(
-            new THREE.BoxGeometry(2, 1.5, 3),
-            new THREE.MeshBasicMaterial({ color: 0x111111 }) // 纯黑
-        );
-        droneGroup.add(camBody);
-        
-        // 镜头
-        const camLens = new THREE.Mesh(
-            new THREE.CylinderGeometry(0.8, 0.8, 1, 16),
-            new THREE.MeshBasicMaterial({ color: 0x333333 })
-        );
-        camLens.rotation.x = Math.PI / 2;
-        camLens.position.z = 1.8;
-        droneGroup.add(camLens);
-
-        // 录制红点 (闪烁)
-        const recLight = new THREE.Mesh(
-            new THREE.SphereGeometry(0.3),
-            new THREE.MeshBasicMaterial({ color: 0xff0000 })
-        );
-        recLight.position.set(0.8, 0.8, 1.5);
-        droneGroup.add(recLight);
-
-        // --- 4. 交互射线 & 地形 ---
         const raycaster = new THREE.Raycaster();
         const mouse = new THREE.Vector2();
         const mouseWorld = new THREE.Vector3(); 
@@ -199,6 +175,7 @@
         hitPlane.rotation.x = -Math.PI / 2;
         scene.add(hitPlane);
 
+        // --- 3. 地形 ---
         const geometry = new THREE.BufferGeometry();
         const positions = []; const colors = []; const sizes = [];
         const colWater = new THREE.Color("#99DDFF"); 
@@ -242,11 +219,30 @@
         const terrain = new THREE.Points(geometry, shaderMaterial);
         scene.add(terrain);
 
-        // --- 5. 种群系统 ---
+        // --- 4. 种群系统 (含专属无人机) ---
         const loader = new GLTFLoader();
         const dracoLoader = new DRACOLoader();
         dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
         loader.setDRACOLoader(dracoLoader);
+
+        // 🌟 辅助函数：制造无人机
+        function createDrone() {
+            const drone = new THREE.Group();
+            // 机身
+            const body = new THREE.Mesh(new THREE.BoxGeometry(1.5, 1, 2), new THREE.MeshBasicMaterial({ color: 0x111111 }));
+            drone.add(body);
+            // 镜头
+            const lens = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.6, 0.8, 16), new THREE.MeshBasicMaterial({ color: 0x555555 }));
+            lens.rotation.x = Math.PI / 2;
+            lens.position.z = 1.2;
+            drone.add(lens);
+            // 录制灯
+            const light = new THREE.Mesh(new THREE.SphereGeometry(0.25), new THREE.MeshBasicMaterial({ color: 0xff0000 }));
+            light.position.set(0.6, 0.6, 1.0);
+            light.userData = { isLight: true }; // 标记一下方便后续闪烁
+            drone.add(light);
+            return drone;
+        }
 
         class SpeciesSwarm {
             constructor(name, normalFile, mutantFile, centerPos) {
@@ -261,7 +257,13 @@
                 this.group.add(this.modelGroup);
                 this.modelGroup.visible = false; 
 
-                // 几何体群 (深色)
+                // 🌟 每只动物配一个专属无人机
+                this.drone = createDrone();
+                this.group.add(this.drone);
+                // 初始状态：在高空巡逻
+                this.drone.position.set(this.center.x, 30, this.center.z);
+
+                // 几何体群
                 const count = 10;
                 const boidGeo = new THREE.ConeGeometry(0.8, 2, 4); 
                 for(let i=0; i<count; i++) {
@@ -276,6 +278,7 @@
                     this.boids.push(mesh);
                 }
 
+                // 模型加载
                 loader.load(normalFile, (gltf) => {
                     this.normalMesh = gltf.scene;
                     this.normalMesh.scale.set(5,5,5); 
@@ -299,6 +302,8 @@
 
             update(delta) {
                 const time = Date.now() * 0.001;
+
+                // 几何体游动
                 this.boids.forEach((boid, i) => {
                     if (this.state === 'focused') {
                         boid.visible = false;
@@ -311,10 +316,46 @@
                         boid.rotation.y += 0.02;
                     }
                 });
+
+                // 模型中心
                 const centerY = getElevation(this.center.x, this.center.z);
                 this.modelGroup.position.set(this.center.x, centerY + 5, this.center.z);
+
                 if(this.nmMixer) this.nmMixer.update(delta);
                 if(this.mmMixer) this.mmMixer.update(delta);
+
+                // 🌟 无人机行为逻辑
+                if (this.state === 'focused') {
+                    // 聚焦模式：近距离急速旋转拍摄
+                    this.drone.position.x = this.center.x + Math.sin(time * 2) * 12;
+                    this.drone.position.z = this.center.z + Math.cos(time * 2) * 12;
+                    this.drone.position.y = centerY + 10;
+                    this.drone.lookAt(this.modelGroup.position);
+                } 
+                else if (this.state === 'hover') {
+                    // 悬停模式：中距离观察
+                    this.drone.position.x += (this.center.x + Math.sin(time) * 15 - this.drone.position.x) * 0.05;
+                    this.drone.position.z += (this.center.z + Math.cos(time) * 15 - this.drone.position.z) * 0.05;
+                    this.drone.position.y += (centerY + 15 - this.drone.position.y) * 0.05;
+                    this.drone.lookAt(this.modelGroup.position);
+                } 
+                else {
+                    // 游荡模式：高空巡逻
+                    this.drone.position.x = this.center.x + Math.sin(time * 0.5) * 20;
+                    this.drone.position.z = this.center.z + Math.cos(time * 0.5) * 20;
+                    this.drone.position.y = centerY + 30; // 飞得很高
+                    // 漫无目的地转
+                    this.drone.rotation.y -= 0.01;
+                    this.drone.rotation.x = Math.sin(time) * 0.2;
+                }
+
+                // 无人机红灯闪烁
+                this.drone.children.forEach(c => {
+                    if (c.userData.isLight) {
+                        const flashSpeed = this.state === 'focused' ? 50 : 500;
+                        c.material.color.setHex((Date.now() % 1000 < flashSpeed) ? 0xff0000 : 0x330000);
+                    }
+                });
             }
 
             hover(isHovering) {
@@ -397,12 +438,8 @@
                 gsap.to(camera.position, {x: 0, y: 60, z: 80, duration: 1.5, ease: "power2.inOut"});
                 gsap.to(controls.target, {x: 0, y: 0, z: 0, duration: 1.5});
                 
-                // 隐藏面板
                 panel.classList.remove('active');
                 setTimeout(() => panel.style.display = 'none', 300);
-                
-                // 隐藏相机
-                droneGroup.visible = false;
             }
         };
 
@@ -418,7 +455,7 @@
         });
 
         document.addEventListener('click', (e) => {
-            if (e.target.classList.contains('close-btn')) return; // 点击关闭按钮时不触发地图点击
+            if (e.target.classList.contains('close-btn')) return; 
 
             let clickedSwarm = null;
             swarms.forEach(swarm => {
@@ -437,9 +474,7 @@
                     gsap.to(camera.position, {x: targetPos.x + 20, y: targetPos.y + 20, z: targetPos.z + 20, duration: 1.5, ease: "power2.inOut"});
                     gsap.to(controls.target, {x: targetPos.x, y: targetPos.y, z: targetPos.z, duration: 1.5});
 
-                    // 面板显示
                     panel.style.display = 'block';
-                    // 强制回流
                     void panel.offsetWidth; 
                     panel.classList.add('active');
                     
@@ -447,12 +482,8 @@
                     document.getElementById('panel-desc').innerText = "Analyzing... Genetic mutation level critical.";
                     document.getElementById('bar-tox').style.width = Math.random()*50 + 50 + "%";
                     document.getElementById('bar-adp').style.width = Math.random()*50 + 50 + "%";
-
-                    // 🎥 无人机相机启动！
-                    droneGroup.visible = true;
                 }
             } else {
-                // 点击空白处关闭
                 if (focusedSwarm) window.closePanel();
             }
         });
@@ -467,22 +498,9 @@
         function animate() {
             requestAnimationFrame(animate);
             const delta = clock.getDelta();
-            const time = Date.now() * 0.001;
 
             if (focusedSwarm) {
                 cursorGroup.scale.set(0,0,0);
-                
-                // 🎥 更新无人机相机运动
-                // 让它绕着变异动物旋转
-                const targetPos = focusedSwarm.modelGroup.position;
-                droneGroup.position.x = targetPos.x + Math.sin(time) * 15;
-                droneGroup.position.z = targetPos.z + Math.cos(time) * 15;
-                droneGroup.position.y = targetPos.y + 8 + Math.sin(time*2)*1; // 上下浮动
-                droneGroup.lookAt(targetPos);
-                
-                // 红灯闪烁
-                recLight.material.color.setHex((Date.now() % 1000 < 500) ? 0xff0000 : 0x330000);
-
             } else {
                 cursorGroup.scale.lerp(new THREE.Vector3(1,1,1), 0.1);
                 let hoverSwarm = null;
