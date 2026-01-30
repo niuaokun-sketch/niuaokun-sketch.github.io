@@ -2,7 +2,7 @@
 <html lang="zh">
 <head>
     <meta charset="UTF-8">
-    <title>ECO-MONITOR | 巨物展示版</title>
+    <title>ECO-MONITOR | 巨兽展示版</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
     
     <style>
@@ -26,7 +26,7 @@
 
         /* 左侧数据 */
         .left-panel {
-            position: absolute; left: 5%; top: 25%; /* 稍微靠边，给中间的大模型腾地 */
+            position: absolute; left: 5%; top: 20%; 
             display: flex; flex-direction: column; align-items: flex-start;
             pointer-events: auto;
         }
@@ -47,7 +47,7 @@
 
         /* 右侧叙事 */
         .right-panel {
-            position: absolute; right: 5%; bottom: 15%; /* 靠边 */
+            position: absolute; right: 5%; bottom: 15%; 
             width: 300px;
             background-color: rgba(20, 20, 20, 0.9);
             color: #ddd;
@@ -67,12 +67,13 @@
         /* 关闭按钮 */
         .close-btn {
             position: absolute; top: 40px; right: 40px;
-            width: 50px; height: 50px;
+            width: 60px; height: 60px;
             border: 2px solid #333; border-radius: 50%;
             display: flex; justify-content: center; align-items: center;
-            cursor: pointer; color: #333; font-size: 24px;
+            cursor: pointer; color: #333; font-size: 30px;
             transition: all 0.3s; pointer-events: auto;
-            background: rgba(255,255,255,0.8);
+            background: rgba(255,255,255,0.9);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
         }
         .close-btn:hover { background: #333; color: #fff; transform: rotate(90deg); }
 
@@ -204,7 +205,7 @@
         cursorTri.rotation.x = Math.PI; cursorTri.position.y = 6;
         cursorGroup.add(cursorTri);
 
-        // 无人机 (装饰)
+        // --- 3. 无人机 ---
         const droneGroup = new THREE.Group();
         scene.add(droneGroup);
         droneGroup.visible = false;
@@ -217,7 +218,7 @@
         recLight.position.set(0.6, 0.6, 1.0);
         droneGroup.add(recLight);
 
-        // --- 3. 射线 & 地形 ---
+        // --- 4. 射线 & 地形 ---
         const raycaster = new THREE.Raycaster();
         const mouse = new THREE.Vector2();
         const mouseWorld = new THREE.Vector3(); 
@@ -268,7 +269,7 @@
         const terrain = new THREE.Points(geometry, shaderMaterial);
         scene.add(terrain);
 
-        // --- 4. 种群系统 ---
+        // --- 5. 种群系统 ---
         const loader = new GLTFLoader();
         const dracoLoader = new DRACOLoader();
         dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
@@ -343,10 +344,12 @@
                 const centerY = getElevation(this.center.x, this.center.z);
                 this.modelGroup.position.set(this.center.x, centerY + 5, this.center.z);
 
-                // 🌟 聚焦时：自动旋转展示 + 抬高悬浮
+                // 🌟 聚焦时：强制旋转 (Group + Mesh 双重保险)
                 if (this.state === 'focused') {
-                    this.modelGroup.rotation.y += 0.01; // 旋转展示
-                    this.modelGroup.position.y = centerY + 8 + Math.sin(time * 1.5) * 1.5; // 抬高一点
+                    // 让整个组旋转
+                    this.modelGroup.rotation.y += 0.01; 
+                    // 上下浮动
+                    this.modelGroup.position.y = centerY + 8 + Math.sin(time * 1.5) * 1.5; 
                 }
 
                 if(this.nmMixer) this.nmMixer.update(delta);
@@ -382,10 +385,10 @@
                     if(this.mutantMesh) this.mutantMesh.visible = true;
                 });
                 if(this.mutantMesh) {
-                    // 🌟 放大 15 倍 (巨物感)
+                    // 🌟 放大 30 倍 (巨物！)
                     tl.fromTo(this.mutantMesh.scale, 
                         {x:0.1, y:0.1, z:0.1}, 
-                        {x:15, y:15, z:15, duration:0.8, ease:"back.out(1.2)"}
+                        {x:30, y:30, z:30, duration:0.8, ease:"back.out(1.2)"}
                     );
                 }
             }
@@ -472,12 +475,12 @@
                     focusedSwarm = clickedSwarm;
                     focusedSwarm.focus();
 
-                    // 镜头推进：🌟 往后拉得更远 (+55)，防止巨型模型糊脸
+                    // 镜头推进：🌟 往后拉得更远 (+50/80)，容纳 30 倍模型
                     const targetPos = focusedSwarm.modelGroup.position;
                     gsap.to(camera.position, {
-                        x: targetPos.x + 35, 
-                        y: targetPos.y + 20, 
-                        z: targetPos.z + 55, 
+                        x: targetPos.x + 50, 
+                        y: targetPos.y + 30, 
+                        z: targetPos.z + 80, 
                         duration: 1.5, 
                         ease: "power2.inOut"
                     });
@@ -519,10 +522,11 @@
             if (focusedSwarm) {
                 cursorGroup.scale.set(0,0,0);
                 
+                // 无人机绕更大的圈
                 const targetPos = focusedSwarm.modelGroup.position;
-                droneGroup.position.x = targetPos.x + Math.sin(time) * 15;
-                droneGroup.position.z = targetPos.z + Math.cos(time) * 15;
-                droneGroup.position.y = targetPos.y + 15 + Math.sin(time*2)*1; // 无人机飞高点
+                droneGroup.position.x = targetPos.x + Math.sin(time) * 30; // 半径加大
+                droneGroup.position.z = targetPos.z + Math.cos(time) * 30;
+                droneGroup.position.y = targetPos.y + 20 + Math.sin(time*2)*2;
                 droneGroup.lookAt(targetPos);
                 
                 recLight.material.color.setHex((Date.now() % 1000 < 500) ? 0xff0000 : 0x330000);
