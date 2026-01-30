@@ -2,7 +2,7 @@
 <html lang="zh">
 <head>
     <meta charset="UTF-8">
-    <title>ECO-MONITOR | 巨兽展示版</title>
+    <title>ECO-MONITOR | 鲜艳巨兽版</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
     
     <style>
@@ -175,11 +175,13 @@
         // --- 1. 场景 ---
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0xffffff);
-        scene.fog = new THREE.FogExp2(0xffffff, 0.015);
+        // 🌟 核心修改：删除了 Fog，颜色不再发灰，直接鲜艳！
+        // scene.fog = new THREE.FogExp2(0xffffff, 0.015); 
 
-        const ambientLight = new THREE.AmbientLight(0xffffff, 2.2); 
+        // 🌟 增强灯光：让模型像在展示台一样亮
+        const ambientLight = new THREE.AmbientLight(0xffffff, 3.5); 
         scene.add(ambientLight);
-        const dirLight = new THREE.DirectionalLight(0xffffff, 2.0);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 3.0);
         dirLight.position.set(50, 80, 50);
         scene.add(dirLight);
 
@@ -344,12 +346,12 @@
                 const centerY = getElevation(this.center.x, this.center.z);
                 this.modelGroup.position.set(this.center.x, centerY + 5, this.center.z);
 
-                // 🌟 聚焦时：强制旋转 (Group + Mesh 双重保险)
+                // 🌟 聚焦时：强制高速自转展示 🌟
                 if (this.state === 'focused') {
-                    // 让整个组旋转
-                    this.modelGroup.rotation.y += 0.01; 
+                    // 这里让整个组旋转，不受内部骨骼影响
+                    this.modelGroup.rotation.y -= 0.02; // 逆时针旋转
                     // 上下浮动
-                    this.modelGroup.position.y = centerY + 8 + Math.sin(time * 1.5) * 1.5; 
+                    this.modelGroup.position.y = centerY + 12 + Math.sin(time * 1.5) * 1.5; 
                 }
 
                 if(this.nmMixer) this.nmMixer.update(delta);
@@ -385,10 +387,10 @@
                     if(this.mutantMesh) this.mutantMesh.visible = true;
                 });
                 if(this.mutantMesh) {
-                    // 🌟 放大 30 倍 (巨物！)
+                    // 🌟 放大 30 倍 (巨物！) 🌟
                     tl.fromTo(this.mutantMesh.scale, 
                         {x:0.1, y:0.1, z:0.1}, 
-                        {x:30, y:30, z:30, duration:0.8, ease:"back.out(1.2)"}
+                        {x:30, y:30, z:30, duration:0.8, ease:"back.out(2.5)"} // 弹跳感更强
                     );
                 }
             }
@@ -475,7 +477,7 @@
                     focusedSwarm = clickedSwarm;
                     focusedSwarm.focus();
 
-                    // 镜头推进：🌟 往后拉得更远 (+50/80)，容纳 30 倍模型
+                    // 镜头推进：🌟 大幅后退以容纳巨物 (z+80)
                     const targetPos = focusedSwarm.modelGroup.position;
                     gsap.to(camera.position, {
                         x: targetPos.x + 50, 
@@ -524,9 +526,9 @@
                 
                 // 无人机绕更大的圈
                 const targetPos = focusedSwarm.modelGroup.position;
-                droneGroup.position.x = targetPos.x + Math.sin(time) * 30; // 半径加大
-                droneGroup.position.z = targetPos.z + Math.cos(time) * 30;
-                droneGroup.position.y = targetPos.y + 20 + Math.sin(time*2)*2;
+                droneGroup.position.x = targetPos.x + Math.sin(time) * 35; // 35半径
+                droneGroup.position.z = targetPos.z + Math.cos(time) * 35;
+                droneGroup.position.y = targetPos.y + 25 + Math.sin(time*2)*2;
                 droneGroup.lookAt(targetPos);
                 
                 recLight.material.color.setHex((Date.now() % 1000 < 500) ? 0xff0000 : 0x330000);
