@@ -16,8 +16,8 @@
         }
 
         /* =========================
-           ✅ 轻量雾霾 + 灰尘（性能友好）
-           - 雾霾：静态渐变（几乎0成本）
+           ✅ 更深雾霾色过渡 + 灰尘（性能友好）
+           - 雾霾：静态渐变（不卡）
            - 灰尘：少量深色小点 + 低FPS
            - 底部渐隐：自然过渡到消失
            ========================= */
@@ -25,14 +25,16 @@
             position: fixed;
             top: 0; left: 0;
             width: 100%;
-            height: 78vh;                 /* 覆盖上方空白区域 */
+            height: 78vh;
             pointer-events: none;
             z-index: 60;
-            opacity: 0.72;
+
+            /* ✅整体更“厚”一点 */
+            opacity: 0.80;
+
             transition: opacity .35s ease;
             overflow: hidden;
 
-            /* 底部渐隐：边缘自然过渡到消失（无断层） */
             -webkit-mask-image: linear-gradient(to bottom,
                 rgba(0,0,0,1) 0%,
                 rgba(0,0,0,1) 55%,
@@ -48,28 +50,28 @@
             opacity: 0.12;
         }
 
-        /* ✅ 雾霾色过渡：纯CSS静态渐变（不动画，不卡） */
+        /* ✅ 更深更脏的雾霾色：偏棕橙 + 层次更明显（静态不动画） */
         #haze-gradient{
             position:absolute;
             inset:0;
             background:
               linear-gradient(to bottom,
-                rgba(203, 175, 135, 0.85) 0%,   /* 顶部偏雾霾 */
-                rgba(203, 175, 135, 0.38) 38%,
-                rgba(230, 216, 195, 0.12) 70%,
+                rgba(140, 92, 52, 0.92) 0%,   /* 顶部更深（接近你图的棕橙暗雾） */
+                rgba(160, 110, 68, 0.62) 28%,
+                rgba(190, 150, 110, 0.28) 62%,
                 rgba(230, 216, 195, 0.00) 100%);
         }
 
-        /* 轻微压暗（提升“空气厚度”，仍然静态不耗性能） */
+        /* ✅ 轻微压暗（提升“空气厚度”），仍然静态 */
         #haze-vignette{
             position:absolute;
             inset:0;
-            background: radial-gradient(120% 90% at 50% 10%,
-                rgba(0,0,0,0.06) 0%,
-                rgba(0,0,0,0.04) 45%,
+            background: radial-gradient(120% 90% at 50% 8%,
+                rgba(0,0,0,0.10) 0%,
+                rgba(0,0,0,0.06) 45%,
                 rgba(0,0,0,0.00) 80%);
             mix-blend-mode: multiply;
-            opacity: 0.55;
+            opacity: 0.65;
         }
 
         /* 灰尘 Canvas */
@@ -199,7 +201,7 @@
 </head>
 <body>
 
-    <!-- ✅ 雾霾色过渡 + 灰尘 -->
+    <!-- ✅ 更深雾霾色过渡 + 灰尘 -->
     <div id="atmo-layer" aria-hidden="true">
         <div id="haze-gradient"></div>
         <div id="haze-vignette"></div>
@@ -257,7 +259,6 @@
         }
     </script>
 
-    <!-- Shader（原样） -->
     <script type="x-shader/x-vertex" id="vertexShader">
         uniform vec3 uMouse;
         attribute float size;
@@ -294,77 +295,6 @@
         import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
         import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
         import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
-
-        /* =========================
-           ✅ 轻量灰尘（深色小点）+ 低FPS
-           ========================= */
-        (function initDust(){
-            const layer = document.getElementById('atmo-layer');
-            const canvas = document.getElementById('dust-canvas');
-            const ctx = canvas.getContext('2d', { alpha: true });
-
-            let W=0, H=0, DPR=Math.min(window.devicePixelRatio||1, 2);
-
-            function resize(){
-                const r = layer.getBoundingClientRect();
-                W = Math.max(1, Math.floor(r.width));
-                H = Math.max(1, Math.floor(r.height));
-                canvas.width = Math.floor(W * DPR);
-                canvas.height = Math.floor(H * DPR);
-                canvas.style.width = W + 'px';
-                canvas.style.height = H + 'px';
-                ctx.setTransform(DPR,0,0,DPR,0,0);
-            }
-            resize();
-            window.addEventListener('resize', resize);
-
-            // ✅ 性能参数：更省 -> COUNT 60 / FPS 18
-            const FPS = 22;
-            const COUNT = 85;
-
-            const dots = [];
-            const rand = (a,b)=>a+Math.random()*(b-a);
-
-            function spawn(){
-                return {
-                    x: rand(0, W),
-                    y: rand(0, H),
-                    r: rand(0.6, 1.7),
-                    a: rand(0.10, 0.20),
-                    vx: rand(-2.4, -0.5),  // 轻微向左飘
-                    vy: rand(-0.25, 0.25),
-                    phase: rand(0, Math.PI*2),
-                    w: rand(0.12, 0.40)    // 轻微摆动
-                };
-            }
-            for(let i=0;i<COUNT;i++) dots.push(spawn());
-
-            function tick(){
-                if(document.body.classList.contains('focus-mode')){
-                    ctx.clearRect(0,0,W,H);
-                    return;
-                }
-
-                ctx.clearRect(0,0,W,H);
-
-                for(const d of dots){
-                    d.phase += 0.015;
-                    d.x += d.vx * (1/FPS);
-                    d.y += d.vy * (1/FPS) + Math.sin(d.phase)*d.w*(1/FPS);
-
-                    if(d.x < -10) d.x = W + 10;
-                    if(d.y < -10) d.y = H + 10;
-                    if(d.y > H + 10) d.y = -10;
-
-                    ctx.beginPath();
-                    ctx.fillStyle = `rgba(45, 40, 34, ${d.a})`;
-                    ctx.arc(d.x, d.y, d.r, 0, Math.PI*2);
-                    ctx.fill();
-                }
-            }
-
-            setInterval(tick, 1000/FPS);
-        })();
 
         // --- 0. 动物数据库（原样保留） ---
         const animalData = {
@@ -639,7 +569,7 @@
             focus() {
                 if (this.state === 'focused') return;
                 this.state = 'focused';
-                document.body.classList.add('focus-mode'); // ✅ 聚焦：雾霾/灰尘淡出
+                document.body.classList.add('focus-mode');
 
                 this.modelGroup.visible = true;
                 const tl = gsap.timeline();
@@ -862,7 +792,6 @@
             renderer.render(scene, camera);
         }
 
-        // ✅ loading淡出
         setTimeout(() => { document.getElementById('loading').style.opacity = 0; }, 2000);
         animate();
 
@@ -873,7 +802,7 @@
         });
 
         /* =========================
-           ✅ 灰尘绘制（放最后，拿到层尺寸）
+           ✅ 灰尘（深色小点）低FPS
            ========================= */
         (function initDust(){
             const layer = document.getElementById('atmo-layer');
@@ -893,7 +822,6 @@
             resizeDust();
             window.addEventListener('resize', resizeDust);
 
-            // 性能参数：更省 -> COUNT 60 / FPS 18
             const FPS = 22;
             const COUNT = 85;
 
