@@ -2,7 +2,7 @@
 <html lang="zh">
 <head>
     <meta charset="UTF-8">
-    <title>ECO-MONITOR | 精准触控版</title>
+    <title>ECO-MONITOR | 最终修正版</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
     
     <style>
@@ -14,19 +14,19 @@
             font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
         }
         
-        /* --- 2. UI 层 --- */
+        /* --- 2. UI 层 (确保层级最高) --- */
         #ui-layer {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             pointer-events: none; 
-            display: none; 
+            display: none; /* 默认隐藏 */
             opacity: 0; transition: opacity 0.5s;
-            z-index: 999; /* 🌟 提高层级，确保显示 */
+            z-index: 999; /* 🌟 确保在最上层 */
         }
         #ui-layer.active { display: block; opacity: 1; }
 
         /* 左侧数据 */
         .left-panel {
-            position: absolute; left: 5%; top: 15%; /* 上移一点防止遮挡 */
+            position: absolute; left: 5%; top: 20%; 
             display: flex; flex-direction: column; align-items: flex-start;
             pointer-events: auto;
         }
@@ -64,8 +64,8 @@
 
         /* 右侧叙事 */
         .right-panel {
-            position: absolute; right: 5%; bottom: 5%; 
-            width: 450px; 
+            position: absolute; right: 5%; bottom: 8%; 
+            width: 420px; 
             background-color: rgba(20, 20, 20, 0.95);
             color: #ddd;
             padding: 35px;
@@ -74,8 +74,6 @@
             backdrop-filter: blur(15px);
             display: flex; flex-direction: column;
             box-shadow: 0 20px 50px rgba(0,0,0,0.3);
-            max-height: 85vh;
-            overflow-y: auto;
         }
 
         /* 视频容器 */
@@ -87,7 +85,6 @@
             border: 1px solid #444;
             overflow: hidden;
             position: relative;
-            flex-shrink: 0;
         }
         #ui-video {
             width: 100%; height: 100%;
@@ -124,7 +121,6 @@
             transition: all 0.3s; pointer-events: auto;
             background: rgba(255,255,255,0.9);
             box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-            z-index: 200;
         }
         .close-btn:hover { background: #333; color: #fff; transform: rotate(90deg); }
 
@@ -134,7 +130,7 @@
         
         #loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #ccc; font-size: 12px; pointer-events: none; transition: opacity 0.5s; }
         
-        /* 强制显示鼠标 */
+        /* 激活时显示鼠标 */
         body.active-mode { cursor: auto !important; }
         #ui-layer:hover, .close-btn:hover { cursor: default; }
     </style>
@@ -224,15 +220,15 @@
 
         // --- 0. 动物数据库 ---
         const animalData = {
-            "POLYMER TURTLE": { video: "./wugui.mp4", name: "聚合体海龟", latin: "CHELONIA PLASTICUS", source: "海洋微塑料堆积", pollutant: "不可降解聚苯乙烯 (PS)", tox: "85%", desc: "这只海龟不再寻找水母，它通过过滤海水中的微塑料维生。背甲融合了人类丢弃的瓶盖和打火机碎片，形成了一层色彩斑斓但死寂的伪装。这种合成装甲的重量是正常骨骼的三倍，迫使它只能在浅海挣扎，无法潜入深海避难。", look: "背甲呈现出破碎的马赛克纹理，那是无数打火机、瓶盖与骨骼生长的痕迹。", act: "行动极其迟缓，经常长时间静止在海面，误把白色的塑料袋当做同类进行求偶行为。" },
-            "PLASTIC CRAB": { video: "./xie.mp4", name: "工业寄居蟹", latin: "PAGURUS INDUSTRIALIS", source: "海岸垃圾倾倒", pollutant: "聚氯乙烯 (PVC) / 塑化剂", tox: "45%", desc: "随着天然贝壳溶解，寄居蟹进化出了适应工业螺纹的腹部。它们背负着塑料瓶盖，成为沙滩上的工业废品。它们的体内积聚了大量塑化剂，导致体型比正常同类大两倍，且具有极高的攻击性。", look: "终生背负着鲜红色的可口可乐或矿泉水瓶盖，双螯呈现出不自然的金属光泽。", act: "在垃圾堆中快速穿梭，通过敲击背上的塑料壳发出高频信号。它们会为了更完好的塑料瓶盖而自相残杀。" },
+            "POLYMER TURTLE": { video: "./wugui.mp4", name: "聚合体海龟", latin: "CHELONIA PLASTICUS", source: "海洋微塑料堆积", pollutant: "不可降解聚苯乙烯 (PS)", tox: "85%", desc: "这只海龟不再寻找水母，它通过过滤海水中的微塑料维生。背甲融合了人类丢弃的瓶盖和打火机碎片，形成了一层色彩斑斓但死寂的伪装。这种合成装甲的重量是正常骨骼的三倍，迫使它只能在浅海挣扎。", look: "背甲由五颜六色的塑料碎片马赛克构成，四肢关节处有明显的塑料纤维增生。", act: "行动极其迟缓，经常长时间静止在海面，误把白色的塑料袋当做同类进行求偶行为。" },
+            "PLASTIC CRAB": { video: "./xie.mp4", name: "工业寄居蟹", latin: "PAGURUS INDUSTRIALIS", source: "海岸垃圾倾倒", pollutant: "聚氯乙烯 (PVC) / 塑化剂", tox: "45%", desc: "随着天然贝壳溶解，寄居蟹进化出了适应工业螺纹的腹部。它们背负着塑料瓶盖，成为沙滩上的工业废品。体内积聚了大量塑化剂，导致体型比正常同类大两倍。", look: "终生背负着鲜红色的可口可乐或矿泉水瓶盖，双螯呈现出不自然的金属光泽。", act: "在垃圾堆中快速穿梭，通过敲击背上的塑料壳发出高频信号交流。" },
             "OIL BIRD": { video: "./niao.mp4", name: "油污鸬鹚", latin: "PHALACROCORAX OLEUM", source: "原油泄漏事故", pollutant: "重质原油 / 多环芳烃", tox: "92%", desc: "羽毛被重油永久浸透。它放弃了飞行，利用油层的浮力漂流。它的存在就是一场无声的生态抗议。它是石油泄漏事故的活体纪念碑，警示着化石燃料对生态的不可逆破坏。", look: "浑身漆黑粘稠，羽毛粘连在一起，在阳光下反射出诡异的彩虹色油膜光泽。", act: "放弃了天空，终生漂浮在污染水域。它不再捕食活鱼，而是吞食沾满油污的尸体。" },
-            "FIBER JELLY": { video: "./shuimu.mp4", name: "光纤水母", latin: "MEDUSA FIBEROPTICUS", source: "海底电缆废弃物", pollutant: "电磁辐射 / 铜离子泄漏", tox: "60%", desc: "生活在海底数据中心附近，吸收了泄漏的铜离子。触须与断裂的光纤纠缠共生，脉冲着冷蓝色人造光。使得它能够直接从海底电缆中窃取微弱的电流作为能量来源。", look: "半透明身体内有发光的电路纹理，触须像乱糟糟的数据线。", act: "被海底电缆的电磁场吸引，干扰通信信号。成群结队时会形成电磁干扰场。" },
-            "SONAR DOLPHIN": { video: "./haitun.mp4", name: "声呐海豚", latin: "DELPHINUS SONARIS", source: "军事声呐与噪音", pollutant: "高频声波污染 (Noise Pollution)", tox: "30%", desc: "为了在充满船舶噪音的海洋中交流，声带发生了病变式进化。能发出震碎玻璃的高频尖叫。它们的大脑结构发生了不可逆的病变，情感区域萎缩，成为了海洋中孤独的声波刺客。", look: "皮肤苍白如死尸，头部有雷达接收器增生。", act: "孤独游动，发出尖锐声波攻击靠近的船只，造成目标严重的内出血或眩晕。" },
-            "TOXIC SNAKE": { video: "./she.mp4", name: "荧光环蛇", latin: "BUNGARUS RADIUM", source: "化工厂非法排污", pollutant: "强酸 / 放射性同位素", tox: "99%", desc: "栖息在化工废料区。毒液混合了强酸，原本的环纹变成了标志性的剧毒荧光绿，夜间发出幽幽警告。它的咬击不仅致命，还会造成严重的化学灼伤和细胞坏死。", look: "身体细长，鳞片缝隙中渗出绿色荧光液。", act: "在受污染的泥土中钻行，留下发光轨迹。植物枯死，昆虫暴毙。" },
-            "ACID FROG": { video: "./wa.mp4", name: "酸蚀箭毒蛙", latin: "DENDROBATES ACIDUS", source: "酸雨与工业径流", pollutant: "工业酸雨 (pH < 3.0)", tox: "75%", desc: "皮肤进化成了耐酸角质层。背部长出了类似晶体的防御刺，是唯一能在pH值低于3的水域存活的脊椎动物。它是自然界在极端污染下强行延续生命的扭曲奇迹。", look: "皮肤粗糙如砂纸，背部有透明晶体。", act: "静止不动时像被腐蚀的矿石，诱捕昆虫。" },
-            "RADIOACTIVE FISH": { video: "./yu.mp4", name: "核辐射鱼", latin: "PISCES NUCLEARIS", source: "核废水排放", pollutant: "铯-137 / 锶-90", tox: "100%", desc: "暴露在高辐射下，DNA链条完全破碎。身体呈现不稳定的半透明状，骨骼发着蓝光。它没有固定的形态，每一代都在发生无序的畸变。", look: "身体半透明，骨架发光，多只眼睛。", act: "游动姿势抽搐，神经系统处于持续短路状态。" },
-            "GHOST SEAL": { video: "./haibao.mp4", name: "幽灵网缚海豹", latin: "PHOCA LAQUEUS", source: "废弃渔网缠绕", pollutant: "聚酰胺纤维 (Polyamide)", tox: "50%", desc: "幼年被渔网缠住，随着长大，渔网嵌入皮肉，与骨骼长在了一起。渔网成为了它身体的一部分，一种痛苦的铠甲。时刻提醒着人类垃圾对海洋生物的终身折磨。", look: "颈部和躯干嵌着彩色尼龙绳索，有增生肉瘤。", act: "极具攻击性，撕咬任何靠近的绳索状物体。" }
+            "FIBER JELLY": { video: "./shuimu.mp4", name: "光纤水母", latin: "MEDUSA FIBEROPTICUS", source: "海底电缆废弃物", pollutant: "电磁辐射 / 铜离子泄漏", tox: "60%", desc: "栖息在海底数据中心废墟附近的变异种。为了适应高强度的电磁辐射环境，它的胶状体吸收了大量泄漏的铜离子。触须与断裂的光纤纠缠共生，脉冲着冷蓝色人造光。", look: "半透明身体内有发光的电路纹理，触须像乱糟糟的数据线。", act: "具有强烈的趋电性，会被海底电缆吸引，成群结队时会形成电磁干扰场。" },
+            "SONAR DOLPHIN": { video: "./haitun.mp4", name: "声呐海豚", latin: "DELPHINUS SONARIS", source: "军事声呐与噪音", pollutant: "高频声波污染 (Noise Pollution)", tox: "30%", desc: "长期暴露在军事级声呐和船舶引擎的极度噪音中，这种海豚的听觉系统完全崩溃并重组。声带进化出了能发出高达 200dB 冲击波的能力。这种声音不再是歌声，而是武器。", look: "皮肤苍白如死尸，头部额隆处有明显的增生组织，类似雷达接收器。", act: "孤独游动，不再群居。会主动向靠近的潜水员或船只发射高频声波。" },
+            "TOXIC SNAKE": { video: "./she.mp4", name: "荧光环蛇", latin: "BUNGARUS RADIUM", source: "化工厂非法排污", pollutant: "强酸 / 放射性同位素", tox: "99%", desc: "发现于被非法倾倒化工废料的湿地。它的毒液腺体吸收了高浓度的强酸和放射性同位素。原本黑白相间的警戒色环纹，变成了标志性的剧毒荧光绿，夜间发出幽幽警告。", look: "身体细长，鳞片闭合不严，缝隙中不断渗出绿色的荧光体液。", act: "夜行性生物。它不需要捕猎，因为它所经过的地方，植物枯死，昆虫暴毙。" },
+            "ACID FROG": { video: "./wa.mp4", name: "酸蚀箭毒蛙", latin: "DENDROBATES ACIDUS", source: "酸雨与工业径流", pollutant: "工业酸雨 (pH < 3.0)", tox: "75%", desc: "在 pH 值低于 3 的强酸性工业废水池中发现的唯一脊椎动物。皮肤进化成了类似陶瓷的耐酸角质层。背部长出了类似晶体的散热排毒结构。它是自然界在极端污染下强行延续生命的扭曲奇迹。", look: "皮肤粗糙如砂纸，呈现出病态的灰白色。背部簇生着透明的晶体簇。", act: "极少移动，静止时像一块被腐蚀的矿石，诱捕被酸雨灼伤的昆虫。" },
+            "RADIOACTIVE FISH": { video: "./yu.mp4", name: "核辐射鱼", latin: "PISCES NUCLEARIS", source: "核废水排放", pollutant: "铯-137 / 锶-90", tox: "100%", desc: "直接暴露在高剂量核辐射区的第一代变异体。它的 DNA 链条处于不断的破碎与重组中，导致细胞极不稳定。身体呈现出半透明状，骨骼清晰可见。它没有固定的形态，每一代都在发生无序的畸变。", look: "身体半透明，骨架发出幽幽蓝光。头部不对称，随机分布着多只眼睛。", act: "游动姿势抽搐且不规律，仿佛神经系统处于持续短路状态。" },
+            "GHOST SEAL": { video: "./haibao.mp4", name: "幽灵网缚海豹", latin: "PHOCA LAQUEUS", source: "废弃渔网缠绕", pollutant: "聚酰胺纤维 (Polyamide)", tox: "50%", desc: "这只海豹在幼年时不幸钻入了一团废弃的尼龙渔网。随着生长，渔网并未断裂，而是深深勒入了皮肉，与骨骼长在了一起。渔网成为了它身体的一部分，一种痛苦的外骨骼，时刻提醒着人类垃圾的残酷。", look: "颈部和躯干嵌着彩色的尼龙绳索，伤口处有巨大的增生肉瘤。", act: "性格极度暴躁，处于长期的疼痛狂躁中。会主动攻击并撕咬任何绳索状物体。" }
         };
 
         // --- 1. 场景 ---
@@ -347,13 +343,11 @@
                 this.center = centerPos.clone();
                 this.group = new THREE.Group();
                 scene.add(this.group);
-                
-                // 🌟 给 Group 加标记，方便射线检测
-                this.group.userData = { swarmName: name, isSwarm: true };
 
                 this.boids = []; 
                 this.state = 'swarm'; 
                 
+                // 🌟 分离组：位置与旋转
                 this.modelGroup = new THREE.Group(); 
                 this.turntable = new THREE.Group();  
                 
@@ -372,13 +366,11 @@
                     const offset = new THREE.Vector3((Math.random()-0.5)*20, (Math.random()-0.5)*10, (Math.random()-0.5)*20);
                     mesh.position.copy(this.center).add(offset);
                     mesh.userData = { offset: offset, phase: Math.random() * Math.PI };
-                    
-                    // 🌟 几何体也加到 group 里，方便射线检测
-                    this.group.add(mesh); 
+                    scene.add(mesh); 
                     this.boids.push(mesh);
                 }
 
-                // 加载模型
+                // 加载模型 (放入 turntable)
                 loader.load(normalFile, (gltf) => {
                     this.normalMesh = gltf.scene;
                     this.normalMesh.scale.set(5,5,5); 
@@ -420,6 +412,7 @@
                 const centerY = getElevation(this.center.x, this.center.z);
                 this.modelGroup.position.set(this.center.x, centerY + 5, this.center.z);
 
+                // 🌟 旋转 Turntable
                 if (this.state === 'focused') {
                     this.turntable.rotation.y -= 0.015; 
                     this.modelGroup.position.y = centerY + 12 + Math.sin(time * 1.5) * 1.5; 
@@ -461,6 +454,7 @@
                     if(this.mutantMesh) this.mutantMesh.visible = true;
                 });
                 if(this.mutantMesh) {
+                    // 🌟 30 倍巨物化
                     tl.fromTo(this.mutantMesh.scale, 
                         {x:0.1, y:0.1, z:0.1}, 
                         {x:30, y:30, z:30, duration:0.8, ease:"back.out(1.2)"}
@@ -541,37 +535,11 @@
         document.addEventListener('click', (e) => {
             if (e.target.closest('.close-btn') || e.target.closest('.right-panel') || e.target.closest('.left-panel')) return;
 
-            // 🌟 核心修复：使用 Raycast 检测物体，而非距离
-            mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
-            mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
-            raycaster.setFromCamera(mouse, camera);
-            
-            // 检测场景中的所有物体
-            const intersects = raycaster.intersectObjects(scene.children, true);
             let clickedSwarm = null;
-
-            // 遍历点击到的物体，寻找属于 Swarm 的对象
-            for(let hit of intersects) {
-                // 向上查找 group 父级
-                let obj = hit.object;
-                while(obj) {
-                    if (obj.userData && obj.userData.isSwarm) {
-                        // 找到对应的 swarm 实例
-                        clickedSwarm = swarms.find(s => s.name === obj.userData.swarmName);
-                        break;
-                    }
-                    obj = obj.parent;
-                }
-                if (clickedSwarm) break;
-            }
-
-            // 如果没点到物体，保留距离检测作为备用方案
-            if (!clickedSwarm) {
-                swarms.forEach(swarm => {
-                    const dist = new THREE.Vector2(swarm.center.x, swarm.center.z).distanceTo(new THREE.Vector2(mouseWorld.x, mouseWorld.z));
-                    if (dist < 20) clickedSwarm = swarm; // 扩大点击判定范围
-                });
-            }
+            swarms.forEach(swarm => {
+                const dist = new THREE.Vector2(swarm.center.x, swarm.center.z).distanceTo(new THREE.Vector2(mouseWorld.x, mouseWorld.z));
+                if (dist < 15) clickedSwarm = swarm;
+            });
 
             if (clickedSwarm) {
                 if (focusedSwarm !== clickedSwarm) {
@@ -605,6 +573,7 @@
                         videoEl.oncanplay = () => { videoEl.play().catch(e=>{}); };
                     }
 
+                    // 🌟 强制显示 UI
                     uiLayer.classList.add('active');
                     document.getElementById('ui-header').style.opacity = 0;
                     document.body.classList.add('active-mode'); 
