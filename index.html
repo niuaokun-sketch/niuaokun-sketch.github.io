@@ -2,194 +2,204 @@
 <html lang="zh">
 <head>
     <meta charset="UTF-8">
-    <title>ECO-MONITOR | 深度叙事版</title>
+    <title>ECO-MONITOR | BIO-HAZARD</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
     
     <style>
-        /* --- 1. 基础设置 --- */
+        /* --- 1. 全局暗黑风格 --- */
         body { 
             margin: 0; overflow: hidden; 
-            background-color: #ffffff; 
+            background-color: #000000; /* 纯黑底 */
             cursor: none; 
-            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            font-family: 'Courier New', Courier, monospace; /* 改用等宽字体，更像终端 */
+            color: #ddd;
         }
         
-        /* --- 2. UI 层 --- */
+        /* --- 2. 首页 Intro 视频层 --- */
+        #intro-layer {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 9999;
+            background: #000;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            transition: opacity 1s ease-out;
+        }
+        /* 背景视频 */
+        #intro-video {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            object-fit: cover; opacity: 0.6; /* 稍微暗一点 */
+            filter: grayscale(80%) contrast(1.2); /* 废土滤镜 */
+        }
+        /* 启动按钮 */
+        #start-btn {
+            position: relative; z-index: 2;
+            padding: 15px 40px;
+            background: rgba(255, 0, 0, 0.2);
+            border: 2px solid #ff4444;
+            color: #ff4444;
+            font-size: 24px; font-weight: bold; letter-spacing: 4px;
+            cursor: pointer; text-transform: uppercase;
+            transition: all 0.3s;
+            box-shadow: 0 0 20px rgba(255, 0, 0, 0.2);
+        }
+        #start-btn:hover {
+            background: #ff4444; color: #000;
+            box-shadow: 0 0 50px rgba(255, 0, 0, 0.8);
+        }
+        .intro-text {
+            position: relative; z-index: 2;
+            color: #fff; margin-bottom: 20px; font-size: 12px; opacity: 0.8; letter-spacing: 2px;
+            text-shadow: 0 0 10px rgba(255,255,255,0.5);
+        }
+
+        /* --- 3. UI 层 (暗黑版) --- */
         #ui-layer {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            pointer-events: none; 
-            display: none; 
-            opacity: 0; transition: opacity 0.5s;
-            z-index: 999;
+            pointer-events: none; display: none; 
+            opacity: 0; transition: opacity 0.5s; z-index: 999;
         }
         #ui-layer.active { display: block; opacity: 1; }
 
-        /* 左侧数据 */
-        .left-panel {
-            position: absolute; left: 5%; top: 15%; 
-            display: flex; flex-direction: column; align-items: flex-start;
-            pointer-events: auto;
-        }
+        /* 左侧面板 */
+        .left-panel { position: absolute; left: 5%; top: 20%; display: flex; flex-direction: column; pointer-events: auto; }
+        
         .title-box {
-            background-color: #ff4444; color: white;
+            background-color: #000; color: #ff3333; /* 黑底红字 */
+            border: 1px solid #ff3333;
             padding: 15px 30px; font-size: 32px; font-weight: 900;
             text-transform: uppercase; letter-spacing: 2px;
-            box-shadow: 5px 5px 0px rgba(0,0,0,0.1);
-            margin-bottom: 0;
+            box-shadow: 0 0 15px rgba(255, 51, 51, 0.3);
+            margin-bottom: 5px;
         }
-        .stat-box {
-            background-color: #222; color: #ccc;
-            padding: 10px 20px; margin-top: 2px;
-            font-size: 12px; font-weight: 600; letter-spacing: 1px;
-            min-width: 200px;
-        }
-        .stat-box span { color: #fff; margin-left: 10px; }
-
+        
         .pollution-alert {
-            background-color: #ffcc00; color: #000;
+            background-color: #220000; color: #ffaa00; /* 暗红底黄字 */
+            border: 1px solid #ffaa00;
             padding: 15px 25px; margin-top: 15px; margin-bottom: 5px;
             font-weight: 900; font-size: 14px; letter-spacing: 1px;
-            border-left: 8px solid #000;
-            box-shadow: 0 0 20px rgba(255, 204, 0, 0.4);
+            box-shadow: 0 0 20px rgba(255, 170, 0, 0.1);
             animation: pulse-border 2s infinite;
             max-width: 350px;
         }
-        .pollution-label { display: block; font-size: 10px; opacity: 0.7; margin-bottom: 5px; }
-        .pollution-value { font-size: 18px; text-transform: uppercase; }
+        .pollution-label { display: block; font-size: 10px; color: #ffaa00; opacity: 0.6; margin-bottom: 5px; }
+        .pollution-value { font-size: 18px; text-transform: uppercase; text-shadow: 0 0 5px #ffaa00; }
+
+        .stat-box {
+            background-color: rgba(0, 0, 0, 0.8); 
+            border-left: 2px solid #555;
+            color: #888; padding: 10px 20px; margin-top: 2px;
+            font-size: 12px; font-weight: 600; letter-spacing: 1px;
+            min-width: 200px;
+        }
+        .stat-box span { color: #ccc; margin-left: 10px; }
+
         @keyframes pulse-border {
-            0% { box-shadow: 0 0 10px rgba(255, 204, 0, 0.2); }
-            50% { box-shadow: 0 0 25px rgba(255, 204, 0, 0.6); }
-            100% { box-shadow: 0 0 10px rgba(255, 204, 0, 0.2); }
+            0% { box-shadow: 0 0 5px rgba(255, 0, 0, 0.2); border-color: #ffaa00; }
+            50% { box-shadow: 0 0 20px rgba(255, 0, 0, 0.6); border-color: #ff4444; }
+            100% { box-shadow: 0 0 5px rgba(255, 0, 0, 0.2); border-color: #ffaa00; }
         }
 
-        /* 🌟 右侧叙事 (改为固定高度 + 内部滚动) */
+        /* 右侧面板 (暗黑磨砂) */
         .right-panel {
-            position: absolute; right: 5%; top: 15%; bottom: 15%; /* 上下留空，固定高度 */
-            width: 480px; 
-            background-color: rgba(20, 20, 20, 0.96);
-            color: #ddd;
-            padding: 0; /* 内部 padding 移给滚动容器 */
+            position: absolute; right: 5%; bottom: 8%; 
+            width: 500px; 
+            background-color: rgba(10, 10, 10, 0.9); /* 极深 */
+            color: #ccc;
+            padding: 35px;
+            border: 1px solid #333;
             border-left: 6px solid #ff4444;
             pointer-events: auto;
-            backdrop-filter: blur(20px);
+            backdrop-filter: blur(10px);
             display: flex; flex-direction: column;
-            box-shadow: 0 30px 100px rgba(0,0,0,0.5);
+            box-shadow: 0 0 50px rgba(0,0,0,0.8);
+            max-height: 85vh; overflow-y: auto;
         }
 
-        /* 视频容器 (固定在顶部) */
+        /* 视频容器 */
         .video-box {
-            width: 100%;
-            height: 270px; /* 固定高度 */
-            background: #000;
-            border-bottom: 1px solid #444;
-            overflow: hidden;
-            position: relative;
-            flex-shrink: 0; /* 防止被压缩 */
+            width: 100%; height: 280px;
+            background: #000; margin-bottom: 25px;
+            border: 1px solid #333; overflow: hidden; position: relative; flex-shrink: 0;
         }
-        #ui-video { width: 100%; height: 100%; object-fit: cover; opacity: 0.95; }
+        #ui-video { width: 100%; height: 100%; object-fit: cover; opacity: 0.8; filter: contrast(1.2) sepia(20%); } /* 视频加一点滤镜 */
+        
         .rec-tag {
             position: absolute; top: 15px; left: 15px;
             color: #ff0000; font-size: 12px; font-weight: bold;
-            animation: blink 1s infinite; z-index: 10; letter-spacing: 1px;
-            text-shadow: 0 0 5px black;
+            animation: blink 0.5s infinite; /* 快速闪烁，更紧张 */
+            z-index: 10; letter-spacing: 1px; text-shadow: 0 0 5px red;
         }
         @keyframes blink { 50% { opacity: 0; } }
 
-        /* 🌟 滚动区域容器 */
-        .scroll-container {
-            flex-grow: 1; /* 占据剩余空间 */
-            overflow-y: auto; /* 允许垂直滚动 */
-            padding: 30px;
-            padding-bottom: 50px;
-        }
-
-        /* 🌟 自定义滚动条样式 (Webkit) */
-        .scroll-container::-webkit-scrollbar { width: 6px; }
-        .scroll-container::-webkit-scrollbar-track { background: #111; }
-        .scroll-container::-webkit-scrollbar-thumb { background: #ff4444; border-radius: 3px; }
-        .scroll-container::-webkit-scrollbar-thumb:hover { background: #ff6666; }
-
         .desc-text {
-            font-size: 14px; line-height: 1.8; margin-bottom: 30px;
-            font-style: normal; color: #eee; text-align: justify;
-            border-bottom: 1px solid #444; padding-bottom: 30px;
+            font-size: 14px; line-height: 1.8; margin-bottom: 20px;
+            color: #bbb; text-align: justify;
+            border-bottom: 1px dashed #444; padding-bottom: 20px;
         }
-        .detail-list { font-size: 13px; color: #bbb; line-height: 1.7; }
-        .detail-item { margin-bottom: 15px; }
-        .detail-label { 
-            display: block; color: #ff4444; font-weight: 800; 
-            margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px;
-            font-size: 11px;
-        }
+        .detail-list { font-size: 13px; color: #888; line-height: 1.7; }
+        .detail-item { margin-bottom: 10px; }
+        .detail-label { color: #ff4444; font-weight: bold; margin-right: 8px; text-transform: uppercase; text-shadow: 0 0 2px rgba(255,0,0,0.3); }
 
-        /* 关闭按钮 */
         .close-btn {
-            position: absolute; top: 20px; right: -70px; /* 移到面板外面 */
-            width: 50px; height: 50px;
-            border: 2px solid #333; border-radius: 50%;
+            position: absolute; top: 40px; right: 40px;
+            width: 60px; height: 60px;
+            border: 2px solid #ff4444; border-radius: 50%;
             display: flex; justify-content: center; align-items: center;
-            cursor: pointer; color: #333; font-size: 30px;
+            cursor: pointer; color: #ff4444; font-size: 30px;
             transition: all 0.3s; pointer-events: auto;
-            background: rgba(255,255,255,0.9);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-            z-index: 200;
+            background: rgba(0,0,0,0.8);
+            box-shadow: 0 0 15px rgba(255,0,0,0.2); z-index: 200;
         }
-        .close-btn:hover { background: #333; color: #fff; transform: rotate(90deg); }
+        .close-btn:hover { background: #ff4444; color: #000; transform: rotate(90deg); box-shadow: 0 0 30px rgba(255,0,0,0.8); }
 
-        #ui-header { position: absolute; top: 30px; left: 40px; color: #333; pointer-events: none; z-index: 10; transition: opacity 0.3s; }
-        h1 { margin: 0; font-size: 20px; font-weight: 800; letter-spacing: 1px; }
-        p { margin: 5px 0 0 0; font-size: 11px; color: #888; font-weight: 600;}
+        /* 顶部 Header */
+        #ui-header { position: absolute; top: 30px; left: 40px; color: #666; pointer-events: none; z-index: 10; transition: opacity 0.3s; mix-blend-mode: difference; }
+        h1 { margin: 0; font-size: 20px; font-weight: 800; letter-spacing: 2px; color: #ccc; }
+        p { margin: 5px 0 0 0; font-size: 11px; color: #ff4444; font-weight: 600; animation: blink 2s infinite; }
         
-        #loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #ccc; font-size: 12px; pointer-events: none; transition: opacity 0.5s; }
+        #loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #666; font-size: 12px; pointer-events: none; transition: opacity 0.5s; font-family: monospace; }
         
         body.active-mode { cursor: auto !important; }
-        #ui-layer:hover, .close-btn:hover { cursor: default; }
+        #ui-layer:hover, .close-btn:hover, #start-btn:hover { cursor: default; }
     </style>
 </head>
 <body>
 
-    <div id="ui-header">
-        <h1>ECO-MONITOR</h1>
-        <p>Global Surveillance // Sector 7</p>
+    <!-- 🌟 新增：Intro 层 -->
+    <div id="intro-layer">
+        <!-- 记得上传 intro.mp4，如果没有，背景就是黑色的 -->
+        <video id="intro-video" src="./intro.mp4" loop muted playsinline autoplay></video>
+        <div class="intro-text">/// WARNING: BIOLOGICAL CONTAMINATION DETECTED ///</div>
+        <div id="start-btn" onclick="startSystem()">ACCESS SYSTEM</div>
     </div>
 
-    <div id="loading">CONNECTING TO SATELLITE...</div>
+    <div id="ui-header">
+        <h1>ECO-MONITOR</h1>
+        <p>SYSTEM FAILURE // SECTOR 7 // CRITICAL</p>
+    </div>
+
+    <div id="loading" style="display:none;">CONNECTING TO SATELLITE...</div>
 
     <div id="ui-layer">
-        
+        <div class="close-btn" onclick="closePanel()">×</div>
         <div class="left-panel">
             <div class="title-box" id="ui-name">TARGET NAME</div>
             <div class="pollution-alert">
-                <span class="pollution-label">MUTATION CAUSE / 异变诱因</span>
+                <span class="pollution-label">MUTATION CAUSE</span>
                 <span class="pollution-value" id="ui-pollutant">UNKNOWN</span>
             </div>
             <div class="stat-box">LATIN: <span id="ui-latin">Unknown</span></div>
             <div class="stat-box">TOXICITY: <span id="ui-tox">0%</span></div>
             <div class="stat-box">STATUS: <span style="color:#ff4444">CRITICAL</span></div>
         </div>
-
         <div class="right-panel">
-            <div class="close-btn" onclick="closePanel()">×</div>
-            
-            <!-- 视频固定在顶部 -->
             <div class="video-box">
                 <div class="rec-tag">● REC 00:14:23</div>
                 <video id="ui-video" loop muted playsinline></video>
             </div>
-
-            <!-- 🌟 可滚动的文字区域 -->
-            <div class="scroll-container">
-                <div class="desc-text" id="ui-desc">...</div>
-                <div class="detail-list">
-                    <div class="detail-item">
-                        <span class="detail-label">MORPHOLOGICAL DEFORMITY / 外貌畸变</span>
-                        <span id="ui-look">...</span>
-                    </div>
-                    <div class="detail-item">
-                        <span class="detail-label">BEHAVIORAL ANOMALY / 异常行为</span>
-                        <span id="ui-act">...</span>
-                    </div>
-                </div>
+            <div class="desc-text" id="ui-desc">...</div>
+            <div class="detail-list">
+                <div class="detail-item"><span class="detail-label">外貌畸变:</span><span id="ui-look">...</span></div>
+                <div class="detail-item"><span class="detail-label">异常行为:</span><span id="ui-act">...</span></div>
             </div>
         </div>
     </div>
@@ -203,6 +213,7 @@
         }
     </script>
 
+    <!-- Shader 调整：让点更暗，只有被照亮时才亮 -->
     <script type="x-shader/x-vertex" id="vertexShader">
         uniform vec3 uMouse;
         attribute float size;
@@ -212,12 +223,12 @@
             vColor = customColor;
             vec3 pos = position;
             float dist = distance(pos.xz, uMouse.xz);
-            float radius = 7.0; 
+            float radius = 10.0; 
             if (dist < radius) {
                 vec3 dir = normalize(pos - uMouse);
                 float force = (radius - dist) / radius;
-                pos.x += dir.x * force * 3.0; 
-                pos.z += dir.z * force * 3.0;
+                pos.x += dir.x * force * 5.0; 
+                pos.z += dir.z * force * 5.0;
             }
             vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
             gl_PointSize = size * (200.0 / -mvPosition.z); 
@@ -230,7 +241,8 @@
             float dist = length(gl_PointCoord - vec2(0.5));
             float alpha = 1.0 - smoothstep(0.4, 0.5, dist);
             if (alpha < 0.01) discard;
-            gl_FragColor = vec4(vColor, alpha); 
+            // 降低整体透明度，制造昏暗感
+            gl_FragColor = vec4(vColor, alpha * 0.7); 
         }
     </script>
 
@@ -240,121 +252,49 @@
         import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
         import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 
-        // --- 0. 动物数据库 (🌟 内容已极大丰富，支持上下滑动) ---
-        const animalData = {
-            "POLYMER TURTLE": { 
-                video: "./wugui.mp4", 
-                name: "聚合体海龟", 
-                latin: "CHELONIA PLASTICUS", 
-                source: "海洋微塑料堆积", 
-                pollutant: "不可降解聚苯乙烯 (PS)", 
-                tox: "85%", 
-                desc: "该样本是在太平洋垃圾带核心区被捕获的。解剖显示，这只海龟的消化系统已经发生了不可逆的退化。它不再具备消化水母或海草的能力，而是通过皮肤上进化出的粗糙滤孔，直接从海水中吸附并整合微塑料颗粒。最令人震惊的病理改变发生在它的背甲上：其骨骼组织与海洋中漂浮的聚乙烯废料在细胞层面发生了融合，形成了一层五颜六色的、永远无法降解的合成装甲。这种“塑料骨骼”虽然提供了极高的物理防御力，但其密度是正常骨骼的三倍，导致它无法潜入深海避难，只能终生漂浮在充满辐射的表层水域。科学家还在其血液中检测出了致死浓度的阻燃剂成分。", 
-                look: "背甲呈现出破碎且混乱的马赛克纹理，那是无数打火机碎片、瓶盖残渣与有机骨骼强行生长在一起的痕迹。四肢关节处有明显的塑料纤维增生，由于长期吸附重金属，皮肤呈现出病态的灰黑色。", 
-                act: "行动极其迟缓，仿佛背负着巨大的枷锁。它经常长时间静止在海面，对周围环境反应迟钝。观察到它多次误把白色的塑料袋当做同类进行求偶行为，并发出低沉、沙哑的悲鸣。" 
-            },
-            "PLASTIC CRAB": { 
-                video: "./xie.mp4", 
-                name: "工业寄居蟹", 
-                latin: "PAGURUS INDUSTRIALIS", 
-                source: "海岸垃圾倾倒", 
-                pollutant: "聚氯乙烯 (PVC) / 塑化剂", 
-                tox: "45%", 
-                desc: "随着海洋酸化加剧，碳酸钙构成的天然贝壳在海水中迅速溶解，导致传统寄居蟹群体面临灭顶之灾。这一亚种展现出了惊人的、令人心碎的适应能力：它们的腹部进化出了适应标准工业螺纹的螺旋结构。它们不再寻找贝壳，而是精准地寄生于人类遗弃的塑料瓶盖、洗洁精喷头甚至生锈的易拉罐中。虽然塑料提供了庇护，但塑料中析出的双酚A（BPA）严重干扰了它们的内分泌系统，导致体型比正常同类大两倍，且极具攻击性。", 
-                look: "终生背负着鲜红色的可口可乐或矿泉水瓶盖，有些甚至寄生在破碎的玩偶头部中。原本的有机甲壳被类似 PVC 材质的硬化皮肤取代，双螯呈现出不自然的金属光泽。", 
-                act: "在垃圾堆中快速穿梭，通过有节奏地敲击背上的塑料壳发出高频信号交流。它们不再具备社会性互助行为，反而会为了争夺一个更完好的塑料瓶盖而残忍地自相残杀。" 
-            },
-            "OIL BIRD": { 
-                video: "./niao.mp4", 
-                name: "油污鸬鹚", 
-                latin: "PHALACROCORAX OLEUM", 
-                source: "原油泄漏事故", 
-                pollutant: "重质原油 / 多环芳烃", 
-                tox: "92%", 
-                desc: "这不仅仅是体表的沾染，原油已经渗透进了它的基因表达。这只鸬鹚的尾脂腺不再分泌油脂，而是直接分泌类似沥青的黑色粘液。它彻底丧失了飞行能力，骨骼变得沉重而致密，这使它能像潜水艇一样在重油层下方潜行。它是石油泄漏事故的活体纪念碑，警示着化石燃料对生态的不可逆破坏。由于长期吸入挥发性有机化合物，它的肺部已经完全纤维化。", 
-                look: "浑身漆黑粘稠，羽毛粘连在一起，形成坚硬的块状物。在阳光下，它的身体反射出诡异的彩虹色油膜光泽。喙部锋利如针，专门用于刺穿厚重的油层。", 
-                act: "彻底放弃了天空，终生漂浮在污染水域。它不再捕食活鱼，而是吞食沾满油污的尸体，甚至直接吸食水面的浮油来获取热量，成为了一台活体除油机。" 
-            },
-            "FIBER JELLY": { 
-                video: "./shuimu.mp4", 
-                name: "光纤水母", 
-                latin: "MEDUSA FIBEROPTICUS", 
-                source: "海底电缆废弃物", 
-                pollutant: "电磁辐射 / 铜离子泄漏", 
-                tox: "60%", 
-                desc: "栖息在海底数据中心废墟附近的奇异变异种。为了适应高强度的电磁辐射环境，它的胶状体吸收了大量泄漏的铜离子和稀土元素，导致其导电性极高。最可怕的是，它的触须与海底断裂的光纤网络发生了共生纠缠，使得它能够直接从海底电缆中窃取微弱的电流作为能量来源。这种共生关系虽然维持了它的生命，但也让它成为了海底网络的幽灵干扰源。", 
-                look: "半透明的钟状身体内部，可见发光的电路状纹理。触须不再是柔软的肉质，而是像乱糟糟的、发着冷蓝光的数据线，偶尔会爆出微弱的电火花。", 
-                act: "具有强烈的趋电性，会被运作中的海底电缆吸引。成群结队时会形成强大的电磁干扰场，导致经过的船只导航失灵，甚至能截获并闪烁摩尔斯电码。" 
-            },
-            "SONAR DOLPHIN": { 
-                video: "./haitun.mp4", 
-                name: "声呐海豚", 
-                latin: "DELPHINUS SONARIS", 
-                source: "军事声呐与噪音", 
-                pollutant: "高频声波污染 (Noise Pollution)", 
-                tox: "30%", 
-                desc: "长期暴露在军事级声呐和巨型船舶引擎的极度噪音中，这种海豚的听觉系统完全崩溃并重组。为了在嘈杂的海洋中交流，它们的声带进化出了能发出高达 200dB 冲击波的能力。这种声音不再是歌声，而是武器。它们的大脑结构发生了不可逆的病变，负责情感的区域萎缩，而负责攻击的区域异常发达。它们成为了海洋中孤独的声波刺客。", 
-                look: "皮肤苍白如死尸，头部额隆处有明显的增生组织，形状类似军用雷达接收器。眼睛已经退化，几乎全盲，完全依赖变异的回声定位系统。", 
-                act: "孤独游动，不再群居。会主动向靠近的潜水员或船只发射高频声波，造成目标严重的内出血或眩晕，以此来保护自己脆弱的领地。" 
-            },
-            "TOXIC SNAKE": { 
-                video: "./she.mp4", 
-                name: "荧光环蛇", 
-                latin: "BUNGARUS RADIUM", 
-                source: "化工厂非法排污", 
-                pollutant: "强酸 / 放射性同位素", 
-                tox: "99%", 
-                desc: "发现于被非法倾倒化工废料的湿地深处。它的毒液腺体吸收了高浓度的强酸和放射性同位素。原本黑白相间的警戒色环纹，变成了标志性的剧毒荧光绿，那是体内积聚的辐射物质在衰变时发出的切伦科夫辐射。它的咬击不仅致命，还会造成严重的化学灼伤和细胞坏死，伤口在数十年内无法愈合。", 
-                look: "身体细长，鳞片闭合不严，鳞片缝隙中不断渗出粘稠的绿色荧光体液。它爬行过的地面会留下烧焦的痕迹，草木瞬间枯死。", 
-                act: "夜行性生物。它不需要主动捕猎，因为它所经过的地方，植物枯死，昆虫暴毙，它只需吞食这些被它的体液毒死的生物即可生存。" 
-            },
-            "ACID FROG": { 
-                video: "./wa.mp4", 
-                name: "酸蚀箭毒蛙", 
-                latin: "DENDROBATES ACIDUS", 
-                source: "酸雨与工业径流", 
-                pollutant: "硫酸 / 硝酸 (pH < 3.0)", 
-                tox: "75%", 
-                desc: "在 pH 值低于 3 的强酸性工业废水池中发现的唯一脊椎动物。为了生存，它的皮肤进化成了类似陶瓷的耐酸角质层，这导致它完全失去了两栖动物的皮肤呼吸功能。作为补偿，它的背部长出了类似晶体的散热排毒结构。它是自然界在极端污染下强行延续生命的扭曲奇迹，但也为此付出了巨大的生理代价。", 
-                look: "皮肤粗糙如砂纸，呈现出病态的灰白色。背部簇生着透明的、锋利的晶体簇，那是结晶化的毒素排出体外的形态。", 
-                act: "极少移动，静止时像一块被腐蚀的矿石。通过背部的晶体折射光线来诱捕被酸雨灼伤的昆虫，鸣叫声嘶哑刺耳，如同金属刮擦。" 
-            },
-            "RADIOACTIVE FISH": { 
-                video: "./yu.mp4", 
-                name: "核辐射鱼", 
-                latin: "PISCES NUCLEARIS", 
-                source: "核废水排放", 
-                pollutant: "铯-137 / 锶-90", 
-                tox: "100%", 
-                desc: "直接暴露在高剂量核辐射区的第一代变异体。它的 DNA 链条处于不断的破碎与重组中，导致细胞极不稳定，寿命极短。身体呈现出不稳定的半透明状，内部器官和发光的骨骼清晰可见。它没有固定的形态，每一代都在发生无序的畸变，甚至同一条鱼在不同时期会长出不同的器官，展现了生命的无序与混乱。", 
-                look: "身体半透明，骨架发出幽幽蓝光。头部严重不对称，随机分布着多只大小不一的眼睛，有些甚至长在背部或侧腹。", 
-                act: "游动姿势抽搐且不规律，仿佛神经系统处于持续短路状态。对光线极度敏感，遇到强光会剧烈痉挛，通常躲藏在反应堆废墟的阴影中。" 
-            },
-            "GHOST SEAL": { 
-                video: "./haibao.mp4", 
-                name: "幽灵网缚海豹", 
-                latin: "PHOCA LAQUEUS", 
-                source: "废弃渔网缠绕", 
-                pollutant: "聚酰胺纤维 (Polyamide)", 
-                tox: "50%", 
-                desc: "这只海豹在幼年时不幸钻入了一团废弃的尼龙渔网。随着它的生长，坚韧的渔网并没有断裂，而是深深勒入了皮肉，甚至切断了部分骨骼，最终被新生的组织包裹，与身体完全长在了一起。渔网成为了它身体的一部分，一种痛苦的外骨骼。这不仅限制了它的生长，还引起了慢性的全身性炎症，时刻提醒着人类垃圾对海洋生物的终身折磨。", 
-                look: "颈部和躯干嵌着彩色的尼龙绳索，伤口处有巨大的增生肉瘤。身体因长期勒痕而呈现出葫芦状的畸形。", 
-                act: "性格极度暴躁，处于长期的疼痛狂躁中。会主动攻击并撕咬任何绳索状的物体，试图摆脱那不存在的束缚，常被误认为是狂犬病发作。" 
-            }
+        // --- 系统启动逻辑 ---
+        window.startSystem = function() {
+            const intro = document.getElementById('intro-layer');
+            intro.style.opacity = 0;
+            setTimeout(() => { intro.style.display = 'none'; }, 1000);
+            
+            // 播放背景音效 (可选)
+            // const audio = new Audio('ambient.mp3'); audio.play();
         };
 
-        // --- 1. 场景 ---
+        // --- 0. 动物数据库 ---
+        const animalData = {
+            "POLYMER TURTLE": { video: "./wugui.mp4", name: "聚合体海龟", latin: "CHELONIA PLASTICUS", source: "海洋微塑料堆积", pollutant: "不可降解聚苯乙烯 (PS)", tox: "85%", desc: "这只海龟不再寻找水母，它通过过滤海水中的微塑料维生。背甲融合了人类丢弃的瓶盖和打火机碎片，形成了一层色彩斑斓但死寂的伪装。这种合成装甲的重量是正常骨骼的三倍，迫使它只能在浅海挣扎，无法潜入深海避难。", look: "背甲由五颜六色的塑料碎片马赛克构成，四肢关节处有明显的塑料纤维增生。", act: "行动极其迟缓，经常长时间静止在海面，误把白色的塑料袋当做同类进行求偶行为。" },
+            "PLASTIC CRAB": { video: "./xie.mp4", name: "工业寄居蟹", latin: "PAGURUS INDUSTRIALIS", source: "海岸垃圾倾倒", pollutant: "聚氯乙烯 (PVC) / 塑化剂", tox: "45%", desc: "随着天然贝壳溶解，寄居蟹进化出了适应工业螺纹的腹部。它们背负着塑料瓶盖，成为沙滩上的工业废品。体内积聚了大量塑化剂，导致体型比正常同类大两倍。", look: "终生背负着鲜红色的可口可乐或矿泉水瓶盖，双螯呈现出不自然的金属光泽。", act: "在垃圾堆中快速穿梭，通过敲击背上的塑料壳发出高频信号交流。" },
+            "OIL BIRD": { video: "./niao.mp4", name: "油污鸬鹚", latin: "PHALACROCORAX OLEUM", source: "原油泄漏事故", pollutant: "重质原油 / 多环芳烃", tox: "92%", desc: "羽毛被重油永久浸透。它放弃了飞行，利用油层的浮力漂流。它的存在就是一场无声的生态抗议。它是石油泄漏事故的活体纪念碑，警示着化石燃料对生态的不可逆破坏。", look: "浑身漆黑粘稠，羽毛粘连在一起，在阳光下反射出诡异的彩虹色油膜光泽。", act: "放弃了天空，终生漂浮在污染水域。它不再捕食活鱼，而是吞食沾满油污的尸体。" },
+            "FIBER JELLY": { video: "./shuimu.mp4", name: "光纤水母", latin: "MEDUSA FIBEROPTICUS", source: "海底电缆废弃物", pollutant: "电磁辐射 / 铜离子泄漏", tox: "60%", desc: "栖息在海底数据中心废墟附近的变异种。为了适应高强度的电磁辐射环境，它的胶状体吸收了大量泄漏的铜离子。触须与断裂的光纤纠缠共生，脉冲着冷蓝色人造光。", look: "半透明身体内有发光的电路纹理，触须像乱糟糟的数据线。", act: "具有强烈的趋电性，会被海底电缆吸引，成群结队时会形成电磁干扰场。" },
+            "SONAR DOLPHIN": { video: "./haitun.mp4", name: "声呐海豚", latin: "DELPHINUS SONARIS", source: "军事声呐与噪音", pollutant: "高频声波污染 (Noise Pollution)", tox: "30%", desc: "长期暴露在军事级声呐和船舶引擎的极度噪音中，这种海豚的听觉系统完全崩溃并重组。声带进化出了能发出高达 200dB 冲击波的能力。这种声音不再是歌声，而是武器。", look: "皮肤苍白如死尸，头部额隆处有明显的增生组织，类似雷达接收器。", act: "孤独游动，发出尖锐声波攻击靠近的船只。" },
+            "TOXIC SNAKE": { video: "./she.mp4", name: "荧光环蛇", latin: "BUNGARUS RADIUM", source: "化工厂非法排污", pollutant: "强酸 / 放射性同位素", tox: "99%", desc: "发现于被非法倾倒化工废料的湿地。它的毒液腺体吸收了高浓度的强酸和放射性同位素。原本黑白相间的警戒色环纹，变成了标志性的剧毒荧光绿，夜间发出幽幽警告。", look: "身体细长，鳞片闭合不严，缝隙中不断渗出绿色荧光体液。", act: "在受污染的泥土中钻行，留下发光轨迹。植物枯死，昆虫暴毙。" },
+            "ACID FROG": { video: "./wa.mp4", name: "酸蚀箭毒蛙", latin: "DENDROBATES ACIDUS", source: "酸雨与工业径流", pollutant: "硫酸 / 硝酸 (pH < 3.0)", tox: "75%", desc: "皮肤进化成了耐酸角质层。背部长出了类似晶体的防御刺，是唯一能在pH值低于3的水域存活的脊椎动物。它是自然界在极端污染下强行延续生命的扭曲奇迹。", look: "皮肤粗糙如砂纸，背部有透明晶体。", act: "静止不动时像被腐蚀的矿石，诱捕昆虫。" },
+            "RADIOACTIVE FISH": { video: "./yu.mp4", name: "核辐射鱼", latin: "PISCES NUCLEARIS", source: "核废水排放", pollutant: "铯-137 / 锶-90", tox: "100%", desc: "暴露在高辐射下，DNA链条完全破碎。身体呈现不稳定的半透明状，骨骼发着蓝光。它没有固定的形态，每一代都在发生无序的畸变。", look: "身体半透明，骨架发光，多只眼睛。", act: "游动姿势抽搐，神经系统处于持续短路状态。" },
+            "GHOST SEAL": { video: "./haibao.mp4", name: "幽灵网缚海豹", latin: "PHOCA LAQUEUS", source: "废弃渔网缠绕", pollutant: "聚酰胺纤维 (Polyamide)", tox: "50%", desc: "幼年被渔网缠住，随着长大，渔网嵌入皮肉，与骨骼长在了一起。渔网成为了它身体的一部分，一种痛苦的铠甲。时刻提醒着人类垃圾对海洋生物的终身折磨。", look: "颈部和躯干嵌着彩色尼龙绳索，有增生肉瘤。", act: "极具攻击性，撕咬任何靠近的绳索状物体。" }
+        };
+
+        // --- 1. 场景 (🌟 核心修改：黑暗废土风) ---
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0xffffff);
-        
-        const ambientLight = new THREE.AmbientLight(0xffffff, 4.0); 
+        scene.background = new THREE.Color(0x050505); // 接近纯黑
+        scene.fog = new THREE.FogExp2(0x050505, 0.02); // 浓重的黑雾，制造压抑感
+
+        // 灯光：暗淡、诡异
+        const ambientLight = new THREE.AmbientLight(0x444444, 1.5); // 灰暗的环境光
         scene.add(ambientLight);
         
-        const dirLight = new THREE.DirectionalLight(0xffffff, 3.0);
+        // 主光：冷色调，像月光或探照灯
+        const dirLight = new THREE.DirectionalLight(0xaaccff, 2.0);
         dirLight.position.set(50, 100, 50);
         scene.add(dirLight);
 
-        const cameraLight = new THREE.DirectionalLight(0xffffff, 1.5);
+        // 补光：侧面的诡异红光，模拟警报
+        const redLight = new THREE.PointLight(0xff0000, 1.0, 100);
+        redLight.position.set(-50, 20, -50);
+        scene.add(redLight);
+
+        const cameraLight = new THREE.DirectionalLight(0xffffff, 1.0);
         scene.add(cameraLight);
 
         const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -365,34 +305,35 @@
         renderer.outputColorSpace = THREE.SRGBColorSpace;
         document.body.appendChild(renderer.domElement);
 
-        // --- 2. 光标 ---
+        // --- 2. 光标 (发光的红色/绿色) ---
         const cursorGroup = new THREE.Group();
         scene.add(cursorGroup);
         const hexGeometry = new THREE.RingGeometry(3.5, 4.2, 6); 
-        const hexMaterial = new THREE.MeshBasicMaterial({ color: 0x333333, side: THREE.DoubleSide, transparent: true, opacity: 0.8 });
+        // 荧光材质
+        const hexMaterial = new THREE.MeshBasicMaterial({ color: 0x00ffcc, side: THREE.DoubleSide, transparent: true, opacity: 0.9 });
         const cursorHex = new THREE.Mesh(hexGeometry, hexMaterial);
         cursorHex.rotation.x = -Math.PI / 2;
         cursorGroup.add(cursorHex);
         const triGeo = new THREE.ConeGeometry(0.8, 2, 3);
-        const triMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
+        const triMat = new THREE.MeshBasicMaterial({ color: 0x00ffcc });
         const cursorTri = new THREE.Mesh(triGeo, triMat);
         cursorTri.rotation.x = Math.PI; cursorTri.position.y = 6;
         cursorGroup.add(cursorTri);
 
-        // --- 3. 无人机 ---
+        // --- 3. 无人机 (深灰色) ---
         const droneGroup = new THREE.Group();
         scene.add(droneGroup);
         droneGroup.visible = false;
-        const camBody = new THREE.Mesh(new THREE.BoxGeometry(1.5, 1, 2), new THREE.MeshBasicMaterial({ color: 0x111111 }));
+        const camBody = new THREE.Mesh(new THREE.BoxGeometry(1.5, 1, 2), new THREE.MeshBasicMaterial({ color: 0x333333 }));
         droneGroup.add(camBody);
-        const camLens = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.6, 0.8, 16), new THREE.MeshBasicMaterial({ color: 0x555555 }));
+        const camLens = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.6, 0.8, 16), new THREE.MeshBasicMaterial({ color: 0x888888 }));
         camLens.rotation.x = Math.PI / 2; camLens.position.z = 1.2;
         droneGroup.add(camLens);
         const recLight = new THREE.Mesh(new THREE.SphereGeometry(0.25), new THREE.MeshBasicMaterial({ color: 0xff0000 }));
         recLight.position.set(0.6, 0.6, 1.0);
         droneGroup.add(recLight);
 
-        // --- 4. 射线 & 地形 ---
+        // --- 4. 地形 (🌟 核心修改：废土配色) ---
         const raycaster = new THREE.Raycaster();
         const mouse = new THREE.Vector2();
         const mouseWorld = new THREE.Vector3(); 
@@ -402,11 +343,14 @@
 
         const geometry = new THREE.BufferGeometry();
         const positions = []; const colors = []; const sizes = [];
-        const colWater = new THREE.Color("#99DDFF"); 
-        const colLand1 = new THREE.Color("#88CC44"); 
-        const colLand2 = new THREE.Color("#66AA33"); 
-        const colLand3 = new THREE.Color("#DDEEAA"); 
-        const colCanopy = new THREE.Color("#3A6B29");
+        
+        // 废土配色方案
+        const colWater = new THREE.Color("#00ff66"); // 剧毒荧光绿水
+        const colLand1 = new THREE.Color("#333333"); // 烧焦的黑土
+        const colLand2 = new THREE.Color("#554433"); // 枯黄的土
+        const colLand3 = new THREE.Color("#222222"); // 深灰岩石
+        const colCanopy = new THREE.Color("#004400"); // 枯死的深绿植被
+
         const range = 180; const gap = 2.5; 
 
         function getElevation(x, z) { return Math.sin(x * 0.05) * 8 + Math.cos(z * 0.05) * 8; }
@@ -418,7 +362,9 @@
                 if (distToCenter > maxRadius) continue;
                 let y = getElevation(x, z);
                 let pSize = 0.0; let pColor = new THREE.Color(); let keepPoint = false;
+                
                 if (y < -3) {
+                    // 毒水
                     if (Math.random() > 0.4) { pSize = 4.0; pColor = colWater; keepPoint = true; }
                 } else {
                     if (Math.random() > 0.5) { 
@@ -428,17 +374,24 @@
                         else { pSize = 1.5; pColor = colLand3; }
                     }
                 }
+                // 偶尔混入一些红色警示点
+                if (keepPoint && Math.random() > 0.99) {
+                    pColor = new THREE.Color("#ff0000");
+                }
+
                 if (keepPoint) { positions.push(x, y, z); colors.push(pColor.r, pColor.g, pColor.b); sizes.push(pSize); }
             }
         }
         geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
         geometry.setAttribute('customColor', new THREE.Float32BufferAttribute(colors, 3));
         geometry.setAttribute('size', new THREE.Float32BufferAttribute(sizes, 1));
+        
         const shaderMaterial = new THREE.ShaderMaterial({
             uniforms: { uMouse: { value: new THREE.Vector3(0, 0, 0) } },
             vertexShader: document.getElementById('vertexShader').textContent,
             fragmentShader: document.getElementById('fragmentShader').textContent,
-            transparent: true, depthTest: true, depthWrite: false
+            transparent: true, depthTest: true, depthWrite: false,
+            blending: THREE.AdditiveBlending // 🌟 发光混合模式
         });
         const terrain = new THREE.Points(geometry, shaderMaterial);
         scene.add(terrain);
@@ -455,7 +408,6 @@
                 this.center = centerPos.clone();
                 this.group = new THREE.Group();
                 scene.add(this.group);
-                
                 this.group.userData = { isSwarm: true, swarmName: name };
 
                 this.boids = []; 
@@ -468,11 +420,12 @@
                 this.modelGroup.add(this.turntable);
                 this.modelGroup.visible = false; 
 
+                // 几何体 (发光)
                 const count = 10;
                 const boidGeo = new THREE.ConeGeometry(0.8, 2, 4); 
                 for(let i=0; i<count; i++) {
                     const isMutant = Math.random() > 0.8;
-                    const color = isMutant ? 0xcc3333 : (Math.random()>0.5 ? 0x444444 : 0x222222);
+                    const color = isMutant ? 0xff0000 : (Math.random()>0.5 ? 0xaaaaaa : 0x666666);
                     const mat = new THREE.MeshBasicMaterial({ color: color, wireframe: true });
                     const mesh = new THREE.Mesh(boidGeo, mat);
                     const offset = new THREE.Vector3((Math.random()-0.5)*20, (Math.random()-0.5)*10, (Math.random()-0.5)*20);
@@ -615,17 +568,13 @@
             if (focusedSwarm) {
                 focusedSwarm.unfocus();
                 focusedSwarm = null;
-                
                 videoEl.pause();
                 videoEl.currentTime = 0;
-
                 gsap.to(camera.position, {x: 0, y: 60, z: 80, duration: 1.5, ease: "power2.inOut"});
                 gsap.to(controls.target, {x: 0, y: 0, z: 0, duration: 1.5});
-                
                 uiLayer.classList.remove('active');
                 document.getElementById('ui-header').style.opacity = 1;
                 document.body.classList.remove('active-mode'); 
-                
                 droneGroup.visible = false;
             }
         };
@@ -647,11 +596,9 @@
             if (e.target.closest('.close-btn') || e.target.closest('.right-panel') || e.target.closest('.left-panel')) return;
 
             let clickedSwarm = null;
-            
             mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
             mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
             raycaster.setFromCamera(mouse, camera);
-            
             const intersects = raycaster.intersectObjects(scene.children, true);
             
             for(let hit of intersects) {
@@ -753,10 +700,10 @@
                 });
 
                 if (hoverSwarm) {
-                    hexMaterial.color.set(0xff4444);
+                    hexMaterial.color.set(0xff0000); // 红色
                     cursorGroup.scale.lerp(new THREE.Vector3(1.5, 1.5, 1.5), 0.1);
                 } else {
-                    hexMaterial.color.set(0x333333);
+                    hexMaterial.color.set(0x00ffcc); // 青色
                 }
 
                 const targetY = getElevation(mouseWorld.x, mouseWorld.z);
