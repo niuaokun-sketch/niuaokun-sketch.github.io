@@ -17,9 +17,6 @@
 
         /* =========================
            ✅ 更深雾霾色过渡 + 灰尘（性能友好）
-           - 雾霾：静态渐变（不卡）
-           - 灰尘：少量深色小点 + 低FPS
-           - 底部渐隐：自然过渡到消失
            ========================= */
         #atmo-layer{
             position: fixed;
@@ -28,10 +25,7 @@
             height: 78vh;
             pointer-events: none;
             z-index: 60;
-
-            /* ✅整体更“厚”一点 */
             opacity: 0.80;
-
             transition: opacity .35s ease;
             overflow: hidden;
 
@@ -45,24 +39,23 @@
                 rgba(0,0,0,0) 100%);
         }
 
-        /* ✅ 聚焦动物：雾霾层淡出（避免盖住动物） */
+        /* ✅ 聚焦动物：雾霾层淡出（避免盖住动物、避免变灰） */
         body.focus-mode #atmo-layer{
             opacity: 0.12;
         }
 
-        /* ✅ 更深更脏的雾霾色：偏棕橙 + 层次更明显（静态不动画） */
+        /* ✅ 更深更脏的雾霾色 */
         #haze-gradient{
             position:absolute;
             inset:0;
             background:
               linear-gradient(to bottom,
-                rgba(140, 92, 52, 0.92) 0%,   /* 顶部更深（接近你图的棕橙暗雾） */
+                rgba(140, 92, 52, 0.92) 0%,
                 rgba(160, 110, 68, 0.62) 28%,
                 rgba(190, 150, 110, 0.28) 62%,
                 rgba(230, 216, 195, 0.00) 100%);
         }
 
-        /* ✅ 轻微压暗（提升“空气厚度”），仍然静态 */
         #haze-vignette{
             position:absolute;
             inset:0;
@@ -74,7 +67,6 @@
             opacity: 0.65;
         }
 
-        /* 灰尘 Canvas */
         #dust-canvas{
             position:absolute;
             inset:0;
@@ -296,6 +288,64 @@
         import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
         import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 
+        /* ==========================================
+           ✅ 你要求的全局参数
+           - 默认：饱和度 +30%，放大 +20%
+           - 聚焦：恢复原饱和度（不加成），放大 +15%
+           ========================================== */
+        const BOOST_SAT_MULT = 1.30;
+        const BOOST_SCALE_MULT = 1.20;
+        const FOCUS_SCALE_MULT = 1.15;
+
+        function clamp01(v){ return Math.max(0, Math.min(1, v)); }
+
+        function ensureMaterialArray(mat){
+            if(!mat) return [];
+            return Array.isArray(mat) ? mat : [mat];
+        }
+
+        // 记录原始颜色（HSL）并可应用“饱和度倍增”
+        function cacheOriginalColors(root){
+            root.traverse((obj)=>{
+                if(!obj.isMesh) return;
+                const mats = ensureMaterialArray(obj.material);
+                mats.forEach((m)=>{
+                    if(m && m.color){
+                        if(!m.userData) m.userData = {};
+                        if(!m.userData._origHSL){
+                            const hsl = {h:0,s:0,l:0};
+                            m.color.getHSL(hsl);
+                            m.userData._origHSL = hsl; // {h,s,l}
+                        }
+                    }
+                });
+            });
+        }
+
+        function applySaturationFromCache(root, satMult){
+            root.traverse((obj)=>{
+                if(!obj.isMesh) return;
+                const mats = ensureMaterialArray(obj.material);
+                mats.forEach((m)=>{
+                    if(m && m.color && m.userData && m.userData._origHSL){
+                        const o = m.userData._origHSL;
+                        const s = clamp01(o.s * satMult);
+                        m.color.setHSL(o.h, s, o.l);
+                        m.needsUpdate = true;
+                    }
+                });
+            });
+        }
+
+        // boids 颜色饱和度提升（直接改材质颜色）
+        function boostColorHex(hex, satMult){
+            const c = new THREE.Color(hex);
+            const hsl = {h:0,s:0,l:0};
+            c.getHSL(hsl);
+            c.setHSL(hsl.h, clamp01(hsl.s * satMult), hsl.l);
+            return c;
+        }
+
         // --- 0. 动物数据库（原样保留） ---
         const animalData = {
             "POLYMER TURTLE": {
@@ -484,13 +534,18 @@
                 this.modelGroup.add(this.turntable);
                 this.modelGroup.visible = false;
 
+                // ✅ boids：饱和度+30%，放大+20%
                 const count = 10;
                 const boidGeo = new THREE.ConeGeometry(0.8, 2, 4);
                 for(let i=0; i<count; i++) {
                     const isMutant = Math.random() > 0.8;
-                    const color = isMutant ? 0xcc3333 : (Math.random()>0.5 ? 0x666666 : 0x333333);
-                    const mat = new THREE.MeshBasicMaterial({ color: color, wireframe: true });
+                    const baseHex = isMutant ? 0xcc3333 : (Math.random()>0.5 ? 0x666666 : 0x333333);
+                    const boosted = boostColorHex(baseHex, BOOST_SAT_MULT);
+                    const mat = new THREE.MeshBasicMaterial({ color: boosted, wireframe: true });
                     const mesh = new THREE.Mesh(boidGeo, mat);
+
+                    mesh.scale.set(BOOST_SCALE_MULT, BOOST_SCALE_MULT, BOOST_SCALE_MULT);
+
                     const offset = new THREE.Vector3((Math.random()-0.5)*20, (Math.random()-0.5)*10, (Math.random()-0.5)*20);
                     mesh.position.copy(this.center).add(offset);
                     mesh.userData = { offset: offset, phase: Math.random() * Math.PI };
@@ -498,10 +553,19 @@
                     this.boids.push(mesh);
                 }
 
+                // 记录模型原始scale
+                this._normalBaseScale = new THREE.Vector3(5,5,5);
+                this._mutantBaseScale = new THREE.Vector3(0.1,0.1,0.1);
+
                 loader.load(normalFile, (gltf) => {
                     this.normalMesh = gltf.scene;
-                    this.normalMesh.scale.set(5,5,5);
+                    this.normalMesh.scale.copy(this._normalBaseScale);
                     this.turntable.add(this.normalMesh);
+
+                    // ✅ 缓存原色，然后默认“加饱和 + 放大”
+                    cacheOriginalColors(this.normalMesh);
+                    this.applyBoostedLook();
+
                     if(gltf.animations.length>0) {
                         this.nmMixer = new THREE.AnimationMixer(this.normalMesh);
                         this.nmMixer.clipAction(gltf.animations[0]).play();
@@ -510,14 +574,44 @@
 
                 loader.load(mutantFile, (gltf) => {
                     this.mutantMesh = gltf.scene;
-                    this.mutantMesh.scale.set(0.1,0.1,0.1);
+                    this.mutantMesh.scale.copy(this._mutantBaseScale);
                     this.mutantMesh.visible = false;
                     this.turntable.add(this.mutantMesh);
+
+                    // ✅ 缓存原色（聚焦后要恢复原饱和度）
+                    cacheOriginalColors(this.mutantMesh);
+                    // 默认也给它boost（虽然大部分时间隐藏）
+                    this.applyBoostedLook();
+
                     if(gltf.animations.length>0) {
                         this.mmMixer = new THREE.AnimationMixer(this.mutantMesh);
                         this.mmMixer.clipAction(gltf.animations[0]).play();
                     }
                 }, undefined, () => {});
+            }
+
+            // ✅ 默认状态：饱和度+30%，放大20%
+            applyBoostedLook(){
+                if(this.normalMesh){
+                    applySaturationFromCache(this.normalMesh, BOOST_SAT_MULT);
+                    this.normalMesh.scale.copy(this._normalBaseScale).multiplyScalar(BOOST_SCALE_MULT);
+                }
+                if(this.mutantMesh){
+                    applySaturationFromCache(this.mutantMesh, BOOST_SAT_MULT);
+                    this.mutantMesh.scale.copy(this._mutantBaseScale).multiplyScalar(BOOST_SCALE_MULT);
+                }
+            }
+
+            // ✅ 聚焦：恢复原饱和度（不加成、不变灰），放大15%
+            applyFocusedLook(){
+                if(this.normalMesh){
+                    applySaturationFromCache(this.normalMesh, 1.0);
+                    this.normalMesh.scale.copy(this._normalBaseScale).multiplyScalar(FOCUS_SCALE_MULT);
+                }
+                if(this.mutantMesh){
+                    applySaturationFromCache(this.mutantMesh, 1.0);
+                    this.mutantMesh.scale.copy(this._mutantBaseScale).multiplyScalar(FOCUS_SCALE_MULT);
+                }
             }
 
             update(delta) {
@@ -555,6 +649,10 @@
                 if (isHovering && this.state !== 'hover') {
                     this.state = 'hover';
                     this.modelGroup.visible = true;
+
+                    // hover时也保持“加饱和 + 放大20%”
+                    this.applyBoostedLook();
+
                     this.turntable.scale.set(1,1,1);
                     gsap.to(this.turntable.scale, {x:1, y:1, z:1, duration:0.5});
                     this.boids.forEach(b => gsap.to(b.scale, {x:0, y:0, z:0, duration:0.3}));
@@ -562,7 +660,7 @@
                 else if (!isHovering && this.state === 'hover') {
                     this.state = 'swarm';
                     this.modelGroup.visible = false;
-                    this.boids.forEach(b => gsap.to(b.scale, {x:1, y:1, z:1, duration:0.5, delay:0.2}));
+                    this.boids.forEach(b => gsap.to(b.scale, {x:BOOST_SCALE_MULT, y:BOOST_SCALE_MULT, z:BOOST_SCALE_MULT, duration:0.5, delay:0.2}));
                 }
             }
 
@@ -571,20 +669,28 @@
                 this.state = 'focused';
                 document.body.classList.add('focus-mode');
 
+                // ✅ 聚焦：恢复原饱和度 + 放大15%
+                this.applyFocusedLook();
+
                 this.modelGroup.visible = true;
                 const tl = gsap.timeline();
+
                 if(this.normalMesh) {
                     tl.to(this.normalMesh.position, {x:0.5, duration:0.05, yoyo:true, repeat:5})
                       .to(this.normalMesh.scale, {x:0.1, y:0.1, z:0.1, duration:0.2});
                 }
+
                 tl.add(() => {
                     if(this.normalMesh) this.normalMesh.visible = false;
                     if(this.mutantMesh) this.mutantMesh.visible = true;
                 });
+
                 if(this.mutantMesh) {
+                    // ✅ 你的“放大15%”：把原来终点30变成 30*1.15 = 34.5
+                    const target = 30 * FOCUS_SCALE_MULT;
                     tl.fromTo(this.mutantMesh.scale,
-                        {x:0.1, y:0.1, z:0.1},
-                        {x:30, y:30, z:30, duration:0.8, ease:"back.out(1.2)"}
+                        {x:this._mutantBaseScale.x * FOCUS_SCALE_MULT, y:this._mutantBaseScale.y * FOCUS_SCALE_MULT, z:this._mutantBaseScale.z * FOCUS_SCALE_MULT},
+                        {x:target, y:target, z:target, duration:0.8, ease:"back.out(1.2)"}
                     );
                 }
             }
@@ -596,17 +702,21 @@
 
                 const tl = gsap.timeline();
                 if(this.mutantMesh) tl.to(this.mutantMesh.scale, {x:0.1, y:0.1, z:0.1, duration:0.3});
+
                 tl.add(() => {
                     if(this.mutantMesh) this.mutantMesh.visible = false;
+
                     if(this.normalMesh) {
                         this.normalMesh.visible = true;
-                        this.normalMesh.scale.set(5,5,5);
+                        // ✅ 回到“加饱和 + 放大20%”
+                        this.applyBoostedLook();
                     }
                     this.modelGroup.visible = false;
                 });
+
                 this.boids.forEach(b => {
                     b.visible = true;
-                    gsap.to(b.scale, {x:1, y:1, z:1, duration:0.5});
+                    gsap.to(b.scale, {x:BOOST_SCALE_MULT, y:BOOST_SCALE_MULT, z:BOOST_SCALE_MULT, duration:0.5});
                 });
             }
         }
@@ -672,7 +782,6 @@
             raycaster.setFromCamera(mouse, camera);
 
             const intersects = raycaster.intersectObjects(scene.children, true);
-
             for(let hit of intersects) {
                 let obj = hit.object;
                 while(obj) {
@@ -687,7 +796,8 @@
 
             if (!clickedSwarm) {
                 swarms.forEach(swarm => {
-                    const dist = new THREE.Vector2(swarm.center.x, swarm.center.z).distanceTo(new THREE.Vector2(mouseWorld.x, mouseWorld.z));
+                    const dist = new THREE.Vector2(swarm.center.x, swarm.center.z)
+                        .distanceTo(new THREE.Vector2(mouseWorld.x, mouseWorld.z));
                     if (dist < 15) clickedSwarm = swarm;
                 });
             }
