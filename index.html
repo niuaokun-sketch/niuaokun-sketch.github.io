@@ -2,7 +2,7 @@
 <html lang="zh">
 <head>
     <meta charset="UTF-8">
-    <title>ECO-MONITOR | 稳定修复版</title>
+    <title>ECO-MONITOR | 精准触控版</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
     
     <style>
@@ -10,7 +10,7 @@
         body { 
             margin: 0; overflow: hidden; 
             background-color: #ffffff; 
-            cursor: none; /* 默认隐藏 */
+            cursor: none; 
             font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
         }
         
@@ -20,13 +20,13 @@
             pointer-events: none; 
             display: none; 
             opacity: 0; transition: opacity 0.5s;
-            z-index: 100;
+            z-index: 999; /* 🌟 提高层级，确保显示 */
         }
         #ui-layer.active { display: block; opacity: 1; }
 
         /* 左侧数据 */
         .left-panel {
-            position: absolute; left: 5%; top: 20%; 
+            position: absolute; left: 5%; top: 15%; /* 上移一点防止遮挡 */
             display: flex; flex-direction: column; align-items: flex-start;
             pointer-events: auto;
         }
@@ -74,8 +74,8 @@
             backdrop-filter: blur(15px);
             display: flex; flex-direction: column;
             box-shadow: 0 20px 50px rgba(0,0,0,0.3);
-            max-height: 85vh; /* 防止太高超出屏幕 */
-            overflow-y: auto; /* 内容过多可滚动 */
+            max-height: 85vh;
+            overflow-y: auto;
         }
 
         /* 视频容器 */
@@ -87,7 +87,7 @@
             border: 1px solid #444;
             overflow: hidden;
             position: relative;
-            flex-shrink: 0; /* 防止被挤压 */
+            flex-shrink: 0;
         }
         #ui-video {
             width: 100%; height: 100%;
@@ -134,7 +134,7 @@
         
         #loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #ccc; font-size: 12px; pointer-events: none; transition: opacity 0.5s; }
         
-        /* 🌟 核心修复：当 active 时强制显示鼠标 */
+        /* 强制显示鼠标 */
         body.active-mode { cursor: auto !important; }
         #ui-layer:hover, .close-btn:hover { cursor: default; }
     </style>
@@ -347,16 +347,21 @@
                 this.center = centerPos.clone();
                 this.group = new THREE.Group();
                 scene.add(this.group);
+                
+                // 🌟 给 Group 加标记，方便射线检测
+                this.group.userData = { swarmName: name, isSwarm: true };
 
                 this.boids = []; 
                 this.state = 'swarm'; 
+                
                 this.modelGroup = new THREE.Group(); 
-                this.turntable = new THREE.Group(); 
+                this.turntable = new THREE.Group();  
                 
                 this.group.add(this.modelGroup);
                 this.modelGroup.add(this.turntable);
                 this.modelGroup.visible = false; 
 
+                // 几何体
                 const count = 10;
                 const boidGeo = new THREE.ConeGeometry(0.8, 2, 4); 
                 for(let i=0; i<count; i++) {
@@ -367,11 +372,13 @@
                     const offset = new THREE.Vector3((Math.random()-0.5)*20, (Math.random()-0.5)*10, (Math.random()-0.5)*20);
                     mesh.position.copy(this.center).add(offset);
                     mesh.userData = { offset: offset, phase: Math.random() * Math.PI };
-                    scene.add(mesh); 
+                    
+                    // 🌟 几何体也加到 group 里，方便射线检测
+                    this.group.add(mesh); 
                     this.boids.push(mesh);
                 }
 
-                // 🛡️ 修复核心：安全加载模型
+                // 加载模型
                 loader.load(normalFile, (gltf) => {
                     this.normalMesh = gltf.scene;
                     this.normalMesh.scale.set(5,5,5); 
@@ -380,7 +387,7 @@
                         this.nmMixer = new THREE.AnimationMixer(this.normalMesh);
                         this.nmMixer.clipAction(gltf.animations[0]).play();
                     }
-                }, undefined, (e) => console.log("加载失败:", normalFile));
+                }, undefined, (e) => console.log("Load err:", normalFile));
 
                 loader.load(mutantFile, (gltf) => {
                     this.mutantMesh = gltf.scene;
@@ -391,7 +398,7 @@
                         this.mmMixer = new THREE.AnimationMixer(this.mutantMesh);
                         this.mmMixer.clipAction(gltf.animations[0]).play();
                     }
-                }, undefined, (e) => console.log("加载失败:", mutantFile));
+                }, undefined, (e) => console.log("Load err:", mutantFile));
             }
 
             update(delta) {
@@ -414,7 +421,6 @@
                 this.modelGroup.position.set(this.center.x, centerY + 5, this.center.z);
 
                 if (this.state === 'focused') {
-                    // 🛡️ 修复核心：如果模型已加载，则旋转
                     this.turntable.rotation.y -= 0.015; 
                     this.modelGroup.position.y = centerY + 12 + Math.sin(time * 1.5) * 1.5; 
                 } else {
@@ -446,7 +452,6 @@
                 this.state = 'focused';
                 this.modelGroup.visible = true;
                 const tl = gsap.timeline();
-                // 🛡️ 修复核心：安全访问模型
                 if(this.normalMesh) {
                     tl.to(this.normalMesh.position, {x:0.5, duration:0.05, yoyo:true, repeat:5})
                       .to(this.normalMesh.scale, {x:0.1, y:0.1, z:0.1, duration:0.2});
@@ -456,7 +461,6 @@
                     if(this.mutantMesh) this.mutantMesh.visible = true;
                 });
                 if(this.mutantMesh) {
-                    // 30倍巨大化
                     tl.fromTo(this.mutantMesh.scale, 
                         {x:0.1, y:0.1, z:0.1}, 
                         {x:30, y:30, z:30, duration:0.8, ease:"back.out(1.2)"}
@@ -506,13 +510,17 @@
             if (focusedSwarm) {
                 focusedSwarm.unfocus();
                 focusedSwarm = null;
+                
                 videoEl.pause();
                 videoEl.currentTime = 0;
+
                 gsap.to(camera.position, {x: 0, y: 60, z: 80, duration: 1.5, ease: "power2.inOut"});
                 gsap.to(controls.target, {x: 0, y: 0, z: 0, duration: 1.5});
+                
                 uiLayer.classList.remove('active');
                 document.getElementById('ui-header').style.opacity = 1;
-                document.body.classList.remove('active-mode'); // 隐藏鼠标
+                document.body.classList.remove('active-mode'); 
+                
                 droneGroup.visible = false;
             }
         };
@@ -533,11 +541,37 @@
         document.addEventListener('click', (e) => {
             if (e.target.closest('.close-btn') || e.target.closest('.right-panel') || e.target.closest('.left-panel')) return;
 
+            // 🌟 核心修复：使用 Raycast 检测物体，而非距离
+            mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+            raycaster.setFromCamera(mouse, camera);
+            
+            // 检测场景中的所有物体
+            const intersects = raycaster.intersectObjects(scene.children, true);
             let clickedSwarm = null;
-            swarms.forEach(swarm => {
-                const dist = new THREE.Vector2(swarm.center.x, swarm.center.z).distanceTo(new THREE.Vector2(mouseWorld.x, mouseWorld.z));
-                if (dist < 15) clickedSwarm = swarm;
-            });
+
+            // 遍历点击到的物体，寻找属于 Swarm 的对象
+            for(let hit of intersects) {
+                // 向上查找 group 父级
+                let obj = hit.object;
+                while(obj) {
+                    if (obj.userData && obj.userData.isSwarm) {
+                        // 找到对应的 swarm 实例
+                        clickedSwarm = swarms.find(s => s.name === obj.userData.swarmName);
+                        break;
+                    }
+                    obj = obj.parent;
+                }
+                if (clickedSwarm) break;
+            }
+
+            // 如果没点到物体，保留距离检测作为备用方案
+            if (!clickedSwarm) {
+                swarms.forEach(swarm => {
+                    const dist = new THREE.Vector2(swarm.center.x, swarm.center.z).distanceTo(new THREE.Vector2(mouseWorld.x, mouseWorld.z));
+                    if (dist < 20) clickedSwarm = swarm; // 扩大点击判定范围
+                });
+            }
 
             if (clickedSwarm) {
                 if (focusedSwarm !== clickedSwarm) {
@@ -573,7 +607,7 @@
 
                     uiLayer.classList.add('active');
                     document.getElementById('ui-header').style.opacity = 0;
-                    document.body.classList.add('active-mode'); // 强制显示鼠标
+                    document.body.classList.add('active-mode'); 
 
                     droneGroup.visible = true;
                 }
