@@ -2,7 +2,7 @@
 <html lang="zh">
 <head>
     <meta charset="UTF-8">
-    <title>ECO-MONITOR | 鲜艳巨兽版</title>
+    <title>ECO-MONITOR | 视频档案版</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
     
     <style>
@@ -45,23 +45,53 @@
         }
         .stat-box span { color: #fff; margin-left: 10px; }
 
-        /* 右侧叙事 */
+        /* 右侧叙事 (带视频) */
         .right-panel {
-            position: absolute; right: 5%; bottom: 15%; 
-            width: 300px;
-            background-color: rgba(20, 20, 20, 0.9);
+            position: absolute; right: 5%; bottom: 10%; 
+            width: 320px;
+            background-color: rgba(20, 20, 20, 0.95);
             color: #ddd;
-            padding: 30px;
+            padding: 25px;
             border-left: 4px solid #ff4444;
             pointer-events: auto;
-            backdrop-filter: blur(5px);
+            backdrop-filter: blur(10px);
+            display: flex; flex-direction: column;
         }
+
+        /* 🌟 视频容器样式 */
+        .video-box {
+            width: 100%;
+            height: 180px; /* 固定高度，保持排版整齐 */
+            background: #000;
+            margin-bottom: 20px;
+            border: 1px solid #444;
+            overflow: hidden;
+            position: relative;
+        }
+        /* 视频本身 */
+        #ui-video {
+            width: 100%; height: 100%;
+            object-fit: cover; /* 填满容器 */
+            opacity: 0.8; /* 稍微暗一点，更有监控感 */
+            transition: opacity 0.3s;
+        }
+        #ui-video:hover { opacity: 1; }
+
+        /* 视频上的“REC”红点 */
+        .rec-tag {
+            position: absolute; top: 10px; left: 10px;
+            color: #ff0000; font-size: 10px; font-weight: bold;
+            animation: blink 1s infinite;
+            z-index: 10;
+        }
+        @keyframes blink { 50% { opacity: 0; } }
+
         .desc-text {
-            font-size: 14px; line-height: 1.8; margin-bottom: 20px;
-            font-style: italic;
+            font-size: 13px; line-height: 1.6; margin-bottom: 15px;
+            font-style: italic; color: #ccc;
         }
         .detail-list { font-size: 12px; color: #999; line-height: 1.6; }
-        .detail-item { margin-bottom: 8px; }
+        .detail-item { margin-bottom: 6px; }
         .detail-label { color: #ff4444; font-weight: bold; margin-right: 5px; }
 
         /* 关闭按钮 */
@@ -96,6 +126,7 @@
 
     <div id="ui-layer">
         <div class="close-btn" onclick="closePanel()">×</div>
+        
         <div class="left-panel">
             <div class="title-box" id="ui-name">TARGET NAME</div>
             <div class="stat-box">LATIN: <span id="ui-latin">Unknown</span></div>
@@ -103,13 +134,21 @@
             <div class="stat-box">TOXICITY LEVEL: <span id="ui-tox">0%</span></div>
             <div class="stat-box">STATUS: <span style="color:#ff4444">CRITICAL</span></div>
         </div>
+
         <div class="right-panel">
+            <!-- 🌟 视频区域 -->
+            <div class="video-box">
+                <div class="rec-tag">● REC</div>
+                <!-- 这里的 src 会由 JS 动态替换 -->
+                <video id="ui-video" loop muted playsinline autoplay></video>
+            </div>
+
             <div class="desc-text" id="ui-desc">...</div>
             <div class="detail-list">
                 <div class="detail-item"><span class="detail-label">外貌特征:</span><span id="ui-look">...</span></div>
                 <div class="detail-item"><span class="detail-label">行为异变:</span><span id="ui-act">...</span></div>
             </div>
-            <div style="width: 50px; height: 2px; background: #ff4444; margin-top: 20px;"></div>
+            <div style="width: 50px; height: 2px; background: #ff4444; margin-top: 15px;"></div>
         </div>
     </div>
 
@@ -159,26 +198,52 @@
         import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
         import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 
-        // --- 0. 动物数据库 ---
+        // --- 0. 动物数据库 (🌟 在这里填写你的视频文件名) ---
+        // ⚠️ 请确保视频文件已上传，名字对得上
         const animalData = {
-            "POLYMER TURTLE": { name: "聚合体海龟", latin: "CHELONIA PLASTICUS", source: "海洋微塑料堆积", tox: "85%", desc: "这只海龟不再寻找水母，它通过过滤海水中的微塑料维生。它的背甲已经完全角质化，融合了人类丢弃的瓶盖和打火机碎片，形成了一层色彩斑斓但死寂的伪装。", look: "背甲由五颜六色的塑料碎片马赛克构成，四肢僵硬。", act: "行动迟缓，经常误把漂浮的塑料袋当做同伴进行求偶。" },
-            "PLASTIC CRAB": { name: "工业寄居蟹", latin: "PAGURUS INDUSTRIALIS", source: "海岸垃圾倾倒", tox: "45%", desc: "随着天然贝壳因海洋酸化而溶解，这种寄居蟹进化出了适应标准工业螺纹的腹部。它们终生背负着红色的塑料瓶盖，成为沙滩上移动的工业废品。", look: "背部背着巨大的红色塑料瓶盖，双螯呈现金属光泽。", act: "在垃圾堆中快速穿梭，通过敲击背上的塑料壳交流。" },
-            "OIL BIRD": { name: "油污鸬鹚", latin: "PHALACROCORAX OLEUM", source: "原油泄漏事故", tox: "92%", desc: "它的羽毛不再防水，而是永久性地被重油浸透。这种鸟类已经放弃了飞行，转而利用油层的浮力在水面漂流。它的存在就是一场无声的生态抗议。", look: "浑身漆黑粘稠，羽毛在阳光下反射出彩虹般的油膜光泽。", act: "不再潜水，而是像浮标一样漂在水面，吞食沾油的死鱼。" },
-            "FIBER JELLY": { name: "光纤水母", latin: "MEDUSA FIBEROPTICUS", source: "海底电缆废弃物", tox: "60%", desc: "生活在海底数据中心附近的水母，吸收了泄漏的铜离子。它的触须与断裂的光纤纠缠共生，体内脉冲着并不属于自然的冷蓝色人造光。", look: "半透明身体内有发光的电路纹理，触须像缠绕的数据线。", act: "会被海底电缆的电磁场吸引，成群结队地干扰通信信号。" },
-            "SONAR DOLPHIN": { name: "声呐海豚", latin: "DELPHINUS SONARIS", source: "军事声呐与噪音", tox: "30%", desc: "为了在充满船舶噪音的海洋中交流，这种海豚的声带发生了病变式进化。它们能发出甚至能震碎玻璃的高频尖叫，皮肤呈现出金属般的苍白。", look: "皮肤苍白如死尸，头部有类似雷达接收器的增生组织。", act: "孤独游动，偶尔发出令人耳鸣的尖锐声波，攻击靠近的船只。" },
-            "TOXIC SNAKE": { name: "荧光环蛇", latin: "BUNGARUS RADIUM", source: "化工厂非法排污", tox: "99%", desc: "栖息在化工废料堆填区。它的毒液混合了强酸与重金属，原本黑白相间的环纹变成了其标志性的剧毒荧光绿，在夜间发出幽幽的警告。", look: "身体细长，鳞片缝隙中渗出绿色荧光液。", act: "在受污染的泥土中钻行，留下一条发光的粘液轨迹。" },
-            "ACID FROG": { name: "酸蚀箭毒蛙", latin: "DENDROBATES ACIDUS", source: "酸雨与工业径流", tox: "75%", desc: "它的皮肤进化成了耐酸的角质层。为了适应强酸性的水坑，它的背部长出了类似晶体的防御刺。它是唯一能在pH值低于3的水域中存活的脊椎动物。", look: "皮肤粗糙如砂纸，背部有透明的晶体突起。", act: "静止不动时像一块被腐蚀的矿石，捕食被酸雨杀死的昆虫。" },
-            "RADIOACTIVE FISH": { name: "核辐射鱼", latin: "PISCES NUCLEARIS", source: "核废水排放", tox: "100%", desc: "直接暴露在高剂量辐射下的幸存者。它的DNA链条完全破碎重组，身体呈现出不稳定的半透明状，骨骼在体内清晰可见并发着蓝光。", look: "身体半透明，骨架发光，眼睛多达四只或完全退化。", act: "游动姿势抽搐且不规律，仿佛神经系统处于持续短路状态。" },
-            "GHOST SEAL": { name: "幽灵网缚海豹", latin: "PHOCA LAQUEUS", source: "废弃渔网缠绕", tox: "50%", desc: "这只海豹在幼年时被尼龙渔网缠住。随着身体长大，渔网并未断裂，而是嵌入了皮肉，与骨骼长在了一起。渔网成为了它身体的一部分，一种痛苦的铠甲。", look: "颈部和躯干嵌着彩色的尼龙绳索，伤口处有增生肉瘤。", act: "极具攻击性，会主动撕咬任何靠近的绳索状物体。" }
+            "POLYMER TURTLE": { 
+                video: "./turtle.mp4", // 你的视频文件名
+                name: "聚合体海龟", latin: "CHELONIA PLASTICUS", source: "海洋微塑料堆积", tox: "85%", desc: "这只海龟不再寻找水母，它通过过滤海水中的微塑料维生。它的背甲已经完全角质化，融合了人类丢弃的瓶盖和打火机碎片，形成了一层色彩斑斓但死寂的伪装。", look: "背甲由五颜六色的塑料碎片马赛克构成，四肢僵硬。", act: "行动迟缓，经常误把漂浮的塑料袋当做同伴进行求偶。" 
+            },
+            "PLASTIC CRAB": { 
+                video: "./crab.mp4", 
+                name: "工业寄居蟹", latin: "PAGURUS INDUSTRIALIS", source: "海岸垃圾倾倒", tox: "45%", desc: "随着天然贝壳因海洋酸化而溶解，这种寄居蟹进化出了适应标准工业螺纹的腹部。它们终生背负着红色的塑料瓶盖，成为沙滩上移动的工业废品。", look: "背部背着巨大的红色塑料瓶盖，双螯呈现金属光泽。", act: "在垃圾堆中快速穿梭，通过敲击背上的塑料壳交流。" 
+            },
+            "OIL BIRD": { 
+                video: "./bird.mp4", 
+                name: "油污鸬鹚", latin: "PHALACROCORAX OLEUM", source: "原油泄漏事故", tox: "92%", desc: "它的羽毛不再防水，而是永久性地被重油浸透。这种鸟类已经放弃了飞行，转而利用油层的浮力在水面漂流。它的存在就是一场无声的生态抗议。", look: "浑身漆黑粘稠，羽毛在阳光下反射出彩虹般的油膜光泽。", act: "不再潜水，而是像浮标一样漂在水面，吞食沾油的死鱼。" 
+            },
+            "FIBER JELLY": { 
+                video: "./jelly.mp4", 
+                name: "光纤水母", latin: "MEDUSA FIBEROPTICUS", source: "海底电缆废弃物", tox: "60%", desc: "生活在海底数据中心附近的水母，吸收了泄漏的铜离子。它的触须与断裂的光纤纠缠共生，体内脉冲着并不属于自然的冷蓝色人造光。", look: "半透明身体内有发光的电路纹理，触须像缠绕的数据线。", act: "会被海底电缆的电磁场吸引，成群结队地干扰通信信号。" 
+            },
+            "SONAR DOLPHIN": { 
+                video: "./dolphin.mp4", 
+                name: "声呐海豚", latin: "DELPHINUS SONARIS", source: "军事声呐与噪音", tox: "30%", desc: "为了在充满船舶噪音的海洋中交流，这种海豚的声带发生了病变式进化。它们能发出甚至能震碎玻璃的高频尖叫，皮肤呈现出金属般的苍白。", look: "皮肤苍白如死尸，头部有类似雷达接收器的增生组织。", act: "孤独游动，偶尔发出令人耳鸣的尖锐声波，攻击靠近的船只。" 
+            },
+            "TOXIC SNAKE": { 
+                video: "./snake.mp4", 
+                name: "荧光环蛇", latin: "BUNGARUS RADIUM", source: "化工厂非法排污", tox: "99%", desc: "栖息在化工废料堆填区。它的毒液混合了强酸与重金属，原本黑白相间的环纹变成了其标志性的剧毒荧光绿，在夜间发出幽幽的警告。", look: "身体细长，鳞片缝隙中渗出绿色荧光液。", act: "在受污染的泥土中钻行，留下一条发光的粘液轨迹。" 
+            },
+            "ACID FROG": { 
+                video: "./frog.mp4", 
+                name: "酸蚀箭毒蛙", latin: "DENDROBATES ACIDUS", source: "酸雨与工业径流", tox: "75%", desc: "它的皮肤进化成了耐酸的角质层。为了适应强酸性的水坑，它的背部长出了类似晶体的防御刺。它是唯一能在pH值低于3的水域中存活的脊椎动物。", look: "皮肤粗糙如砂纸，背部有透明的晶体突起。", act: "静止不动时像一块被腐蚀的矿石，捕食被酸雨杀死的昆虫。" 
+            },
+            "RADIOACTIVE FISH": { 
+                video: "./fish.mp4", 
+                name: "核辐射鱼", latin: "PISCES NUCLEARIS", source: "核废水排放", tox: "100%", desc: "直接暴露在高剂量辐射下的幸存者。它的DNA链条完全破碎重组，身体呈现出不稳定的半透明状，骨骼在体内清晰可见并发着蓝光。", look: "身体半透明，骨架发光，眼睛多达四只或完全退化。", act: "游动姿势抽搐且不规律，仿佛神经系统处于持续短路状态。" 
+            },
+            "GHOST SEAL": { 
+                video: "./seal.mp4", 
+                name: "幽灵网缚海豹", latin: "PHOCA LAQUEUS", source: "废弃渔网缠绕", tox: "50%", desc: "这只海豹在幼年时被尼龙渔网缠住。随着身体长大，渔网并未断裂，而是嵌入了皮肉，与骨骼长在了一起。渔网成为了它身体的一部分，一种痛苦的铠甲。", look: "颈部和躯干嵌着彩色的尼龙绳索，伤口处有增生肉瘤。", act: "极具攻击性，会主动撕咬任何靠近的绳索状物体。" 
+            }
         };
 
         // --- 1. 场景 ---
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0xffffff);
-        // 🌟 核心修改：删除了 Fog，颜色不再发灰，直接鲜艳！
         // scene.fog = new THREE.FogExp2(0xffffff, 0.015); 
 
-        // 🌟 增强灯光：让模型像在展示台一样亮
         const ambientLight = new THREE.AmbientLight(0xffffff, 3.5); 
         scene.add(ambientLight);
         const dirLight = new THREE.DirectionalLight(0xffffff, 3.0);
@@ -346,11 +411,8 @@
                 const centerY = getElevation(this.center.x, this.center.z);
                 this.modelGroup.position.set(this.center.x, centerY + 5, this.center.z);
 
-                // 🌟 聚焦时：强制高速自转展示 🌟
                 if (this.state === 'focused') {
-                    // 这里让整个组旋转，不受内部骨骼影响
-                    this.modelGroup.rotation.y -= 0.02; // 逆时针旋转
-                    // 上下浮动
+                    this.modelGroup.rotation.y -= 0.02; 
                     this.modelGroup.position.y = centerY + 12 + Math.sin(time * 1.5) * 1.5; 
                 }
 
@@ -387,10 +449,10 @@
                     if(this.mutantMesh) this.mutantMesh.visible = true;
                 });
                 if(this.mutantMesh) {
-                    // 🌟 放大 30 倍 (巨物！) 🌟
+                    // 巨物缩放
                     tl.fromTo(this.mutantMesh.scale, 
                         {x:0.1, y:0.1, z:0.1}, 
-                        {x:30, y:30, z:30, duration:0.8, ease:"back.out(2.5)"} // 弹跳感更强
+                        {x:30, y:30, z:30, duration:0.8, ease:"back.out(1.2)"}
                     );
                 }
             }
@@ -430,6 +492,7 @@
         // --- 6. 交互逻辑 ---
         const clock = new THREE.Clock();
         const uiLayer = document.getElementById('ui-layer');
+        const videoEl = document.getElementById('ui-video');
         let focusedSwarm = null; 
         
         window.closePanel = function() {
@@ -437,6 +500,10 @@
                 focusedSwarm.unfocus();
                 focusedSwarm = null;
                 
+                // 停止视频
+                videoEl.pause();
+                videoEl.currentTime = 0;
+
                 // 镜头复原
                 gsap.to(camera.position, {x: 0, y: 60, z: 80, duration: 1.5, ease: "power2.inOut"});
                 gsap.to(controls.target, {x: 0, y: 0, z: 0, duration: 1.5});
@@ -477,7 +544,7 @@
                     focusedSwarm = clickedSwarm;
                     focusedSwarm.focus();
 
-                    // 镜头推进：🌟 大幅后退以容纳巨物 (z+80)
+                    // 镜头推进
                     const targetPos = focusedSwarm.modelGroup.position;
                     gsap.to(camera.position, {
                         x: targetPos.x + 50, 
@@ -497,6 +564,15 @@
                     document.getElementById('ui-desc').innerText = `"${data.desc || '...'}"`;
                     document.getElementById('ui-look').innerText = data.look || "...";
                     document.getElementById('ui-act').innerText = data.act || "...";
+
+                    // 🌟 视频切换逻辑
+                    if (data.video) {
+                        videoEl.src = data.video;
+                        // 稍微延迟播放，防止卡顿
+                        setTimeout(() => {
+                            videoEl.play().catch(e => console.log("Autoplay blocked:", e));
+                        }, 500);
+                    }
 
                     uiLayer.classList.add('active');
                     document.getElementById('ui-header').style.opacity = 0;
@@ -524,9 +600,8 @@
             if (focusedSwarm) {
                 cursorGroup.scale.set(0,0,0);
                 
-                // 无人机绕更大的圈
                 const targetPos = focusedSwarm.modelGroup.position;
-                droneGroup.position.x = targetPos.x + Math.sin(time) * 35; // 35半径
+                droneGroup.position.x = targetPos.x + Math.sin(time) * 35; // 半径加大
                 droneGroup.position.z = targetPos.z + Math.cos(time) * 35;
                 droneGroup.position.y = targetPos.y + 25 + Math.sin(time*2)*2;
                 droneGroup.lookAt(targetPos);
