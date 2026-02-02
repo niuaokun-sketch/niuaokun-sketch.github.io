@@ -2,7 +2,7 @@
 <html lang="zh">
 <head>
     <meta charset="UTF-8">
-    <title>ECO-MONITOR | 完美展示版</title>
+    <title>ECO-MONITOR | 完美修复版</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
     
     <style>
@@ -45,7 +45,7 @@
         }
         .stat-box span { color: #fff; margin-left: 10px; }
 
-        /* 右侧叙事 (加大面板) */
+        /* 右侧叙事 */
         .right-panel {
             position: absolute; right: 5%; bottom: 8%; 
             width: 420px; 
@@ -73,6 +73,7 @@
             width: 100%; height: 100%;
             object-fit: cover;
             opacity: 0.9;
+            display: block; /* 确保视频块级显示 */
         }
         .rec-tag {
             position: absolute; top: 15px; left: 15px;
@@ -92,7 +93,7 @@
         }
         .detail-list { font-size: 13px; color: #aaa; line-height: 1.7; }
         .detail-item { margin-bottom: 10px; }
-        .detail-label { color: #ff4444; font-weight: bold; margin-right: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .detail-label { color: #ff4444; font-weight: bold; margin-right: 8px; text-transform: uppercase; }
 
         /* 关闭按钮 */
         .close-btn {
@@ -138,6 +139,7 @@
         <div class="right-panel">
             <div class="video-box">
                 <div class="rec-tag">● REC 00:14:23</div>
+                <!-- 🌟 视频标签：确保 muted 和 playsinline -->
                 <video id="ui-video" loop muted playsinline></video>
             </div>
 
@@ -158,7 +160,6 @@
         }
     </script>
 
-    <!-- Shader -->
     <script type="x-shader/x-vertex" id="vertexShader">
         uniform vec3 uMouse;
         attribute float size;
@@ -213,15 +214,13 @@
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0xffffff);
         
-        // 🌟 终极灯光设置：告别灰色 🌟
-        const ambientLight = new THREE.AmbientLight(0xffffff, 4.0); // 强度 4.0，非常亮
+        const ambientLight = new THREE.AmbientLight(0xffffff, 4.0); 
         scene.add(ambientLight);
         
         const dirLight = new THREE.DirectionalLight(0xffffff, 3.0);
         dirLight.position.set(50, 100, 50);
         scene.add(dirLight);
 
-        // 补光灯 (跟随相机，保证正面永远有光)
         const cameraLight = new THREE.DirectionalLight(0xffffff, 1.5);
         scene.add(cameraLight);
 
@@ -327,9 +326,9 @@
                 this.boids = []; 
                 this.state = 'swarm'; 
                 
-                // 🌟 分离位置和旋转，解决动画覆盖问题
-                this.modelGroup = new THREE.Group(); // 负责位移
-                this.turntable = new THREE.Group();  // 负责旋转
+                // 🌟 分离组：位置与旋转
+                this.modelGroup = new THREE.Group(); 
+                this.turntable = new THREE.Group();  
                 
                 this.group.add(this.modelGroup);
                 this.modelGroup.add(this.turntable);
@@ -350,7 +349,7 @@
                     this.boids.push(mesh);
                 }
 
-                // 加载模型 (放入 turntable)
+                // 加载模型
                 loader.load(normalFile, (gltf) => {
                     this.normalMesh = gltf.scene;
                     this.normalMesh.scale.set(5,5,5); 
@@ -392,12 +391,12 @@
                 const centerY = getElevation(this.center.x, this.center.z);
                 this.modelGroup.position.set(this.center.x, centerY + 5, this.center.z);
 
-                // 🌟 强制旋转 turntable，无视动画混合器
+                // 🌟 旋转展示
                 if (this.state === 'focused') {
-                    this.turntable.rotation.y -= 0.015; // 匀速旋转
+                    this.turntable.rotation.y -= 0.015; 
                     this.modelGroup.position.y = centerY + 12 + Math.sin(time * 1.5) * 1.5; 
                 } else {
-                    this.turntable.rotation.y = 0; // 复位
+                    this.turntable.rotation.y = 0;
                 }
 
                 if(this.nmMixer) this.nmMixer.update(delta);
@@ -409,7 +408,6 @@
                 if (isHovering && this.state !== 'hover') {
                     this.state = 'hover';
                     this.modelGroup.visible = true;
-                    // 恢复正常
                     this.turntable.scale.set(1,1,1);
                     gsap.to(this.turntable.scale, {x:1, y:1, z:1, duration:0.5});
                     this.boids.forEach(b => gsap.to(b.scale, {x:0, y:0, z:0, duration:0.3}));
@@ -435,7 +433,6 @@
                     if(this.mutantMesh) this.mutantMesh.visible = true;
                 });
                 if(this.mutantMesh) {
-                    // 🌟 30 倍巨物化
                     tl.fromTo(this.mutantMesh.scale, 
                         {x:0.1, y:0.1, z:0.1}, 
                         {x:30, y:30, z:30, duration:0.8, ease:"back.out(1.2)"}
@@ -489,7 +486,6 @@
                 videoEl.pause();
                 videoEl.currentTime = 0;
 
-                // 镜头复原
                 gsap.to(camera.position, {x: 0, y: 60, z: 80, duration: 1.5, ease: "power2.inOut"});
                 gsap.to(controls.target, {x: 0, y: 0, z: 0, duration: 1.5});
                 
@@ -529,7 +525,6 @@
                     focusedSwarm = clickedSwarm;
                     focusedSwarm.focus();
 
-                    // 镜头推进：🌟 大幅后退以容纳巨物 (z+80)
                     const targetPos = focusedSwarm.modelGroup.position;
                     gsap.to(camera.position, {
                         x: targetPos.x + 50, 
@@ -540,7 +535,6 @@
                     });
                     gsap.to(controls.target, {x: targetPos.x, y: targetPos.y, z: targetPos.z, duration: 1.5});
 
-                    // UI 更新
                     const data = animalData[focusedSwarm.name] || {};
                     document.getElementById('ui-name').innerText = data.name || focusedSwarm.name;
                     document.getElementById('ui-latin').innerText = data.latin || "Unknown";
@@ -552,7 +546,11 @@
 
                     if (data.video) {
                         videoEl.src = data.video;
-                        setTimeout(() => { videoEl.play().catch(e=>console.log(e)); }, 500);
+                        // 🌟 核心视频修复：强制 Load 并 Play
+                        videoEl.load();
+                        videoEl.oncanplay = () => {
+                            videoEl.play().catch(e=>console.log(e));
+                        };
                     }
 
                     uiLayer.classList.add('active');
@@ -578,20 +576,17 @@
             const delta = clock.getDelta();
             const time = Date.now() * 0.001;
 
-            // 🌟 补光灯跟随相机
+            // 🌟 补光灯跟随相机，确保模型永远亮
             cameraLight.position.copy(camera.position);
 
             if (focusedSwarm) {
                 cursorGroup.scale.set(0,0,0);
-                
                 const targetPos = focusedSwarm.modelGroup.position;
                 droneGroup.position.x = targetPos.x + Math.sin(time) * 35; 
                 droneGroup.position.z = targetPos.z + Math.cos(time) * 35;
                 droneGroup.position.y = targetPos.y + 25 + Math.sin(time*2)*2;
                 droneGroup.lookAt(targetPos);
-                
                 recLight.material.color.setHex((Date.now() % 1000 < 500) ? 0xff0000 : 0x330000);
-
             } else {
                 cursorGroup.scale.lerp(new THREE.Vector3(1,1,1), 0.1);
                 let hoverSwarm = null;
@@ -615,7 +610,7 @@
                 cursorHex.rotation.z += 0.01;
             }
 
-            // 🌟 修复 Bug: 确保所有种群的 update 都在运行
+            // 🌟 修复：确保所有种群在所有状态下都刷新
             swarms.forEach(swarm => swarm.update(delta));
 
             controls.update();
