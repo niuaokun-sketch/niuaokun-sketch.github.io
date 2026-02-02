@@ -16,23 +16,23 @@
         }
 
         /* =========================
-           ✅ 轻量灰尘层（只画深色小点）
-           - 覆盖上方空白区域
-           - 底部渐隐（无断层）
-           - pointer-events: none
+           ✅ 轻量雾霾 + 灰尘（性能友好）
+           - 雾霾：静态渐变（几乎0成本）
+           - 灰尘：少量深色小点 + 低FPS
+           - 底部渐隐：自然过渡到消失
            ========================= */
-        #dust-layer{
+        #atmo-layer{
             position: fixed;
             top: 0; left: 0;
             width: 100%;
-            height: 78vh;              /* 你可以改：比如 70vh/85vh */
+            height: 78vh;                 /* 覆盖上方空白区域 */
             pointer-events: none;
             z-index: 60;
-            opacity: 0.65;
+            opacity: 0.72;
             transition: opacity .35s ease;
             overflow: hidden;
 
-            /* 底部渐隐：边缘自然过渡到消失 */
+            /* 底部渐隐：边缘自然过渡到消失（无断层） */
             -webkit-mask-image: linear-gradient(to bottom,
                 rgba(0,0,0,1) 0%,
                 rgba(0,0,0,1) 55%,
@@ -42,15 +42,43 @@
                 rgba(0,0,0,1) 55%,
                 rgba(0,0,0,0) 100%);
         }
-        #dust-canvas{
-            width: 100%;
-            height: 100%;
-            display: block;
+
+        /* ✅ 聚焦动物：雾霾层淡出（避免盖住动物） */
+        body.focus-mode #atmo-layer{
+            opacity: 0.12;
         }
 
-        /* ✅ 聚焦动物时：灰尘层淡出（避免盖住动物） */
-        body.focus-mode #dust-layer{
-            opacity: 0.10;
+        /* ✅ 雾霾色过渡：纯CSS静态渐变（不动画，不卡） */
+        #haze-gradient{
+            position:absolute;
+            inset:0;
+            background:
+              linear-gradient(to bottom,
+                rgba(203, 175, 135, 0.85) 0%,   /* 顶部偏雾霾 */
+                rgba(203, 175, 135, 0.38) 38%,
+                rgba(230, 216, 195, 0.12) 70%,
+                rgba(230, 216, 195, 0.00) 100%);
+        }
+
+        /* 轻微压暗（提升“空气厚度”，仍然静态不耗性能） */
+        #haze-vignette{
+            position:absolute;
+            inset:0;
+            background: radial-gradient(120% 90% at 50% 10%,
+                rgba(0,0,0,0.06) 0%,
+                rgba(0,0,0,0.04) 45%,
+                rgba(0,0,0,0.00) 80%);
+            mix-blend-mode: multiply;
+            opacity: 0.55;
+        }
+
+        /* 灰尘 Canvas */
+        #dust-canvas{
+            position:absolute;
+            inset:0;
+            width:100%;
+            height:100%;
+            display:block;
         }
 
         /* --- 2. UI 层 --- */
@@ -156,7 +184,14 @@
         h1 { margin: 0; font-size: 20px; font-weight: 800; letter-spacing: 1px; }
         p { margin: 5px 0 0 0; font-size: 11px; color: #886644; font-weight: 600; }
 
-        #loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #886644; font-size: 12px; pointer-events: none; transition: opacity 0.5s; font-weight: bold; z-index: 10;}
+        #loading {
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            color: #886644; font-size: 12px;
+            pointer-events: none;
+            transition: opacity 0.5s; font-weight: bold;
+            z-index: 10;
+        }
 
         body.active-mode { cursor: auto !important; }
         #ui-layer:hover, .close-btn:hover { cursor: default; }
@@ -164,8 +199,10 @@
 </head>
 <body>
 
-    <!-- ✅ 轻量灰尘 -->
-    <div id="dust-layer" aria-hidden="true">
+    <!-- ✅ 雾霾色过渡 + 灰尘 -->
+    <div id="atmo-layer" aria-hidden="true">
+        <div id="haze-gradient"></div>
+        <div id="haze-vignette"></div>
         <canvas id="dust-canvas"></canvas>
     </div>
 
@@ -220,6 +257,7 @@
         }
     </script>
 
+    <!-- Shader（原样） -->
     <script type="x-shader/x-vertex" id="vertexShader">
         uniform vec3 uMouse;
         attribute float size;
@@ -241,7 +279,6 @@
             gl_Position = projectionMatrix * mvPosition;
         }
     </script>
-
     <script type="x-shader/x-fragment" id="fragmentShader">
         varying vec3 vColor;
         void main() {
@@ -259,10 +296,10 @@
         import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 
         /* =========================
-           ✅ 轻量灰尘粒子（低帧率、少数量）
+           ✅ 轻量灰尘（深色小点）+ 低FPS
            ========================= */
         (function initDust(){
-            const layer = document.getElementById('dust-layer');
+            const layer = document.getElementById('atmo-layer');
             const canvas = document.getElementById('dust-canvas');
             const ctx = canvas.getContext('2d', { alpha: true });
 
@@ -281,32 +318,28 @@
             resize();
             window.addEventListener('resize', resize);
 
-            // ✅ 性能参数（想更省就更少）
-            const FPS = 24;                 // 24fps 足够“漂浮”
-            const COUNT = 90;               // 粒子数量：更省 -> 60；更明显 -> 120
-            const dots = [];
+            // ✅ 性能参数：更省 -> COUNT 60 / FPS 18
+            const FPS = 22;
+            const COUNT = 85;
 
+            const dots = [];
             const rand = (a,b)=>a+Math.random()*(b-a);
 
             function spawn(){
-                // 深色小点（你要的感觉）
-                // 为了自然：大小/速度/透明度做小范围抖动
                 return {
                     x: rand(0, W),
                     y: rand(0, H),
-                    r: rand(0.6, 1.8),
-                    a: rand(0.10, 0.22),
-                    vx: rand(-3.0, -0.6),   // 轻微向左飘（像空气流动）
-                    vy: rand(-0.35, 0.35),
+                    r: rand(0.6, 1.7),
+                    a: rand(0.10, 0.20),
+                    vx: rand(-2.4, -0.5),  // 轻微向左飘
+                    vy: rand(-0.25, 0.25),
                     phase: rand(0, Math.PI*2),
-                    w: rand(0.15, 0.45)     // 微摆动
+                    w: rand(0.12, 0.40)    // 轻微摆动
                 };
             }
             for(let i=0;i<COUNT;i++) dots.push(spawn());
 
-            let timer = null;
             function tick(){
-                // 聚焦动物：基本不画（避免盖住，也省性能）
                 if(document.body.classList.contains('focus-mode')){
                     ctx.clearRect(0,0,W,H);
                     return;
@@ -314,28 +347,26 @@
 
                 ctx.clearRect(0,0,W,H);
 
-                // 深色偏灰/棕（更符合你背景），不使用混合模式/模糊
                 for(const d of dots){
                     d.phase += 0.015;
                     d.x += d.vx * (1/FPS);
                     d.y += d.vy * (1/FPS) + Math.sin(d.phase)*d.w*(1/FPS);
 
-                    // 出界回收
                     if(d.x < -10) d.x = W + 10;
                     if(d.y < -10) d.y = H + 10;
                     if(d.y > H + 10) d.y = -10;
 
                     ctx.beginPath();
-                    ctx.fillStyle = `rgba(45, 40, 34, ${d.a})`; // ✅ 深色小点
+                    ctx.fillStyle = `rgba(45, 40, 34, ${d.a})`;
                     ctx.arc(d.x, d.y, d.r, 0, Math.PI*2);
                     ctx.fill();
                 }
             }
 
-            timer = setInterval(tick, 1000/FPS);
+            setInterval(tick, 1000/FPS);
         })();
 
-        // --- 0. 动物数据库 (原样保留) ---
+        // --- 0. 动物数据库（原样保留） ---
         const animalData = {
             "POLYMER TURTLE": {
                 video: "./wugui.mp4", name: "聚合体海龟", latin: "CHELONIA PLASTICUS", source: "海洋微塑料堆积", pollutant: "不可降解聚苯乙烯 (PS)", tox: "85%",
@@ -460,7 +491,6 @@
         const colCanopy = new THREE.Color("#444433");
 
         const range = 180; const gap = 2.5;
-
         function getElevation(x, z) { return Math.sin(x * 0.05) * 8 + Math.cos(z * 0.05) * 8; }
 
         for (let x = -range; x < range; x += gap) {
@@ -483,7 +513,6 @@
                         else { pSize = 1.5; pColor = colLand1; }
                     }
                 }
-
                 if (keepPoint) { positions.push(x, y, z); colors.push(pColor.r, pColor.g, pColor.b); sizes.push(pSize); }
             }
         }
@@ -610,7 +639,7 @@
             focus() {
                 if (this.state === 'focused') return;
                 this.state = 'focused';
-                document.body.classList.add('focus-mode');  // ✅ 聚焦：灰尘淡出
+                document.body.classList.add('focus-mode'); // ✅ 聚焦：雾霾/灰尘淡出
 
                 this.modelGroup.visible = true;
                 const tl = gsap.timeline();
@@ -833,6 +862,7 @@
             renderer.render(scene, camera);
         }
 
+        // ✅ loading淡出
         setTimeout(() => { document.getElementById('loading').style.opacity = 0; }, 2000);
         animate();
 
@@ -841,6 +871,75 @@
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
         });
+
+        /* =========================
+           ✅ 灰尘绘制（放最后，拿到层尺寸）
+           ========================= */
+        (function initDust(){
+            const layer = document.getElementById('atmo-layer');
+            const canvas = document.getElementById('dust-canvas');
+            const ctx = canvas.getContext('2d', { alpha: true });
+
+            let W=0, H=0, DPR=Math.min(window.devicePixelRatio||1, 2);
+
+            function resizeDust(){
+                const r = layer.getBoundingClientRect();
+                W = Math.max(1, Math.floor(r.width));
+                H = Math.max(1, Math.floor(r.height));
+                canvas.width = Math.floor(W * DPR);
+                canvas.height = Math.floor(H * DPR);
+                ctx.setTransform(DPR,0,0,DPR,0,0);
+            }
+            resizeDust();
+            window.addEventListener('resize', resizeDust);
+
+            // 性能参数：更省 -> COUNT 60 / FPS 18
+            const FPS = 22;
+            const COUNT = 85;
+
+            const dots = [];
+            const rand = (a,b)=>a+Math.random()*(b-a);
+
+            function spawn(){
+                return {
+                    x: rand(0, W),
+                    y: rand(0, H),
+                    r: rand(0.6, 1.7),
+                    a: rand(0.10, 0.20),
+                    vx: rand(-2.4, -0.5),
+                    vy: rand(-0.25, 0.25),
+                    phase: rand(0, Math.PI*2),
+                    w: rand(0.12, 0.40)
+                };
+            }
+            for(let i=0;i<COUNT;i++) dots.push(spawn());
+
+            function tick(){
+                if(document.body.classList.contains('focus-mode')){
+                    ctx.clearRect(0,0,W,H);
+                    return;
+                }
+
+                ctx.clearRect(0,0,W,H);
+
+                for(const d of dots){
+                    d.phase += 0.015;
+                    d.x += d.vx * (1/FPS);
+                    d.y += d.vy * (1/FPS) + Math.sin(d.phase)*d.w*(1/FPS);
+
+                    if(d.x < -10) d.x = W + 10;
+                    if(d.y < -10) d.y = H + 10;
+                    if(d.y > H + 10) d.y = -10;
+
+                    ctx.beginPath();
+                    ctx.fillStyle = `rgba(45, 40, 34, ${d.a})`;
+                    ctx.arc(d.x, d.y, d.r, 0, Math.PI*2);
+                    ctx.fill();
+                }
+            }
+
+            setInterval(tick, 1000/FPS);
+        })();
     </script>
 </body>
 </html>
