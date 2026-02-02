@@ -15,76 +15,84 @@
         }
 
         /* =========================
-           ✅ 0. 顶部雾霾大气层（新增）
+           ✅ 0. 顶部雾霾大气层（新增&修复：渐隐不截断）
            ========================= */
         #atmo-layer{
             position: fixed;
             top: 0; left: 0;
             width: 100%;
-            height: 36vh;            /* ✅ 可调：雾霾占屏高度（建议 28vh~45vh） */
+            height: 70vh;                 /* 雾层大，但底部会渐隐 */
             pointer-events: none;
-            z-index: 50;             /* 在 three 画布上方，但在 UI(999)下方 */
+            z-index: 50;                  /* 在 three 画布上方，在 UI(999)下方 */
             overflow: hidden;
+
+            /* ✅ 关键：底部渐隐到透明，彻底解决“中间断开” */
+            -webkit-mask-image: linear-gradient(to bottom,
+                rgba(0,0,0,1) 0%,
+                rgba(0,0,0,1) 45%,
+                rgba(0,0,0,0) 100%);
+            mask-image: linear-gradient(to bottom,
+                rgba(0,0,0,1) 0%,
+                rgba(0,0,0,1) 45%,
+                rgba(0,0,0,0) 100%);
         }
 
-        /* 厚重雾霾体积感（底层） */
+        /* 厚重雾霾体积感（底层）——克制，避免盖住动物 */
         #atmo-layer .fog-volume{
             position: absolute;
             inset: -10%;
             background:
               radial-gradient(120% 80% at 40% 40%,
-                rgba(180,140,90,0.55) 0%,
-                rgba(180,140,90,0.35) 35%,
-                rgba(180,140,90,0.18) 60%,
+                rgba(180,140,90,0.40) 0%,
+                rgba(180,140,90,0.22) 40%,
+                rgba(180,140,90,0.10) 70%,
                 rgba(180,140,90,0.00) 100%),
               linear-gradient(to bottom,
-                rgba(160,120,80,0.70) 0%,
-                rgba(160,120,80,0.55) 35%,
-                rgba(160,120,80,0.25) 70%,
+                rgba(160,120,80,0.42) 0%,
+                rgba(160,120,80,0.30) 40%,
+                rgba(160,120,80,0.14) 75%,
                 rgba(160,120,80,0.00) 100%);
-            filter: blur(2px);
-            opacity: 1; /* ✅ 可调：总体浓度 */
+            filter: blur(6px);
+            opacity: 0.95;
         }
 
-        /* 空气流动（中层）：用渐变+纹理漂移模拟“活着的空气” */
+        /* 空气流动（中层）——更自然的漂移，避免压黑 */
         #atmo-layer .fog-flow{
             position: absolute;
-            inset: -20%;
+            inset: -25%;
             background:
-              /* 大尺度气流条带 */
-              linear-gradient(120deg,
+              linear-gradient(115deg,
                 rgba(255,255,255,0.00) 0%,
-                rgba(255,255,255,0.05) 20%,
-                rgba(0,0,0,0.03) 45%,
-                rgba(255,255,255,0.04) 70%,
+                rgba(255,255,255,0.05) 18%,
+                rgba(0,0,0,0.02) 45%,
+                rgba(255,255,255,0.04) 72%,
                 rgba(255,255,255,0.00) 100%),
-              /* 微噪声（不用图片，用纯 CSS 的重复细纹模拟） */
               repeating-radial-gradient(circle at 30% 30%,
-                rgba(0,0,0,0.025) 0px,
-                rgba(0,0,0,0.025) 1px,
-                rgba(255,255,255,0.00) 3px,
-                rgba(255,255,255,0.00) 8px);
-            opacity: 0.22;           /* ✅ 可调：流动层强度（0.12~0.3） */
-            filter: blur(6px);
-            mix-blend-mode: multiply; /* 让它更“脏” */
-            animation: fogDrift 26s linear infinite;
+                rgba(0,0,0,0.020) 0px,
+                rgba(0,0,0,0.020) 1px,
+                rgba(255,255,255,0.00) 4px,
+                rgba(255,255,255,0.00) 10px);
+            opacity: 0.14;
+            filter: blur(10px);
+            animation: fogDrift 34s linear infinite;
+            mix-blend-mode: normal; /* ✅ 关键：不用 multiply，不然会吞掉场景 */
         }
 
         @keyframes fogDrift{
-            0%   { transform: translate3d(0,0,0) scale(1.1); }
-            50%  { transform: translate3d(-6%, 2%, 0) scale(1.12); }
-            100% { transform: translate3d(-12%, 0%, 0) scale(1.1); }
+            0%   { transform: translate3d(0,0,0) scale(1.08); }
+            50%  { transform: translate3d(-4%, 1.5%, 0) scale(1.10); }
+            100% { transform: translate3d(-8%, 0%, 0) scale(1.08); }
         }
 
-        /* 顶部更压、底部更透的遮罩（增强“厚重感”） */
+        /* 顶部轻微压暗（可选） */
         #atmo-layer .fog-mask{
             position: absolute;
             inset: 0;
             background: linear-gradient(to bottom,
-                rgba(0,0,0,0.18) 0%,
-                rgba(0,0,0,0.08) 30%,
-                rgba(0,0,0,0.00) 70%);
-            opacity: 0.55; /* ✅ 可调 */
+                rgba(0,0,0,0.10) 0%,
+                rgba(0,0,0,0.05) 35%,
+                rgba(0,0,0,0.00) 80%);
+            opacity: 0.55;
             mix-blend-mode: multiply;
             pointer-events: none;
         }
@@ -121,7 +129,6 @@
             margin-bottom: 0;
         }
 
-        /* 污染警示框 */
         .pollution-alert {
             background-color: #ffcc00; color: #222;
             padding: 15px 25px; margin-top: 15px; margin-bottom: 5px;
@@ -209,6 +216,7 @@
             transform: translate(-50%, -50%);
             color: #886644; font-size: 12px; pointer-events: none;
             transition: opacity 0.5s; font-weight: bold;
+            z-index: 5;
         }
 
         body.active-mode { cursor: auto !important; }
@@ -217,7 +225,7 @@
 </head>
 <body>
 
-    <!-- ✅ 新增：顶部雾霾层 -->
+    <!-- ✅ 顶部雾霾层 -->
     <div id="atmo-layer" aria-hidden="true">
         <div class="fog-volume"></div>
         <div class="fog-flow"></div>
@@ -276,7 +284,6 @@
         }
     </script>
 
-    <!-- Shader -->
     <script type="x-shader/x-vertex" id="vertexShader">
         uniform vec3 uMouse;
         attribute float size;
@@ -298,6 +305,7 @@
             gl_Position = projectionMatrix * mvPosition;
         }
     </script>
+
     <script type="x-shader/x-fragment" id="fragmentShader">
         varying vec3 vColor;
         void main() {
@@ -315,25 +323,24 @@
         import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 
         /* =========================
-           ✅ 顶部雾霾颗粒系统（新增）
+           ✅ 顶部雾霾颗粒系统（更克制：不糊场景）
            ========================= */
         function initAtmoDust(){
             const layer = document.getElementById('atmo-layer');
             const canvas = document.getElementById('atmo-dust');
             const ctx = canvas.getContext('2d', { alpha: true });
 
-            // ✅ 可调：颗粒密度 & 颗粒尺寸范围
             const CONFIG = {
-                spawnPerSec: 2.2,       // 每秒生成颗粒数（1.2~4 之间比较克制）
-                maxParticles: 180,      // 上限（越高越“脏”）
-                sizeMin: 0.6,
-                sizeMax: 2.2,
-                lifeMin: 4.0,           // 秒
-                lifeMax: 10.0,
-                baseAlpha: 0.18,        // 整体颗粒存在感（0.10~0.25）
-                driftX: 8.0,            // px/s 水平漂移
-                driftY: 2.2,            // px/s 垂直漂移
-                turbulence: 0.55        // “空气扰动”幅度
+                spawnPerSec: 1.4,
+                maxParticles: 120,
+                sizeMin: 0.5,
+                sizeMax: 1.8,
+                lifeMin: 6.0,
+                lifeMax: 12.0,
+                baseAlpha: 0.10,
+                driftX: 7.0,
+                driftY: 1.8,
+                turbulence: 0.45
             };
 
             let W = 0, H = 0, DPR = Math.min(window.devicePixelRatio || 1, 2);
@@ -358,7 +365,7 @@
                     if(particles.length >= CONFIG.maxParticles) return;
                     const p = {
                         x: rand(0, W),
-                        y: rand(H*0.1, H),       // 让颗粒更多出现在中下部，顶部更“糊”
+                        y: rand(H*0.12, H),
                         r: rand(CONFIG.sizeMin, CONFIG.sizeMax),
                         vx: rand(CONFIG.driftX*0.6, CONFIG.driftX*1.2),
                         vy: rand(-CONFIG.driftY*0.2, CONFIG.driftY),
@@ -367,10 +374,9 @@
                         age: 0,
                         a: rand(CONFIG.baseAlpha*0.6, CONFIG.baseAlpha*1.2)
                     };
-                    // 让少部分颗粒更明显（偶发“细点”）
                     if(Math.random() > 0.92){
                         p.r *= 1.4;
-                        p.a *= 1.4;
+                        p.a *= 1.25;
                     }
                     particles.push(p);
                 }
@@ -383,7 +389,6 @@
                 const dt = Math.min(0.033, (now - last) / 1000);
                 last = now;
 
-                // 生成逻辑
                 accSpawn += dt * CONFIG.spawnPerSec;
                 if(accSpawn >= 1){
                     const k = Math.floor(accSpawn);
@@ -393,27 +398,22 @@
 
                 ctx.clearRect(0,0,W,H);
 
-                // 画雾霾颗粒：克制的灰土色点
                 for(let i=particles.length-1; i>=0; i--){
                     const p = particles[i];
                     p.age += dt;
                     p.t += dt;
 
-                    // 简单“扰动”：用 sin/cos 做假湍流（足够像空气）
                     const turb = CONFIG.turbulence;
                     p.x += p.vx*dt + Math.sin(p.t*1.9 + p.y*0.02) * turb;
                     p.y += p.vy*dt + Math.cos(p.t*1.4 + p.x*0.02) * turb*0.7;
 
-                    // 循环回边界，保持连续感
                     if(p.x > W + 20) p.x = -20;
                     if(p.y > H + 20) p.y = rand(H*0.2, H);
                     if(p.y < -20) p.y = rand(H*0.2, H);
 
-                    // 生命周期淡入淡出（关键：避免“下雪感”）
-                    const half = p.life * 0.5;
                     let fade = 1;
-                    if(p.age < 0.7) fade = p.age / 0.7;                 // 淡入
-                    else if(p.age > p.life - 1.2) fade = Math.max(0, (p.life - p.age) / 1.2); // 淡出
+                    if(p.age < 0.8) fade = p.age / 0.8;
+                    else if(p.age > p.life - 1.4) fade = Math.max(0, (p.life - p.age) / 1.4);
 
                     const alpha = p.a * fade;
                     if(alpha <= 0 || p.age >= p.life){
@@ -422,7 +422,7 @@
                     }
 
                     ctx.beginPath();
-                    ctx.fillStyle = `rgba(70,55,40,${alpha})`;  // ✅ 可调：颗粒颜色（偏脏土灰）
+                    ctx.fillStyle = `rgba(95, 78, 58, ${alpha})`;  // 更淡、更像空气尘
                     ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
                     ctx.fill();
                 }
@@ -433,7 +433,7 @@
         }
         initAtmoDust();
 
-        // --- 0. 动物数据库（保留） ---
+        // --- 0. 动物数据库（原样保留） ---
         const animalData = {
             "POLYMER TURTLE": {
                 video: "./wugui.mp4", name: "聚合体海龟", latin: "CHELONIA PLASTICUS", source: "海洋微塑料堆积", pollutant: "不可降解聚苯乙烯 (PS)", tox: "85%",
@@ -555,7 +555,6 @@
         const colWater = new THREE.Color("#668899");
         const colLand1 = new THREE.Color("#ccaa66");
         const colLand2 = new THREE.Color("#885533");
-        const colLand3 = new THREE.Color("#555555");
         const colCanopy = new THREE.Color("#444433");
 
         const range = 180; const gap = 2.5;
@@ -567,6 +566,7 @@
                 const distToCenter = Math.sqrt(x*x + z*z);
                 const maxRadius = 120 + Math.sin(Math.atan2(z, x) * 5.0) * 15.0 + Math.cos(x * 0.1) * 10.0;
                 if (distToCenter > maxRadius) continue;
+
                 let y = getElevation(x, z);
                 let pSize = 0.0; let pColor = new THREE.Color(); let keepPoint = false;
 
@@ -580,6 +580,7 @@
                         else { pSize = 1.5; pColor = colLand1; }
                     }
                 }
+
                 if (keepPoint) { positions.push(x, y, z); colors.push(pColor.r, pColor.g, pColor.b); sizes.push(pSize); }
             }
         }
@@ -606,9 +607,9 @@
             constructor(name, normalFile, mutantFile, centerPos) {
                 this.name = name;
                 this.center = centerPos.clone();
+
                 this.group = new THREE.Group();
                 scene.add(this.group);
-
                 this.group.userData = { isSwarm: true, swarmName: name };
 
                 this.boids = [];
