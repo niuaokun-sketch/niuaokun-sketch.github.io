@@ -2,7 +2,7 @@
 <html lang="zh">
 <head>
     <meta charset="UTF-8">
-    <title>ECO-MONITOR | 未来动物档案</title>
+    <title>ECO-MONITOR | 废土档案版</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 
     <style>
@@ -34,73 +34,73 @@
             background: #000;
         }
 
-        /* HUD / 系统文字（你原来的那套） */
+        /* HUD / 系统文字（保留） */
         #intro-hud {
             position: absolute;
             left: 4vw;
             top: 5vh;
-            color: rgba(255, 240, 220, 0.92);
+            color: rgba(255, 230, 200, 0.92);
             font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
             text-transform: uppercase;
             letter-spacing: 0.12em;
             mix-blend-mode: screen;
             pointer-events: none;
             user-select: none;
-            text-shadow: 0 0 12px rgba(255,120,60,0.25);
+            /* ✅ 你要字幕无阴影，但 HUD 我也去掉阴影，整体更干净 */
+            text-shadow: none;
         }
         #intro-hud .hud-title { font-size: 20px; font-weight: 800; margin-bottom: 10px; opacity: 0.95; }
         #intro-hud .hud-sub { font-size: 11px; opacity: 0.75; margin-bottom: 18px; }
         #intro-hud .hud-line { font-size: 12px; opacity: 0.0; transform: translateY(6px); white-space: pre; }
-        #intro-hud .hud-warn { margin-top: 14px; font-size: 11px; opacity: 0.6; color: rgba(255, 120, 80, 0.95); }
+        #intro-hud .hud-warn { margin-top: 14px; font-size: 11px; opacity: 0.65; color: rgba(255, 140, 90, 0.95); }
 
         /* ✅ 电影式字幕（顶部居中 / 大字体 / 一句一句） */
         #intro-cinema {
             position: absolute;
-            top: 6vh;              /* ✅ 顶部位置 */
+            top: 6vh;
             left: 50%;
             transform: translateX(-50%);
-            width: min(1100px, 90vw);
+            width: min(1100px, 92vw);
             text-align: center;
             pointer-events: none;
             user-select: none;
-            z-index: 5;
+            z-index: 6;
 
-            color: rgba(255, 245, 235, 0.92);
+            /* ✅ 更显眼：更亮、更白一点（但不刺眼的纯白） */
+            color: rgba(255, 252, 245, 0.98);
             font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-            font-weight: 600;
-            letter-spacing: 0.08em;
+            font-weight: 700;
+            letter-spacing: 0.10em;
             text-transform: uppercase;
 
-            /* 电影质感：一点柔和阴影 */
-            text-shadow:
-                0 2px 18px rgba(0,0,0,0.75),
-                0 0 30px rgba(0,0,0,0.35);
+            /* ✅ 你要不要阴影：这里完全取消 */
+            text-shadow: none;
         }
         #intro-cinema-line {
-            font-size: clamp(22px, 3.2vw, 40px); /* ✅ 大一点，自动适配屏幕 */
-            line-height: 1.25;
+            font-size: clamp(26px, 3.6vw, 52px); /* ✅ 更大一点 */
+            line-height: 1.22;
             opacity: 0;
             transform: translateY(10px);
             margin: 0;
             padding: 0 10px;
         }
 
-        /* ✅ 自动播放失败按钮 */
+        /* ✅ 一进来就显示：CLICK TO START */
         #intro-start {
             position: absolute;
             right: 4vw;
             bottom: 6vh;
             padding: 14px 18px;
-            border: 1px solid rgba(255,240,220,0.6);
-            color: rgba(255,240,220,0.9);
+            border: 1px solid rgba(255,255,255,0.85);
+            color: rgba(255,255,255,0.95);
             background: rgba(0,0,0,0.35);
             backdrop-filter: blur(8px);
             font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-            letter-spacing: 0.14em;
+            letter-spacing: 0.16em;
             text-transform: uppercase;
             font-size: 12px;
             cursor: pointer;
-            display: none;
+            display: block; /* ✅ 默认显示 */
             user-select: none;
         }
         #intro-start:hover { background: rgba(0,0,0,0.55); }
@@ -225,7 +225,7 @@
 
     <!-- ✅ 开场视频层 -->
     <div id="intro-video-layer">
-        <video id="intro-video" autoplay muted playsinline preload="auto">
+        <video id="intro-video" muted playsinline preload="auto">
             <source src="./kaitou.mp4" type="video/mp4">
         </video>
 
@@ -234,12 +234,11 @@
             <p id="intro-cinema-line"></p>
         </div>
 
-        <!-- HUD（你也可以不要，我保留） -->
         <div id="intro-hud">
             <div class="hud-title">ECO-MONITOR</div>
-            <div class="hud-sub">WASTELAND SURVEILLANCE // BOOT SEQUENCE</div>
+            <div class="hud-sub">WASTELAND SURVEILLANCE // USER INIT REQUIRED</div>
             <div class="hud-line" id="hud-line">...</div>
-            <div class="hud-warn">DO NOT INTERRUPT // SIGNAL LOCK REQUIRED</div>
+            <div class="hud-warn">CLICK TO AUTHORIZE PLAYBACK</div>
         </div>
 
         <div id="intro-start">CLICK TO START</div>
@@ -296,7 +295,6 @@
         }
     </script>
 
-    <!-- Shader -->
     <script type="x-shader/x-vertex" id="vertexShader">
         uniform vec3 uMouse;
         attribute float size;
@@ -807,46 +805,35 @@
         });
 
         /* =========================
-           ✅ 开场：视频播放 + HUD + 电影字幕（逐句）
+           ✅ 开场：点击启动 + 电影字幕（逐句）+ 结束淡出/拉近
         ========================= */
         const introLayer = document.getElementById('intro-video-layer');
         const introVideo = document.getElementById('intro-video');
         const introStart = document.getElementById('intro-start');
         const hudLine = document.getElementById('hud-line');
         const canvas = renderer.domElement;
-
         const cinemaEl = document.getElementById('intro-cinema-line');
 
-        // ✅ 你要的背景介绍句子（可直接改这里）
         const cinemaLines = [
             "WE TOOK FROM THE EARTH AS IF IT WERE ENDLESS.",
             "WE BURNED, DUMPED, AND DILUTED THE COST INTO AIR AND SEA.",
             "PLASTIC. OIL. ACID. RADIATION. NOISE.",
             "THE PLANET DID NOT FORGIVE — IT ADAPTED.",
-            "THESE MUTATIONS ARE NOT MYTHS.",
+            "THESE MUTATIONS ARE NOT STORIES.",
             "THEY ARE EVIDENCE."
         ];
 
-        // ✅ 每句的节奏（秒）：淡入/停留/淡出
         const CIN_IN = 0.55;
-        const CIN_HOLD = 1.35;
+        const CIN_HOLD = 1.45;
         const CIN_OUT = 0.55;
         const CIN_GAP = 0.25;
 
         function playCinemaText(){
-            // 总时长根据句子数量自动排
             const tl = gsap.timeline();
-            cinemaLines.forEach((line, i) => {
-                tl.call(() => {
-                    cinemaEl.textContent = line;
-                }, null, ">");
-
-                tl.fromTo(cinemaEl,
-                    { opacity: 0, y: 10 },
-                    { opacity: 0.95, y: 0, duration: CIN_IN, ease: "power2.out" },
-                    ">"
-                );
-                tl.to(cinemaEl, { opacity: 0.95, duration: CIN_HOLD, ease: "none" }, ">");
+            cinemaLines.forEach((line) => {
+                tl.call(() => { cinemaEl.textContent = line; }, null, ">");
+                tl.fromTo(cinemaEl, { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: CIN_IN, ease: "power2.out" }, ">");
+                tl.to(cinemaEl, { opacity: 1, duration: CIN_HOLD, ease: "none" }, ">");
                 tl.to(cinemaEl, { opacity: 0, y: -6, duration: CIN_OUT, ease: "power2.in" }, ">");
                 tl.to({}, { duration: CIN_GAP }, ">");
             });
@@ -855,14 +842,14 @@
 
         const hudLines = [
             "LINK: ORBITAL RELAY // OK",
-            "AUTH: ARCHIVE ACCESS // GRANTED",
-            "SYNC: ATMOSPHERIC MODEL // 71%",
+            "AUTH: ARCHIVE ACCESS // PENDING",
+            "SYNC: ATMOSPHERIC MODEL // READY",
             "SCAN: COASTLINE ANOMALY // DETECTED",
             "READ: TOXICITY INDEX // HIGH",
-            "COMPRESS: EVIDENCE STREAM // ACTIVE",
-            "MAP: SECTOR-7 GRID // LOADING",
+            "COMPRESS: EVIDENCE STREAM // STANDBY",
+            "MAP: SECTOR-7 GRID // LOCKED",
             "ALERT: BIOSPHERE DEGRADATION // CRITICAL",
-            "LOCK: TARGET COORDINATES // ACQUIRED"
+            "LOCK: USER INPUT REQUIRED // CLICK"
         ];
 
         let hudTimer = null;
@@ -883,70 +870,45 @@
             if(hudTimer) clearInterval(hudTimer);
             hudTimer = null;
         }
-
         startHudFlicker();
 
+        let started = false;
         let cinemaTl = null;
-        function startCinema(){
-            if (cinemaTl) cinemaTl.kill();
+        let revealed = false;
+
+        async function startIntro() {
+            if (started) return;
+            started = true;
+
+            introStart.style.display = "none";
+            cinemaEl.textContent = "";
+
+            try {
+                await introVideo.play();
+            } catch(e) {
+                // 如果真的播不了（极少），就允许用户再点一次
+                started = false;
+                introStart.style.display = "block";
+                return;
+            }
+
             cinemaTl = playCinemaText();
         }
 
-        let revealed = false;
-        let started = false;
-
-        async function tryPlayVideo() {
-            try {
-                if (introVideo.readyState < 2) {
-                    await new Promise((resolve) => {
-                        const onCanPlay = () => { introVideo.removeEventListener('canplay', onCanPlay); resolve(); };
-                        introVideo.addEventListener('canplay', onCanPlay, { once: true });
-                    });
-                }
-                await introVideo.play();
-                started = true;
-                introStart.style.display = "none";
-                startCinema(); // ✅ 视频真正开始播时再跑字幕
-            } catch (err) {
-                introStart.style.display = "block";
-            }
-        }
-
-        tryPlayVideo();
-        setTimeout(tryPlayVideo, 500);
-        setTimeout(tryPlayVideo, 1200);
-
-        introStart.addEventListener('click', async () => {
-            introStart.style.display = "none";
-            try {
-                await introVideo.play();
-                started = true;
-                startCinema();
-            } catch(e) {
-                introStart.style.display = "block";
-            }
+        introStart.addEventListener('click', startIntro);
+        // 也允许点任意地方启动（更“互动”）
+        introLayer.addEventListener('click', (e) => {
+            if (e.target === introStart) return;
+            startIntro();
         });
 
-        introLayer.addEventListener('click', async () => {
-            if (started) return;
-            try {
-                await introVideo.play();
-                started = true;
-                introStart.style.display = "none";
-                startCinema();
-            } catch(e) {
-                introStart.style.display = "block";
-            }
-        });
-
-        // 最后1秒：疯狂淡出（字幕+HUD+视频整体一起淡出）并让 canvas 渐显
         introVideo.addEventListener('timeupdate', () => {
             if (!introVideo.duration) return;
             const remain = introVideo.duration - introVideo.currentTime;
 
             if (remain <= 1.0) {
-                const k = Math.min(1, Math.max(0, 1 - remain / 1.0)); // 0->1
-                const op = Math.pow(1 - k, 6); // 陡降
+                const k = Math.min(1, Math.max(0, 1 - remain / 1.0));
+                const op = Math.pow(1 - k, 6);
                 introLayer.style.opacity = String(op);
 
                 if (!revealed && k > 0.05) {
@@ -958,6 +920,7 @@
 
         introVideo.addEventListener('ended', () => {
             stopHudFlicker();
+            if (cinemaTl) cinemaTl.kill();
             introLayer.remove();
             canvas.classList.add('visible');
 
