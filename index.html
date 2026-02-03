@@ -2,7 +2,7 @@
 <html lang="zh">
 <head>
   <meta charset="UTF-8" />
-  <title>ECO-MONITOR | 废土档案版</title>
+  <title>ECO-MONITOR | 未来动物档案</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 
   <style>
@@ -107,7 +107,6 @@
       text-shadow:none !important;
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
       font-weight: 900;
-      /* 小两号 */
       font-size: clamp(18px, 2.4vw, 36px);
       line-height: 1.08;
       margin: 0;
@@ -183,8 +182,9 @@
       box-shadow:0 5px 15px rgba(0,0,0,0.1);
       max-width:350px;
     }
-    .pollution-label{ display:block; font-size:10px; opacity:0.7; margin-bottom:5px; }
-    .pollution-value{ font-size:18px; text-transform:uppercase; }
+    .pollution-label { display:block; font-size:10px; opacity:0.7; margin-bottom:5px; }
+    .pollution-value { font-size:18px; text-transform:uppercase; }
+
     .stat-box{
       background-color:#333; color:#ccc;
       padding:10px 20px; margin-top:2px;
@@ -205,6 +205,7 @@
       display:flex; flex-direction:column;
       box-shadow:0 20px 50px rgba(0,0,0,0.3);
     }
+
     .video-box{
       width:100%; height:260px;
       background:#000;
@@ -344,7 +345,6 @@
   </script>
 
   <script type="x-shader/x-vertex" id="vertexShader">
-
     uniform vec3 uMouse;
     attribute float size;
     attribute vec3 customColor;
@@ -425,81 +425,70 @@
         setTimeout(()=>{ loadingEl.style.display="none"; }, 600);
         return;
       }
-      // 如果还在显示，就淡出
       if(loadingEl.style.display !== "none"){
         loadingEl.style.opacity = 0;
         setTimeout(()=>{ loadingEl.style.display="none"; }, 600);
       }
     }
-    // 无论如何，3秒后强制隐藏一次，避免“永远加载”的观感
     setTimeout(()=>hideLoading(true), 3000);
 
     /* =========================
-       动物数据库（你原版）
+       ✅ 你原来的 9 个动物介绍：全部恢复
     ========================= */
     const animalData = {
       "POLYMER TURTLE": {
-        video: "./wugui.mp4", name: "聚合体海龟", latin: "CHELONIA PLASTICUS",
-        pollutant: "不可降解聚苯乙烯 (PS)", tox: "85%",
-        desc: "该样本是在太平洋垃圾带核心区被捕获的。解剖显示，这只海龟的消化系统已经发生了不可逆的退化……",
-        look: "背甲呈现出破碎且混乱的马赛克纹理……",
-        act: "行动极其迟缓……"
+        video: "./wugui.mp4", name: "聚合体海龟", latin: "CHELONIA PLASTICUS", source: "海洋微塑料堆积", pollutant: "不可降解聚苯乙烯 (PS)", tox: "85%",
+        desc: "该样本是在太平洋垃圾带核心区被捕获的。解剖显示，这只海龟的消化系统已经发生了不可逆的退化。它不再具备消化水母或海草的能力，而是通过皮肤上进化出的粗糙滤孔，直接从海水中吸附并整合微塑料颗粒。最令人震惊的病理改变发生在它的背甲上：其骨骼组织与海洋中漂浮的聚乙烯废料在细胞层面发生了融合，形成了一层五颜六色的、永远无法降解的合成装甲。这种“塑料骨骼”虽然提供了极高的物理防御力，但其密度是正常骨骼的三倍，导致它无法潜入深海避难，只能终生漂浮在充满辐射的表层水域。",
+        look: "背甲呈现出破碎且混乱的马赛克纹理，那是无数打火机碎片、瓶盖残渣与有机骨骼强行生长在一起的痕迹。四肢关节处有明显的塑料纤维增生。",
+        act: "行动极其迟缓，仿佛背负着巨大的枷锁。它经常长时间静止在海面，对周围环境反应迟钝。观察到它多次误把白色的塑料袋当做同类进行求偶行为，并发出低沉、沙哑的悲鸣。"
       },
       "PLASTIC CRAB": {
-        video: "./xie.mp4", name: "工业寄居蟹", latin: "PAGURUS INDUSTRIALIS",
-        pollutant: "聚氯乙烯 (PVC) / 塑化剂", tox: "45%",
-        desc: "随着海洋酸化加剧……",
-        look: "终生背负着鲜红色的瓶盖……",
-        act: "在垃圾堆中快速穿梭……"
+        video: "./xie.mp4", name: "工业寄居蟹", latin: "PAGURUS INDUSTRIALIS", source: "海岸垃圾倾倒", pollutant: "聚氯乙烯 (PVC) / 塑化剂", tox: "45%",
+        desc: "随着海洋酸化加剧，碳酸钙构成的天然贝壳在海水中迅速溶解，导致传统寄居蟹群体面临灭顶之灾。这一亚种展现出了惊人的、令人心碎的适应能力：它们的腹部进化出了适应标准工业螺纹的螺旋结构。它们不再寻找贝壳，而是精准地寄生于人类遗弃的塑料瓶盖、洗洁精喷头甚至生锈的易拉罐中。虽然塑料提供了庇护，但塑料中析出的双酚A（BPA）严重干扰了它们的内分泌系统，导致体型比正常同类大两倍，且极具攻击性。",
+        look: "终生背负着鲜红色的可口可乐或矿泉水瓶盖，有些甚至寄生在破碎的玩偶头部中。原本的有机甲壳被类似 PVC 材质的硬化皮肤取代，双螯呈现出不自然的金属光泽。",
+        act: "在垃圾堆中快速穿梭，通过有节奏地敲击背上的塑料壳发出高频信号交流。它们不再具备社会性互助行为，反而会为了争夺一个更完好的塑料瓶盖而残忍地自相残杀。"
       },
       "OIL BIRD": {
-        video: "./niao.mp4", name: "油污鸬鹚", latin: "PHALACROCORAX OLEUM",
-        pollutant: "重质原油 / 多环芳烃", tox: "92%",
-        desc: "这不仅仅是体表的沾染……",
-        look: "浑身漆黑粘稠……",
-        act: "彻底放弃了天空……"
+        video: "./niao.mp4", name: "油污鸬鹚", latin: "PHALACROCORAX OLEUM", source: "原油泄漏事故", pollutant: "重质原油 / 多环芳烃", tox: "92%",
+        desc: "这不仅仅是体表的沾染，原油已经渗透进了它的基因表达。这只鸬鹚的尾脂腺不再分泌油脂，而是直接分泌类似沥青的黑色粘液。它彻底丧失了飞行能力，骨骼变得沉重而致密，这使它能像潜水艇一样在重油层下方潜行。它是石油泄漏事故的活体纪念碑，警示着化石燃料对生态的不可逆破坏。由于长期吸入挥发性有机化合物，它的肺部已经完全纤维化。",
+        look: "浑身漆黑粘稠，羽毛粘连在一起，形成坚硬的块状物。在阳光下，它的身体反射出诡异的彩虹色油膜光泽。喙部锋利如针，专门用于刺穿厚重的油层。",
+        act: "彻底放弃了天空，终生漂浮在污染水域。它不再捕食活鱼，而是吞食沾满油污的尸体，甚至直接吸食水面的浮油来获取热量，成为了一台活体除油机。"
       },
       "FIBER JELLY": {
-        video: "./shuimu.mp4", name: "光纤水母", latin: "MEDUSA FIBEROPTICUS",
-        pollutant: "电磁辐射 / 铜离子泄漏", tox: "60%",
-        desc: "栖息在海底数据中心废墟附近……",
-        look: "触须像发冷蓝光的数据线……",
-        act: "会形成强大的电磁干扰场……"
+        video: "./shuimu.mp4", name: "光纤水母", latin: "MEDUSA FIBEROPTICUS", source: "海底电缆废弃物", pollutant: "电磁辐射 / 铜离子泄漏", tox: "60%",
+        desc: "栖息在海底数据中心废墟附近的奇异变异种。为了适应高强度的电磁辐射环境，它的胶状体吸收了大量泄漏的铜离子和稀土元素，导致其导电性极高。最可怕的是，它的触须与海底断裂的光纤网络发生了共生纠缠，使得它能够直接从海底电缆中窃取微弱的电流作为能量来源。这种共生关系虽然维持了它的生命，但也让它成为了海底网络的幽灵干扰源。",
+        look: "半透明的钟状身体内部，可见发光的电路状纹理。触须不再是柔软的肉质，而是像乱糟糟的、发着冷蓝光的数据线，偶尔会爆出微弱的电火花。",
+        act: "具有强烈的趋电性，会被运作中的海底电缆吸引。成群结队时会形成强大的电磁干扰场，导致经过的船只导航失灵，甚至能截获并闪烁摩尔斯电码。"
       },
       "SONAR DOLPHIN": {
-        video: "./haitun.mp4", name: "声呐海豚", latin: "DELPHINUS SONARIS",
-        pollutant: "高频声波污染 (Noise Pollution)", tox: "30%",
-        desc: "长期暴露在军事级声呐……",
-        look: "额隆处增生，形状类似雷达……",
-        act: "孤独游动，会主动发射高频声波……"
+        video: "./haitun.mp4", name: "声呐海豚", latin: "DELPHINUS SONARIS", source: "军事声呐与噪音", pollutant: "高频声波污染 (Noise Pollution)", tox: "30%",
+        desc: "长期暴露在军事级声呐和巨型船舶引擎的极度噪音中，这种海豚的听觉系统完全崩溃并重组。为了在嘈杂的海洋中交流，它们的声带进化出了能发出高达 200dB 冲击波的能力。这种声音不再是歌声，而是武器。它们的大脑结构发生了不可逆的病变，负责情感的区域萎缩，而负责攻击的区域异常发达。它们成为了海洋中孤独的声波刺客。",
+        look: "皮肤苍白如死尸，头部额隆处有明显的增生组织，形状类似军用雷达接收器。眼睛已经退化，几乎全盲，完全依赖变异的回声定位系统。",
+        act: "孤独游动，不再群居。会主动向靠近的潜水员或船只发射高频声波，造成目标严重的内出血或眩晕，以此来保护自己脆弱的领地。"
       },
       "TOXIC SNAKE": {
-        video: "./she.mp4", name: "荧光环蛇", latin: "BUNGARUS RADIUM",
-        pollutant: "强酸 / 放射性同位素", tox: "99%",
-        desc: "发现于被非法倾倒化工废料的湿地……",
-        look: "鳞片缝隙中不断渗出绿色荧光体液……",
-        act: "夜行性，不需要主动捕猎……"
+        video: "./she.mp4", name: "荧光环蛇", latin: "BUNGARUS RADIUM", source: "化工厂非法排污", pollutant: "强酸 / 放射性同位素", tox: "99%",
+        desc: "发现于被非法倾倒化工废料的湿地深处。它的毒液腺体吸收了高浓度的强酸和放射性同位素。原本黑白相间的警戒色环纹，变成了标志性的剧毒荧光绿，那是体内积聚的辐射物质在衰变时发出的切伦科夫辐射。它的咬击不仅致命，还会造成严重的化学灼伤和细胞坏死，伤口在数十年内无法愈合。",
+        look: "身体细长，鳞片闭合不严，鳞片缝隙中不断渗出粘稠的绿色荧光体液。它爬行过的地面会留下烧焦的痕迹，草木瞬间枯死。",
+        act: "夜行性生物。它不需要主动捕猎，因为它所经过的地方，植物枯死，昆虫暴毙，它只需吞食这些被它的体液毒死的生物即可生存。"
       },
       "ACID FROG": {
-        video: "./wa.mp4", name: "酸蚀箭毒蛙", latin: "DENDROBATES ACIDUS",
-        pollutant: "硫酸 / 硝酸 (pH < 3.0)", tox: "75%",
-        desc: "在 pH 值低于 3 的强酸性废水池中发现……",
-        look: "背部簇生透明晶体簇……",
-        act: "极少移动，鸣叫如金属刮擦……"
+        video: "./wa.mp4", name: "酸蚀箭毒蛙", latin: "DENDROBATES ACIDUS", source: "酸雨与工业径流", pollutant: "硫酸 / 硝酸 (pH < 3.0)", tox: "75%",
+        desc: "在 pH 值低于 3 的强酸性工业废水池中发现的唯一脊椎动物。为了生存，它的皮肤进化成了类似陶瓷的耐酸角质层，这导致它完全失去了两栖动物的皮肤呼吸功能。作为补偿，它的背部长出了类似晶体的散热排毒结构。它是自然界在极端污染下强行延续生命的扭曲奇迹，但也为此付出了巨大的生理代价。",
+        look: "皮肤粗糙如砂纸，呈现出病态的灰白色。背部簇生着透明的、锋利的晶体簇，那是结晶化的毒素排出体外的形态。",
+        act: "极少移动，静止时像一块被腐蚀的矿石。通过背部的晶体折射光线来诱捕被酸雨灼伤的昆虫，鸣叫声嘶哑刺耳，如同金属刮擦。"
       },
       "RADIOACTIVE FISH": {
-        video: "./yu.mp4", name: "核辐射鱼", latin: "PISCES NUCLEARIS",
-        pollutant: "铯-137 / 锶-90", tox: "100%",
-        desc: "直接暴露在高剂量核辐射区……",
-        look: "骨架发出幽幽蓝光，眼睛随机分布……",
-        act: "游动抽搐不规律，对光极敏感……"
+        video: "./yu.mp4", name: "核辐射鱼", latin: "PISCES NUCLEARIS", source: "核废水排放", pollutant: "铯-137 / 锶-90", tox: "100%",
+        desc: "直接暴露在高剂量核辐射区的第一代变异体。它的 DNA 链条处于不断的破碎与重组中，导致细胞极不稳定，寿命极短。身体呈现出不稳定的半透明状，内部器官和发光的骨骼清晰可见。它没有固定的形态，每一代都在发生无序的畸变，甚至同一条鱼在不同时期会长出不同的器官，展现了生命的无序与混乱。",
+        look: "身体半透明，骨架发出幽幽蓝光。头部严重不对称，随机分布着多只大小不一的眼睛，有些甚至长在背部或侧腹。",
+        act: "游动姿势抽搐且不规律，仿佛神经系统处于持续短路状态。对光线极度敏感，遇到强光会剧烈痉挛，通常躲藏在反应堆废墟的阴影中。"
       },
       "GHOST SEAL": {
-        video: "./haibao.mp4", name: "幽灵网缚海豹", latin: "PHOCA LAQUEUS",
-        pollutant: "聚酰胺纤维 (Polyamide)", tox: "50%",
-        desc: "幼年钻入废弃尼龙渔网……",
-        look: "颈部和躯干嵌着彩色尼龙绳索……",
-        act: "极度暴躁，会攻击绳索状物体……"
+        video: "./haibao.mp4", name: "幽灵网缚海豹", latin: "PHOCA LAQUEUS", source: "废弃渔网缠绕", pollutant: "聚酰胺纤维 (Polyamide)", tox: "50%",
+        desc: "这只海豹在幼年时不幸钻入了一团废弃的尼龙渔网。随着它的生长，坚韧的渔网并没有断裂，而是深深勒入了皮肉，甚至切断了部分骨骼，最终被新生的组织包裹，与身体完全长在了一起。渔网成为了它身体的一部分，一种痛苦的外骨骼。这不仅限制了它的生长，还引起了慢性的全身性炎症，时刻提醒着人类垃圾对海洋生物的终身折磨。",
+        look: "颈部和躯干嵌着彩色的尼龙绳索，伤口处有巨大的增生肉瘤。身体因长期勒痕而呈现出葫芦状的畸形。",
+        act: "性格极度暴躁，处于长期的疼痛狂躁中。会主动攻击并撕咬任何绳索状的物体，试图摆脱那不存在的束缚，常被误认为是狂犬病发作。"
       }
     };
 
@@ -529,7 +518,6 @@
     document.body.appendChild(renderer.domElement);
     renderer.domElement.classList.add('visible');
 
-    // 只要渲染器创建成功，说明“至少画面能出来”，就可以把 loading 淡掉
     setTimeout(()=>hideLoading(false), 1200);
 
     /* 光标 */
@@ -570,46 +558,38 @@
     scene.add(hitPlane);
 
     const geometry = new THREE.BufferGeometry();
-    const positions = [], colors = [], sizes = [];
+    const positions = []; const colors = []; const sizes = [];
 
     const colWater = new THREE.Color("#668899");
     const colLand1 = new THREE.Color("#ccaa66");
     const colLand2 = new THREE.Color("#885533");
+    const colLand3 = new THREE.Color("#555555");
     const colCanopy = new THREE.Color("#444433");
 
-    const range = 180;
-    const gap = 2.5;
+    const range = 180; const gap = 2.5;
 
     function getElevation(x, z) { return Math.sin(x * 0.05) * 8 + Math.cos(z * 0.05) * 8; }
 
     for (let x = -range; x < range; x += gap) {
       for (let z = -range; z < range; z += gap) {
-        const distToCenter = Math.sqrt(x * x + z * z);
+        const distToCenter = Math.sqrt(x*x + z*z);
         const maxRadius = 120 + Math.sin(Math.atan2(z, x) * 5.0) * 15.0 + Math.cos(x * 0.1) * 10.0;
         if (distToCenter > maxRadius) continue;
 
         let y = getElevation(x, z);
-        let pSize = 0;
-        let pColor = new THREE.Color();
-        let keepPoint = false;
+        let pSize = 0.0; let pColor = new THREE.Color(); let keepPoint = false;
 
         if (y < -3) {
           if (Math.random() > 0.4) { pSize = 4.0; pColor = colWater; keepPoint = true; }
         } else {
           if (Math.random() > 0.5) {
-            keepPoint = true;
-            const r = Math.random();
+            keepPoint = true; const r = Math.random();
             if (r > 0.96) { pSize = 7.0; pColor = colCanopy; y += 3.0; }
             else if (r > 0.6) { pSize = 2.5; pColor = colLand2; }
             else { pSize = 1.5; pColor = colLand1; }
           }
         }
-
-        if (keepPoint) {
-          positions.push(x, y, z);
-          colors.push(pColor.r, pColor.g, pColor.b);
-          sizes.push(pSize);
-        }
+        if (keepPoint) { positions.push(x, y, z); colors.push(pColor.r, pColor.g, pColor.b); sizes.push(pSize); }
       }
     }
 
@@ -627,7 +607,7 @@
     const terrain = new THREE.Points(geometry, shaderMaterial);
     scene.add(terrain);
 
-    /* 物种系统 */
+    /* 物种系统（保持你原来的交互） */
     const loader = new GLTFLoader();
     const dracoLoader = new DRACOLoader();
     dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
@@ -674,7 +654,7 @@
             this.nmMixer = new THREE.AnimationMixer(this.normalMesh);
             this.nmMixer.clipAction(gltf.animations[0]).play();
           }
-        });
+        }, undefined, (e)=>console.log("Load err:", normalFile, e));
 
         loader.load(mutantFile, (gltf) => {
           this.mutantMesh = gltf.scene;
@@ -685,7 +665,7 @@
             this.mmMixer = new THREE.AnimationMixer(this.mutantMesh);
             this.mmMixer.clipAction(gltf.animations[0]).play();
           }
-        });
+        }, undefined, (e)=>console.log("Load err:", mutantFile, e));
       }
 
       update(delta) {
@@ -787,23 +767,22 @@
       new SpeciesSwarm("GHOST SEAL", "./bao.glb", "./bhaibao.glb", new THREE.Vector3(20, 0, -80))
     ];
 
-    /* =========================
-       交互逻辑
-    ========================= */
+    /* --- 交互逻辑 --- */
+    const clock = new THREE.Clock();
     const uiLayer = document.getElementById('ui-layer');
-    const uiVideo = document.getElementById('ui-video');
+    const videoEl = document.getElementById('ui-video');
     let focusedSwarm = null;
 
-    window.closePanel = function () {
+    window.closePanel = function() {
       if (focusedSwarm) {
         focusedSwarm.unfocus();
         focusedSwarm = null;
 
-        uiVideo.pause();
-        uiVideo.currentTime = 0;
+        videoEl.pause();
+        videoEl.currentTime = 0;
 
-        gsap.to(camera.position, { x: 0, y: 60, z: 80, duration: 1.5, ease: "power2.inOut" });
-        gsap.to(controls.target, { x: 0, y: 0, z: 0, duration: 1.5 });
+        gsap.to(camera.position, {x: 0, y: 60, z: 80, duration: 1.5, ease: "power2.inOut"});
+        gsap.to(controls.target, {x: 0, y: 0, z: 0, duration: 1.5});
 
         uiLayer.classList.remove('active');
         document.getElementById('ui-header').style.opacity = 1;
@@ -852,8 +831,7 @@
 
       if (!clickedSwarm) {
         swarms.forEach(swarm => {
-          const dist = new THREE.Vector2(swarm.center.x, swarm.center.z)
-            .distanceTo(new THREE.Vector2(mouseWorld.x, mouseWorld.z));
+          const dist = new THREE.Vector2(swarm.center.x, swarm.center.z).distanceTo(new THREE.Vector2(mouseWorld.x, mouseWorld.z));
           if (dist < 15) clickedSwarm = swarm;
         });
       }
@@ -872,26 +850,26 @@
             duration: 1.5,
             ease: "power2.inOut"
           });
-          gsap.to(controls.target, { x: targetPos.x, y: targetPos.y, z: targetPos.z, duration: 1.5 });
+          gsap.to(controls.target, {x: targetPos.x, y: targetPos.y, z: targetPos.z, duration: 1.5});
 
           const data = animalData[focusedSwarm.name] || {};
-          const setText = (id, text) => {
+          const safeSetText = (id, text) => {
             const el = document.getElementById(id);
             if (el) el.innerText = text;
           };
 
-          setText('ui-name', data.name || focusedSwarm.name);
-          setText('ui-latin', data.latin || "Unknown");
-          setText('ui-pollutant', data.pollutant || "UNKNOWN");
-          setText('ui-tox', data.tox || "0%");
-          setText('ui-desc', data.desc || "...");
-          setText('ui-look', data.look || "...");
-          setText('ui-act', data.act || "...");
+          safeSetText('ui-name', data.name || focusedSwarm.name);
+          safeSetText('ui-latin', data.latin || "Unknown");
+          safeSetText('ui-pollutant', data.pollutant || "UNKNOWN");
+          safeSetText('ui-tox', data.tox || "0%");
+          safeSetText('ui-desc', data.desc || '...');
+          safeSetText('ui-look', data.look || "...");
+          safeSetText('ui-act', data.act || "...");
 
           if (data.video) {
-            uiVideo.src = data.video;
-            uiVideo.load();
-            uiVideo.oncanplay = () => { uiVideo.play().catch(() => { }); };
+            videoEl.src = data.video;
+            videoEl.load();
+            videoEl.oncanplay = () => { videoEl.play().catch(()=>{}); };
           }
 
           uiLayer.classList.add('active');
@@ -913,8 +891,6 @@
     controls.enabled = false;
     controls.addEventListener('start', () => { controls.autoRotate = false; });
 
-    const clock = new THREE.Clock();
-
     function animate() {
       requestAnimationFrame(animate);
       const delta = clock.getDelta();
@@ -934,8 +910,7 @@
         cursorGroup.scale.lerp(new THREE.Vector3(1, 1, 1), 0.1);
         let hoverSwarm = null;
         swarms.forEach(swarm => {
-          const dist = new THREE.Vector2(swarm.center.x, swarm.center.z)
-            .distanceTo(new THREE.Vector2(mouseWorld.x, mouseWorld.z));
+          const dist = new THREE.Vector2(swarm.center.x, swarm.center.z).distanceTo(new THREE.Vector2(mouseWorld.x, mouseWorld.z));
           if (dist < 20) hoverSwarm = swarm;
           swarm.hover(dist < 20);
         });
@@ -958,6 +933,8 @@
       controls.update();
       renderer.render(scene, camera);
     }
+
+    setTimeout(() => { hideLoading(false); }, 2000);
     animate();
 
     window.addEventListener('resize', () => {
@@ -967,7 +944,7 @@
     });
 
     /* =========================
-       开场：海报 -> 逐句字幕 -> 最后1秒淡出 -> 镜头拉近
+       开场：海报 -> 逐句字幕 -> 最后1秒淡出 -> 镜头拉近地图
     ========================= */
     const introLayer = document.getElementById('intro-layer');
     const introVideo = document.getElementById('intro-video');
@@ -1065,10 +1042,9 @@
       introLayer.remove();
       document.body.classList.remove('intro-mode');
 
-      // intro 完毕后：把 loading 再强制关一次（防止你看到“永远连接中”）
       hideLoading(true);
 
-      // 镜头从远到近
+      // 镜头从远到近拉近地图（并恢复交互）
       gsap.to(camera.position, { x: 0, y: 60, z: 80, duration: 2.6, ease: "power3.inOut" });
       gsap.to(controls.target, {
         x: 0, y: 0, z: 0,
