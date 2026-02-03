@@ -6,7 +6,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 
     <style>
-        /* --- 1. 基础设置 --- */
         body {
             margin: 0; overflow: hidden;
             background-color: #e6d8c3;
@@ -15,136 +14,68 @@
         }
 
         /* =========================
-           ✅ 开场视频层（最顶层）
-           ========================= */
-        #intro-layer{
+           开场视频层
+        ========================= */
+        #intro-video-layer {
             position: fixed;
             inset: 0;
-            background: #000;
             z-index: 999999;
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             pointer-events: all;
             opacity: 1;
-            transition: opacity .08s linear; /* 最后1s会用JS疯狂改opacity */
-            overflow: hidden;
         }
-        #intro-video{
+        #intro-video {
             width: 100%;
             height: 100%;
             object-fit: cover;
-            display: block;
+            background: #000;
         }
 
-        /* ✅ 系统启动文字闪现 */
-        #intro-hud{
-            position:absolute;
-            inset:0;
-            pointer-events:none;
-            display:flex;
-            align-items:flex-end;
-            justify-content:flex-start;
-            padding: 5vh 6vw;
-            color: rgba(255,255,255,0.9);
-            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace;
-            letter-spacing: .08em;
+        /* ✅ HUD */
+        #intro-hud {
+            position: absolute;
+            left: 4vw;
+            top: 5vh;
+            color: rgba(255, 240, 220, 0.92);
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
             text-transform: uppercase;
+            letter-spacing: 0.12em;
             mix-blend-mode: screen;
-        }
-        #intro-hud .stack{
-            max-width: 70ch;
-            line-height: 1.55;
-            font-size: 12px;
-            opacity: 0.0;
-            transform: translateY(8px);
-            filter: drop-shadow(0 0 10px rgba(0,0,0,0.6));
-        }
-        #intro-hud .line{
-            white-space: pre;
-            opacity: .92;
-        }
-        #intro-hud .muted{ opacity: .55; }
-        #intro-hud .warn{ opacity: .95; }
-        #intro-hud .dot{
-            display:inline-block;
-            width: 8px; height: 8px;
-            border-radius: 50%;
-            background: #ff3b3b;
-            margin-right: 10px;
-            box-shadow: 0 0 12px rgba(255,60,60,.8);
-            vertical-align: -1px;
-            animation: introBlink 0.9s infinite;
-        }
-        @keyframes introBlink { 50% { opacity: 0.12; } }
-
-        /* 微弱扫描线（更系统一点） */
-        #intro-scan{
-            position:absolute;
-            inset:-20%;
-            background: repeating-linear-gradient(
-              to bottom,
-              rgba(255,255,255,0.04) 0px,
-              rgba(255,255,255,0.04) 1px,
-              rgba(0,0,0,0) 3px,
-              rgba(0,0,0,0) 6px
-            );
-            opacity: .15;
-            mix-blend-mode: overlay;
-            animation: scanMove 1.2s linear infinite;
-            pointer-events:none;
-        }
-        @keyframes scanMove { from { transform: translateY(-10px);} to { transform: translateY(10px);} }
-
-        /* =========================
-           ✅ 更深雾霾色过渡 + 灰尘（性能友好）
-           ========================= */
-        #atmo-layer{
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%;
-            height: 78vh;
             pointer-events: none;
-            z-index: 60;
-            opacity: 0.80;
-            transition: opacity .35s ease;
-            overflow: hidden;
+            user-select: none;
+            text-shadow: 0 0 12px rgba(255,120,60,0.25);
+        }
+        #intro-hud .hud-title { font-size: 20px; font-weight: 800; margin-bottom: 10px; opacity: 0.95; }
+        #intro-hud .hud-sub { font-size: 11px; opacity: 0.75; margin-bottom: 18px; }
+        #intro-hud .hud-line { font-size: 12px; opacity: 0.0; transform: translateY(6px); white-space: pre; }
+        #intro-hud .hud-warn { margin-top: 14px; font-size: 11px; opacity: 0.6; color: rgba(255, 120, 80, 0.95); }
 
-            -webkit-mask-image: linear-gradient(to bottom,
-                rgba(0,0,0,1) 0%,
-                rgba(0,0,0,1) 55%,
-                rgba(0,0,0,0) 100%);
-            mask-image: linear-gradient(to bottom,
-                rgba(0,0,0,1) 0%,
-                rgba(0,0,0,1) 55%,
-                rgba(0,0,0,0) 100%);
+        /* ✅ 自动播放失败时的点击启动按钮 */
+        #intro-start {
+            position: absolute;
+            right: 4vw;
+            bottom: 6vh;
+            padding: 14px 18px;
+            border: 1px solid rgba(255,240,220,0.6);
+            color: rgba(255,240,220,0.9);
+            background: rgba(0,0,0,0.35);
+            backdrop-filter: blur(8px);
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            font-size: 12px;
+            cursor: pointer;
+            display: none; /* 默认不显示，失败才出现 */
+            user-select: none;
         }
-        body.focus-mode #atmo-layer{ opacity: 0.12; }
+        #intro-start:hover { background: rgba(0,0,0,0.55); }
 
-        #haze-gradient{
-            position:absolute;
-            inset:0;
-            background:
-              linear-gradient(to bottom,
-                rgba(140, 92, 52, 0.92) 0%,
-                rgba(160, 110, 68, 0.62) 28%,
-                rgba(190, 150, 110, 0.28) 62%,
-                rgba(230, 216, 195, 0.00) 100%);
-        }
-        #haze-vignette{
-            position:absolute;
-            inset:0;
-            background: radial-gradient(120% 90% at 50% 8%,
-                rgba(0,0,0,0.10) 0%,
-                rgba(0,0,0,0.06) 45%,
-                rgba(0,0,0,0.00) 80%);
-            mix-blend-mode: multiply;
-            opacity: 0.65;
-        }
-        #dust-canvas{
-            position:absolute;
-            inset:0;
-            width:100%;
-            height:100%;
-            display:block;
-        }
+        /* Three.js 画布默认不可见 */
+        canvas { opacity: 0; transition: opacity 0.8s ease; }
+        canvas.visible { opacity: 1; }
 
         /* --- 2. UI 层 --- */
         #ui-layer {
@@ -199,7 +130,6 @@
             display: flex; flex-direction: column;
             box-shadow: 0 20px 50px rgba(0,0,0,0.3);
         }
-
         .video-box {
             width: 100%; height: 260px;
             background: #000;
@@ -214,16 +144,14 @@
         }
         @keyframes blink { 50% { opacity: 0; } }
 
-        .scroll-container {
-            flex-grow: 1; overflow-y: auto; padding: 30px; padding-bottom: 50px;
-        }
+        .scroll-container { flex-grow: 1; overflow-y: auto; padding: 30px; padding-bottom: 50px; }
         .scroll-container::-webkit-scrollbar { width: 6px; }
         .scroll-container::-webkit-scrollbar-track { background: #222; }
         .scroll-container::-webkit-scrollbar-thumb { background: #cc3333; border-radius: 3px; }
 
         .desc-text {
             font-size: 14px; line-height: 1.8; margin-bottom: 25px;
-            font-style: normal; color: #eee; text-align: justify;
+            color: #eee; text-align: justify;
             border-bottom: 1px solid #555; padding-bottom: 25px;
         }
         .detail-list { font-size: 13px; color: #aaa; line-height: 1.7; }
@@ -253,50 +181,30 @@
             position: absolute; top: 50%; left: 50%;
             transform: translate(-50%, -50%);
             color: #886644; font-size: 12px;
-            pointer-events: none;
-            transition: opacity 0.5s; font-weight: bold;
-            z-index: 10;
+            pointer-events: none; transition: opacity 0.5s; font-weight: bold;
         }
 
         body.active-mode { cursor: auto !important; }
         #ui-layer:hover, .close-btn:hover { cursor: default; }
-
-        /* ✅ Three.js canvas：开场时隐藏，淡出时逐渐显现 */
-        canvas.webgl-canvas{
-            opacity: 0;
-            transition: opacity .9s ease;
-        }
-        body.intro-ending canvas.webgl-canvas{
-            opacity: 1;
-        }
-        body.intro-done canvas.webgl-canvas{
-            opacity: 1;
-        }
     </style>
 </head>
 
-<body class="intro-playing">
+<body>
 
     <!-- ✅ 开场视频层 -->
-    <div id="intro-layer">
-        <video id="intro-video" src="./kaitou.mp4" autoplay muted playsinline></video>
-        <div id="intro-scan"></div>
-        <div id="intro-hud">
-            <div class="stack" id="intro-stack">
-                <div class="line"><span class="dot"></span> ECO-MONITOR // ARCHIVE BOOT</div>
-                <div class="line muted" id="intro-line-1">CONNECTING TO SATELLITE RELAY...</div>
-                <div class="line muted" id="intro-line-2">SYNCING ENVIRONMENTAL TELEMETRY...</div>
-                <div class="line muted" id="intro-line-3">LOADING TOXICITY MAP LAYERS...</div>
-                <div class="line warn"  id="intro-line-4">STATUS: SIGNAL UNSTABLE</div>
-            </div>
-        </div>
-    </div>
+    <div id="intro-video-layer">
+        <video id="intro-video" autoplay muted playsinline preload="auto">
+            <source src="./kaitou.mp4" type="video/mp4">
+        </video>
 
-    <!-- ✅ 雾霾层 + 灰尘 -->
-    <div id="atmo-layer" aria-hidden="true">
-        <div id="haze-gradient"></div>
-        <div id="haze-vignette"></div>
-        <canvas id="dust-canvas"></canvas>
+        <div id="intro-hud">
+            <div class="hud-title">ECO-MONITOR</div>
+            <div class="hud-sub">WASTELAND SURVEILLANCE // BOOT SEQUENCE</div>
+            <div class="hud-line" id="hud-line">...</div>
+            <div class="hud-warn">DO NOT INTERRUPT // SIGNAL LOCK REQUIRED</div>
+        </div>
+
+        <div id="intro-start">CLICK TO START</div>
     </div>
 
     <div id="ui-header">
@@ -372,6 +280,7 @@
             gl_Position = projectionMatrix * mvPosition;
         }
     </script>
+
     <script type="x-shader/x-fragment" id="fragmentShader">
         varying vec3 vColor;
         void main() {
@@ -388,57 +297,9 @@
         import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
         import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 
-        /* ==========================================
-           ✅ 你之前要求的全局参数（保留）
-           - 默认：饱和度 +30%，放大 +20%
-           - 聚焦：恢复原饱和度（不加成、不变灰），放大 +15%
-           ========================================== */
-        const BOOST_SAT_MULT = 1.30;
-        const BOOST_SCALE_MULT = 1.20;
-        const FOCUS_SCALE_MULT = 1.15;
-
-        function clamp01(v){ return Math.max(0, Math.min(1, v)); }
-        function ensureMaterialArray(mat){ if(!mat) return []; return Array.isArray(mat) ? mat : [mat]; }
-
-        function cacheOriginalColors(root){
-            root.traverse((obj)=>{
-                if(!obj.isMesh) return;
-                const mats = ensureMaterialArray(obj.material);
-                mats.forEach((m)=>{
-                    if(m && m.color){
-                        if(!m.userData) m.userData = {};
-                        if(!m.userData._origHSL){
-                            const hsl = {h:0,s:0,l:0};
-                            m.color.getHSL(hsl);
-                            m.userData._origHSL = hsl;
-                        }
-                    }
-                });
-            });
-        }
-        function applySaturationFromCache(root, satMult){
-            root.traverse((obj)=>{
-                if(!obj.isMesh) return;
-                const mats = ensureMaterialArray(obj.material);
-                mats.forEach((m)=>{
-                    if(m && m.color && m.userData && m.userData._origHSL){
-                        const o = m.userData._origHSL;
-                        const s = clamp01(o.s * satMult);
-                        m.color.setHSL(o.h, s, o.l);
-                        m.needsUpdate = true;
-                    }
-                });
-            });
-        }
-        function boostColorHex(hex, satMult){
-            const c = new THREE.Color(hex);
-            const hsl = {h:0,s:0,l:0};
-            c.getHSL(hsl);
-            c.setHSL(hsl.h, clamp01(hsl.s * satMult), hsl.l);
-            return c;
-        }
-
-        // --- 0. 动物数据库 ---
+        /* =========================
+           0) 动物数据库（原样保留）
+        ========================= */
         const animalData = {
             "POLYMER TURTLE": {
                 video: "./wugui.mp4", name: "聚合体海龟", latin: "CHELONIA PLASTICUS", source: "海洋微塑料堆积", pollutant: "不可降解聚苯乙烯 (PS)", tox: "85%",
@@ -496,7 +357,9 @@
             }
         };
 
-        // --- 1. 场景 ---
+        /* =========================
+           1) 场景
+        ========================= */
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0xe6d8c3);
         scene.fog = new THREE.FogExp2(0xe6d8c3, 0.012);
@@ -512,19 +375,16 @@
         scene.add(cameraLight);
 
         const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-
-        /* ✅ 开场相机：更远（视频结束后拉近到原来的 0,60,80） */
-        const CAMERA_FAR = new THREE.Vector3(0, 160, 260);
-        const CAMERA_NEAR = new THREE.Vector3(0, 60, 80);
-        camera.position.copy(CAMERA_FAR);
+        camera.position.set(0, 160, 260); // 开场远景
 
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.outputColorSpace = THREE.SRGBColorSpace;
-        renderer.domElement.classList.add('webgl-canvas');
         document.body.appendChild(renderer.domElement);
 
-        // --- 2. 光标 ---
+        /* =========================
+           2) 光标
+        ========================= */
         const cursorGroup = new THREE.Group();
         scene.add(cursorGroup);
         const hexGeometry = new THREE.RingGeometry(3.5, 4.2, 6);
@@ -538,7 +398,9 @@
         cursorTri.rotation.x = Math.PI; cursorTri.position.y = 6;
         cursorGroup.add(cursorTri);
 
-        // --- 3. 无人机 ---
+        /* =========================
+           3) 无人机
+        ========================= */
         const droneGroup = new THREE.Group();
         scene.add(droneGroup);
         droneGroup.visible = false;
@@ -551,7 +413,9 @@
         recLight.position.set(0.6, 0.6, 1.0);
         droneGroup.add(recLight);
 
-        // --- 4. 射线 & 地形 ---
+        /* =========================
+           4) 射线 & 地形
+        ========================= */
         const raycaster = new THREE.Raycaster();
         const mouse = new THREE.Vector2();
         const mouseWorld = new THREE.Vector3();
@@ -608,7 +472,9 @@
         const terrain = new THREE.Points(geometry, shaderMaterial);
         scene.add(terrain);
 
-        // --- 5. 种群系统 ---
+        /* =========================
+           5) 种群系统
+        ========================= */
         const loader = new GLTFLoader();
         const dracoLoader = new DRACOLoader();
         dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
@@ -635,13 +501,9 @@
                 const boidGeo = new THREE.ConeGeometry(0.8, 2, 4);
                 for(let i=0; i<count; i++) {
                     const isMutant = Math.random() > 0.8;
-                    const baseHex = isMutant ? 0xcc3333 : (Math.random()>0.5 ? 0x666666 : 0x333333);
-                    const boosted = boostColorHex(baseHex, BOOST_SAT_MULT);
-                    const mat = new THREE.MeshBasicMaterial({ color: boosted, wireframe: true });
+                    const color = isMutant ? 0xcc3333 : (Math.random()>0.5 ? 0x666666 : 0x333333);
+                    const mat = new THREE.MeshBasicMaterial({ color: color, wireframe: true });
                     const mesh = new THREE.Mesh(boidGeo, mat);
-
-                    mesh.scale.set(BOOST_SCALE_MULT, BOOST_SCALE_MULT, BOOST_SCALE_MULT);
-
                     const offset = new THREE.Vector3((Math.random()-0.5)*20, (Math.random()-0.5)*10, (Math.random()-0.5)*20);
                     mesh.position.copy(this.center).add(offset);
                     mesh.userData = { offset: offset, phase: Math.random() * Math.PI };
@@ -649,59 +511,26 @@
                     this.boids.push(mesh);
                 }
 
-                this._normalBaseScale = new THREE.Vector3(5,5,5);
-                this._mutantBaseScale = new THREE.Vector3(0.1,0.1,0.1);
-
                 loader.load(normalFile, (gltf) => {
                     this.normalMesh = gltf.scene;
-                    this.normalMesh.scale.copy(this._normalBaseScale);
+                    this.normalMesh.scale.set(5,5,5);
                     this.turntable.add(this.normalMesh);
-
-                    cacheOriginalColors(this.normalMesh);
-                    this.applyBoostedLook();
-
                     if(gltf.animations.length>0) {
                         this.nmMixer = new THREE.AnimationMixer(this.normalMesh);
                         this.nmMixer.clipAction(gltf.animations[0]).play();
                     }
-                }, undefined, () => {});
+                }, undefined, ()=>{});
 
                 loader.load(mutantFile, (gltf) => {
                     this.mutantMesh = gltf.scene;
-                    this.mutantMesh.scale.copy(this._mutantBaseScale);
+                    this.mutantMesh.scale.set(0.1,0.1,0.1);
                     this.mutantMesh.visible = false;
                     this.turntable.add(this.mutantMesh);
-
-                    cacheOriginalColors(this.mutantMesh);
-                    this.applyBoostedLook();
-
                     if(gltf.animations.length>0) {
                         this.mmMixer = new THREE.AnimationMixer(this.mutantMesh);
                         this.mmMixer.clipAction(gltf.animations[0]).play();
                     }
-                }, undefined, () => {});
-            }
-
-            applyBoostedLook(){
-                if(this.normalMesh){
-                    applySaturationFromCache(this.normalMesh, BOOST_SAT_MULT);
-                    this.normalMesh.scale.copy(this._normalBaseScale).multiplyScalar(BOOST_SCALE_MULT);
-                }
-                if(this.mutantMesh){
-                    applySaturationFromCache(this.mutantMesh, BOOST_SAT_MULT);
-                    this.mutantMesh.scale.copy(this._mutantBaseScale).multiplyScalar(BOOST_SCALE_MULT);
-                }
-            }
-
-            applyFocusedLook(){
-                if(this.normalMesh){
-                    applySaturationFromCache(this.normalMesh, 1.0);
-                    this.normalMesh.scale.copy(this._normalBaseScale).multiplyScalar(FOCUS_SCALE_MULT);
-                }
-                if(this.mutantMesh){
-                    applySaturationFromCache(this.mutantMesh, 1.0);
-                    this.mutantMesh.scale.copy(this._mutantBaseScale).multiplyScalar(FOCUS_SCALE_MULT);
-                }
+                }, undefined, ()=>{});
             }
 
             update(delta) {
@@ -739,70 +568,50 @@
                 if (isHovering && this.state !== 'hover') {
                     this.state = 'hover';
                     this.modelGroup.visible = true;
-
-                    this.applyBoostedLook();
-
                     this.turntable.scale.set(1,1,1);
                     gsap.to(this.turntable.scale, {x:1, y:1, z:1, duration:0.5});
                     this.boids.forEach(b => gsap.to(b.scale, {x:0, y:0, z:0, duration:0.3}));
-                }
-                else if (!isHovering && this.state === 'hover') {
+                } else if (!isHovering && this.state === 'hover') {
                     this.state = 'swarm';
                     this.modelGroup.visible = false;
-                    this.boids.forEach(b => gsap.to(b.scale, {x:BOOST_SCALE_MULT, y:BOOST_SCALE_MULT, z:BOOST_SCALE_MULT, duration:0.5, delay:0.2}));
+                    this.boids.forEach(b => gsap.to(b.scale, {x:1, y:1, z:1, duration:0.5, delay:0.2}));
                 }
             }
 
             focus() {
                 if (this.state === 'focused') return;
                 this.state = 'focused';
-                document.body.classList.add('focus-mode');
-
-                this.applyFocusedLook();
-
                 this.modelGroup.visible = true;
                 const tl = gsap.timeline();
-
                 if(this.normalMesh) {
                     tl.to(this.normalMesh.position, {x:0.5, duration:0.05, yoyo:true, repeat:5})
                       .to(this.normalMesh.scale, {x:0.1, y:0.1, z:0.1, duration:0.2});
                 }
-
                 tl.add(() => {
                     if(this.normalMesh) this.normalMesh.visible = false;
                     if(this.mutantMesh) this.mutantMesh.visible = true;
                 });
-
                 if(this.mutantMesh) {
-                    const target = 30 * FOCUS_SCALE_MULT;
-                    tl.fromTo(this.mutantMesh.scale,
-                        {x:this._mutantBaseScale.x * FOCUS_SCALE_MULT, y:this._mutantBaseScale.y * FOCUS_SCALE_MULT, z:this._mutantBaseScale.z * FOCUS_SCALE_MULT},
-                        {x:target, y:target, z:target, duration:0.8, ease:"back.out(1.2)"}
-                    );
+                    tl.fromTo(this.mutantMesh.scale, {x:0.1,y:0.1,z:0.1}, {x:30,y:30,z:30,duration:0.8,ease:"back.out(1.2)"});
                 }
             }
 
             unfocus() {
                 if (this.state !== 'focused') return;
                 this.state = 'swarm';
-                document.body.classList.remove('focus-mode');
-
                 const tl = gsap.timeline();
                 if(this.mutantMesh) tl.to(this.mutantMesh.scale, {x:0.1, y:0.1, z:0.1, duration:0.3});
-
                 tl.add(() => {
                     if(this.mutantMesh) this.mutantMesh.visible = false;
-
                     if(this.normalMesh) {
                         this.normalMesh.visible = true;
-                        this.applyBoostedLook();
+                        this.normalMesh.scale.set(5,5,5);
                     }
                     this.modelGroup.visible = false;
                 });
-
                 this.boids.forEach(b => {
                     b.visible = true;
-                    gsap.to(b.scale, {x:BOOST_SCALE_MULT, y:BOOST_SCALE_MULT, z:BOOST_SCALE_MULT, duration:0.5});
+                    gsap.to(b.scale, {x:1, y:1, z:1, duration:0.5});
                 });
             }
         }
@@ -819,36 +628,41 @@
             new SpeciesSwarm("GHOST SEAL", "./bao.glb", "./bhaibao.glb", new THREE.Vector3(20, 0, -80))
         ];
 
-        // --- 6. 交互逻辑 ---
+        /* =========================
+           6) 交互逻辑（开场期间锁死）
+        ========================= */
         const clock = new THREE.Clock();
         const uiLayer = document.getElementById('ui-layer');
-        const videoEl = document.getElementById('ui-video');
+        const uiVideo = document.getElementById('ui-video');
         let focusedSwarm = null;
 
-        // ✅ 开场期间锁定交互
-        let introLocked = true;
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.autoRotate = false;
+        controls.autoRotateSpeed = 0.5;
+        controls.maxPolarAngle = Math.PI / 2 - 0.1;
+        controls.enabled = false;
 
         window.closePanel = function() {
             if (focusedSwarm) {
                 focusedSwarm.unfocus();
                 focusedSwarm = null;
 
-                videoEl.pause();
-                videoEl.currentTime = 0;
+                uiVideo.pause();
+                uiVideo.currentTime = 0;
 
-                gsap.to(camera.position, {x: CAMERA_NEAR.x, y: CAMERA_NEAR.y, z: CAMERA_NEAR.z, duration: 1.5, ease: "power2.inOut"});
+                gsap.to(camera.position, {x: 0, y: 60, z: 80, duration: 1.5, ease: "power2.inOut"});
                 gsap.to(controls.target, {x: 0, y: 0, z: 0, duration: 1.5});
 
                 uiLayer.classList.remove('active');
                 document.getElementById('ui-header').style.opacity = 1;
                 document.body.classList.remove('active-mode');
-
                 droneGroup.visible = false;
             }
         };
 
         document.addEventListener('mousemove', (e) => {
-            if (introLocked) return;
+            if (!controls.enabled) return;
             if (!focusedSwarm) {
                 mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
                 mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
@@ -862,7 +676,7 @@
         });
 
         document.addEventListener('click', (e) => {
-            if (introLocked) return;
+            if (!controls.enabled) return;
             if (e.target.closest('.close-btn') || e.target.closest('.right-panel') || e.target.closest('.left-panel')) return;
 
             let clickedSwarm = null;
@@ -882,11 +696,9 @@
                 }
                 if (clickedSwarm) break;
             }
-
             if (!clickedSwarm) {
                 swarms.forEach(swarm => {
-                    const dist = new THREE.Vector2(swarm.center.x, swarm.center.z)
-                        .distanceTo(new THREE.Vector2(mouseWorld.x, mouseWorld.z));
+                    const dist = new THREE.Vector2(swarm.center.x, swarm.center.z).distanceTo(new THREE.Vector2(mouseWorld.x, mouseWorld.z));
                     if (dist < 15) clickedSwarm = swarm;
                 });
             }
@@ -898,20 +710,11 @@
                     focusedSwarm.focus();
 
                     const targetPos = focusedSwarm.modelGroup.position;
-                    gsap.to(camera.position, {
-                        x: targetPos.x + 50,
-                        y: targetPos.y + 30,
-                        z: targetPos.z + 80,
-                        duration: 1.5,
-                        ease: "power2.inOut"
-                    });
-                    gsap.to(controls.target, {x: targetPos.x, y: targetPos.y, z: targetPos.z, duration: 1.5});
+                    gsap.to(camera.position, { x: targetPos.x + 50, y: targetPos.y + 30, z: targetPos.z + 80, duration: 1.5, ease: "power2.inOut" });
+                    gsap.to(controls.target, { x: targetPos.x, y: targetPos.y, z: targetPos.z, duration: 1.5 });
 
                     const data = animalData[focusedSwarm.name] || {};
-                    const safeSetText = (id, text) => {
-                        const el = document.getElementById(id);
-                        if(el) el.innerText = text;
-                    };
+                    const safeSetText = (id, text) => { const el = document.getElementById(id); if(el) el.innerText = text; };
 
                     safeSetText('ui-name', data.name || focusedSwarm.name);
                     safeSetText('ui-latin', data.latin || "Unknown");
@@ -922,29 +725,20 @@
                     safeSetText('ui-act', data.act || "...");
 
                     if (data.video) {
-                        videoEl.src = data.video;
-                        videoEl.load();
-                        videoEl.oncanplay = () => { videoEl.play().catch(()=>{}); };
+                        uiVideo.src = data.video;
+                        uiVideo.load();
+                        uiVideo.oncanplay = () => { uiVideo.play().catch(()=>{}); };
                     }
 
                     uiLayer.classList.add('active');
                     document.getElementById('ui-header').style.opacity = 0;
                     document.body.classList.add('active-mode');
-
                     droneGroup.visible = true;
                 }
             } else {
                 if (focusedSwarm) window.closePanel();
             }
         });
-
-        const controls = new OrbitControls(camera, renderer.domElement);
-        controls.enableDamping = true;
-        controls.autoRotate = false;     // ✅ 开场先不转
-        controls.autoRotateSpeed = 0.5;
-        controls.maxPolarAngle = Math.PI / 2 - 0.1;
-        controls.enabled = false;        // ✅ 开场锁定
-        controls.addEventListener('start', () => { controls.autoRotate = false; });
 
         function animate() {
             requestAnimationFrame(animate);
@@ -963,15 +757,12 @@
                 recLight.material.color.setHex((Date.now() % 1000 < 500) ? 0xff0000 : 0x330000);
             } else {
                 cursorGroup.scale.lerp(new THREE.Vector3(1,1,1), 0.1);
-
                 let hoverSwarm = null;
                 swarms.forEach(swarm => {
-                    const dist = new THREE.Vector2(swarm.center.x, swarm.center.z)
-                        .distanceTo(new THREE.Vector2(mouseWorld.x, mouseWorld.z));
+                    const dist = new THREE.Vector2(swarm.center.x, swarm.center.z).distanceTo(new THREE.Vector2(mouseWorld.x, mouseWorld.z));
                     if (dist < 20) hoverSwarm = swarm;
                     swarm.hover(dist < 20);
                 });
-
                 if (hoverSwarm) {
                     hexMaterial.color.set(0xff4444);
                     cursorGroup.scale.lerp(new THREE.Vector3(1.5, 1.5, 1.5), 0.1);
@@ -986,8 +777,7 @@
                 cursorHex.rotation.z += 0.01;
             }
 
-            swarms.forEach(swarm => swarm.update(delta));
-
+            swarms.forEach(s => s.update(delta));
             controls.update();
             renderer.render(scene, camera);
         }
@@ -1002,198 +792,114 @@
         });
 
         /* =========================
-           ✅ 灰尘（深色小点）低FPS
-           ========================= */
-        (function initDust(){
-            const layer = document.getElementById('atmo-layer');
-            const canvas = document.getElementById('dust-canvas');
-            const ctx = canvas.getContext('2d', { alpha: true });
+           ✅ 开场播放（强制可用版）
+        ========================= */
+        const introLayer = document.getElementById('intro-video-layer');
+        const introVideo = document.getElementById('intro-video');
+        const introStart = document.getElementById('intro-start');
+        const hudLine = document.getElementById('hud-line');
+        const canvas = renderer.domElement;
 
-            let W=0, H=0, DPR=Math.min(window.devicePixelRatio||1, 2);
+        const hudLines = [
+            "LINK: ORBITAL RELAY // OK",
+            "AUTH: ARCHIVE ACCESS // GRANTED",
+            "SYNC: ATMOSPHERIC MODEL // 71%",
+            "SCAN: COASTLINE ANOMALY // DETECTED",
+            "READ: TOXICITY INDEX // HIGH",
+            "COMPRESS: EVIDENCE STREAM // ACTIVE",
+            "MAP: SECTOR-7 GRID // LOADING",
+            "ALERT: BIOSPHERE DEGRADATION // CRITICAL",
+            "LOCK: TARGET COORDINATES // ACQUIRED"
+        ];
 
-            function resizeDust(){
-                const r = layer.getBoundingClientRect();
-                W = Math.max(1, Math.floor(r.width));
-                H = Math.max(1, Math.floor(r.height));
-                canvas.width = Math.floor(W * DPR);
-                canvas.height = Math.floor(H * DPR);
-                ctx.setTransform(DPR,0,0,DPR,0,0);
-            }
-            resizeDust();
-            window.addEventListener('resize', resizeDust);
-
-            const FPS = 22;
-            const COUNT = 85;
-
-            const dots = [];
-            const rand = (a,b)=>a+Math.random()*(b-a);
-
-            function spawn(){
-                return {
-                    x: rand(0, W),
-                    y: rand(0, H),
-                    r: rand(0.6, 1.7),
-                    a: rand(0.10, 0.20),
-                    vx: rand(-2.4, -0.5),
-                    vy: rand(-0.25, 0.25),
-                    phase: rand(0, Math.PI*2),
-                    w: rand(0.12, 0.40)
-                };
-            }
-            for(let i=0;i<COUNT;i++) dots.push(spawn());
-
-            function tick(){
-                if(document.body.classList.contains('focus-mode')){
-                    ctx.clearRect(0,0,W,H);
-                    return;
-                }
-
-                ctx.clearRect(0,0,W,H);
-
-                for(const d of dots){
-                    d.phase += 0.015;
-                    d.x += d.vx * (1/FPS);
-                    d.y += d.vy * (1/FPS) + Math.sin(d.phase)*d.w*(1/FPS);
-
-                    if(d.x < -10) d.x = W + 10;
-                    if(d.y < -10) d.y = H + 10;
-                    if(d.y > H + 10) d.y = -10;
-
-                    ctx.beginPath();
-                    ctx.fillStyle = `rgba(45, 40, 34, ${d.a})`;
-                    ctx.arc(d.x, d.y, d.r, 0, Math.PI*2);
-                    ctx.fill();
-                }
-            }
-            setInterval(tick, 1000/FPS);
-        })();
-
-        /* =========================
-           ✅ 开场视频控制：
-           - HUD闪现
-           - 最后1秒 opacity 疯狂下降
-           - 相机从远拉近地图
-           ========================= */
-        (function initIntro(){
-            const introLayer = document.getElementById('intro-layer');
-            const introVideo = document.getElementById('intro-video');
-            const stack = document.getElementById('intro-stack');
-
-            const line1 = document.getElementById('intro-line-1');
-            const line2 = document.getElementById('intro-line-2');
-            const line3 = document.getElementById('intro-line-3');
-            const line4 = document.getElementById('intro-line-4');
-
-            // HUD入场
-            gsap.to(stack, {opacity: 0.95, y: 0, duration: 0.6, ease: "power2.out", delay: 0.2});
-            // 轻微闪烁抖动
-            gsap.to(stack, {opacity: 0.78, duration: 0.08, repeat: -1, yoyo: true, ease:"none", delay: 0.9});
-
-            const messages = [
-                "CONNECTING TO SATELLITE RELAY...",
-                "SYNCING ENVIRONMENTAL TELEMETRY...",
-                "LOADING TOXICITY MAP LAYERS...",
-                "CALIBRATING SENSOR ARRAY...",
-                "VERIFYING ARCHIVE INTEGRITY...",
-                "POLLUTION INDEX: CRITICAL",
-                "SIGNAL UNSTABLE // RETRY...",
-                "ACQUIRING COORDINATES...",
-                "DETECTING ANOMALIES..."
-            ];
-
-            let msgTimer = setInterval(()=>{
-                const m1 = messages[(Math.random()*messages.length)|0];
-                const m2 = messages[(Math.random()*messages.length)|0];
-                const m3 = messages[(Math.random()*messages.length)|0];
-                line1.textContent = m1;
-                line2.textContent = m2;
-                line3.textContent = m3;
-
-                // 偶尔警告闪一下
-                if(Math.random() > 0.65){
-                    line4.textContent = "WARNING: TOXICITY SPIKE DETECTED";
-                }else{
-                    line4.textContent = "STATUS: SIGNAL UNSTABLE";
-                }
-
-                // 小幅抖动
-                gsap.fromTo(stack, {x:-2},{x:2, duration:0.06, yoyo:true, repeat:3, ease:"none"});
-            }, 520);
-
-            // iOS/浏览器策略：autoplay失败时，点击任意处播放
-            const tryPlay = () => {
-                introVideo.play().catch(()=>{});
-            };
-            document.addEventListener('pointerdown', tryPlay, { once: true });
-
-            // 最后1秒：opacity 疯狂下降（指数坠落）
-            introVideo.addEventListener('timeupdate', ()=>{
-                if(!introVideo.duration) return;
-                const remain = introVideo.duration - introVideo.currentTime;
-
-                if(remain <= 1.05){
-                    document.body.classList.add('intro-ending'); // ✅ 背后canvas显现
-                    const t = Math.max(0, 1 - remain); // 0→1
-                    // 指数式坠落：越到末尾越“疯狂”
-                    const drop = Math.pow(t, 2.6);
-                    introLayer.style.opacity = String(Math.max(0, 1 - drop * 1.25));
-
-                    // 最后一秒让HUD也更“坏掉”
-                    if(t > 0.25){
-                        stack.style.opacity = String(Math.max(0, 0.9 - drop * 1.6));
-                        gsap.fromTo(stack, {x:-6},{x:6, duration:0.04, yoyo:true, repeat:2, ease:"none"});
+        let hudTimer = null;
+        function startHudFlicker(){
+            hudTimer = setInterval(() => {
+                const txt = hudLines[Math.floor(Math.random()*hudLines.length)];
+                hudLine.textContent = txt;
+                gsap.killTweensOf(hudLine);
+                gsap.fromTo(hudLine,
+                    { opacity: 0.0, y: 8 },
+                    { opacity: 0.95, y: 0, duration: 0.08, ease: "none",
+                      onComplete: () => gsap.to(hudLine, { opacity: 0.15, duration: 0.18, ease: "none" })
                     }
+                );
+            }, 180);
+        }
+        function stopHudFlicker(){
+            if(hudTimer) clearInterval(hudTimer);
+            hudTimer = null;
+        }
+
+        startHudFlicker();
+
+        let revealed = false;
+        let started = false;
+
+        async function tryPlayVideo() {
+            try {
+                // 等待到有数据可播，避免黑屏
+                if (introVideo.readyState < 2) {
+                    await new Promise((resolve) => {
+                        const onCanPlay = () => { introVideo.removeEventListener('canplay', onCanPlay); resolve(); };
+                        introVideo.addEventListener('canplay', onCanPlay, { once: true });
+                    });
                 }
+                await introVideo.play();
+                started = true;
+                introStart.style.display = "none";
+            } catch (err) {
+                // 自动播放失败：显示按钮让用户触发播放（必定成功）
+                introStart.style.display = "block";
+            }
+        }
+
+        // 多次重试：GitHub Pages 首次加载慢时也能成功
+        tryPlayVideo();
+        setTimeout(tryPlayVideo, 500);
+        setTimeout(tryPlayVideo, 1200);
+
+        // 用户点击启动
+        introStart.addEventListener('click', async () => {
+            introStart.style.display = "none";
+            try { await introVideo.play(); started = true; } catch(e) { introStart.style.display = "block"; }
+        });
+
+        // 你也可以点击任意位置启动（更方便）
+        introLayer.addEventListener('click', async () => {
+            if (started) return;
+            try { await introVideo.play(); started = true; introStart.style.display = "none"; } catch(e) { introStart.style.display = "block"; }
+        });
+
+        // 最后1秒疯狂淡出 + 显示canvas
+        introVideo.addEventListener('timeupdate', () => {
+            if (!introVideo.duration) return;
+            const remain = introVideo.duration - introVideo.currentTime;
+
+            if (remain <= 1.0) {
+                const k = Math.min(1, Math.max(0, 1 - remain / 1.0)); // 0->1
+                const op = Math.pow(1 - k, 6); // 陡降
+                introLayer.style.opacity = String(op);
+
+                if (!revealed && k > 0.05) {
+                    revealed = true;
+                    canvas.classList.add('visible');
+                }
+            }
+        });
+
+        introVideo.addEventListener('ended', () => {
+            stopHudFlicker();
+            introLayer.remove();
+            canvas.classList.add('visible');
+
+            gsap.to(camera.position, { x: 0, y: 60, z: 80, duration: 2.6, ease: "power3.inOut" });
+            gsap.to(controls.target, {
+                x: 0, y: 0, z: 0,
+                duration: 2.6, ease: "power3.inOut",
+                onComplete: () => { controls.enabled = true; controls.autoRotate = true; }
             });
-
-            introVideo.addEventListener('ended', ()=>{
-                clearInterval(msgTimer);
-
-                // 彻底移除intro层
-                introLayer.remove();
-
-                document.body.classList.add('intro-done');
-                document.body.classList.remove('intro-ending');
-                document.body.classList.remove('intro-playing');
-
-                // 解锁交互 + 相机拉近
-                introLocked = false;
-                controls.enabled = false; // 拉近期间仍锁住
-                controls.autoRotate = false;
-
-                // 拉镜头：远 -> 近
-                const tl = gsap.timeline({
-                    onComplete: ()=>{
-                        controls.enabled = true;
-                        controls.autoRotate = true;
-                    }
-                });
-
-                tl.to(camera.position, {
-                    x: CAMERA_NEAR.x,
-                    y: CAMERA_NEAR.y,
-                    z: CAMERA_NEAR.z,
-                    duration: 2.6,
-                    ease: "power3.inOut"
-                }, 0);
-
-                tl.to(controls.target, {
-                    x: 0, y: 0, z: 0,
-                    duration: 2.6,
-                    ease: "power3.inOut"
-                }, 0);
-            });
-
-            // 兜底：如果视频加载很慢，至少HUD也能显示
-            introVideo.addEventListener('error', ()=>{
-                clearInterval(msgTimer);
-                line4.textContent = "ERROR: INTRO VIDEO NOT FOUND (kaitou.mp4)";
-            });
-
-            // 自动尝试播放
-            tryPlay();
-        })();
-
+        });
     </script>
 </body>
 </html>
