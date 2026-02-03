@@ -6,106 +6,119 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 
     <style>
+        /* --- 1. 基础设置 --- */
         body {
             margin: 0; overflow: hidden;
             background-color: #e6d8c3;
-            cursor: none;
+            cursor: none;                 /* 地图阶段你要隐藏鼠标 */
             font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
         }
+        /* ✅ 开场阶段显示鼠标（修复你说的“鼠标不显示”） */
+        body.intro-mode { cursor: auto !important; }
 
         /* =========================
-           开场视频层
+           开场视频层（先黑屏）
         ========================= */
-        #intro-video-layer {
+        #intro-layer {
             position: fixed;
             inset: 0;
             z-index: 999999;
-            background: #000;
+            background: #000;            /* ✅ 黑屏背景 */
             display: flex;
             align-items: center;
             justify-content: center;
             pointer-events: all;
             opacity: 1;
         }
+
+        /* 点击启动屏（黑屏+按钮居中） */
+        #intro-clickscreen {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #000;
+            z-index: 10;
+        }
+
+        #intro-start {
+            padding: 18px 26px;
+            border: 1px solid rgba(255,255,255,0.88);
+            color: rgba(255,255,255,0.95);
+            background: rgba(0,0,0,0.55);
+            backdrop-filter: blur(10px);
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+            font-size: 14px;
+            cursor: pointer;
+            user-select: none;
+        }
+        #intro-start:hover { background: rgba(255,255,255,0.08); }
+
+        /* 视频：点击后才淡入 */
         #intro-video {
+            position: absolute;
+            inset: 0;
             width: 100%;
             height: 100%;
             object-fit: cover;
+            opacity: 0;                 /* ✅ 初始不可见，先黑屏 */
             background: #000;
         }
 
-        /* HUD / 系统文字（保留） */
-        #intro-hud {
+        /* ✅ 你要的“L’INTRÚS 那种片头大红字”叠加层 */
+        #titlecard {
             position: absolute;
-            left: 4vw;
-            top: 5vh;
-            color: rgba(255, 230, 200, 0.92);
-            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-            text-transform: uppercase;
-            letter-spacing: 0.12em;
-            mix-blend-mode: screen;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             pointer-events: none;
-            user-select: none;
-            /* ✅ 你要字幕无阴影，但 HUD 我也去掉阴影，整体更干净 */
-            text-shadow: none;
+            z-index: 20;
+            opacity: 0;                 /* 由动画控制出现/消失 */
         }
-        #intro-hud .hud-title { font-size: 20px; font-weight: 800; margin-bottom: 10px; opacity: 0.95; }
-        #intro-hud .hud-sub { font-size: 11px; opacity: 0.75; margin-bottom: 18px; }
-        #intro-hud .hud-line { font-size: 12px; opacity: 0.0; transform: translateY(6px); white-space: pre; }
-        #intro-hud .hud-warn { margin-top: 14px; font-size: 11px; opacity: 0.65; color: rgba(255, 140, 90, 0.95); }
 
-        /* ✅ 电影式字幕（顶部居中 / 大字体 / 一句一句） */
-        #intro-cinema {
-            position: absolute;
-            top: 6vh;
-            left: 50%;
-            transform: translateX(-50%);
-            width: min(1100px, 92vw);
+        .tc-wrap{
+            width: min(1200px, 92vw);
             text-align: center;
-            pointer-events: none;
-            user-select: none;
-            z-index: 6;
-
-            /* ✅ 更显眼：更亮、更白一点（但不刺眼的纯白） */
-            color: rgba(255, 252, 245, 0.98);
-            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-            font-weight: 700;
-            letter-spacing: 0.10em;
+            color: rgba(255, 0, 0, 0.96);
             text-transform: uppercase;
-
-            /* ✅ 你要不要阴影：这里完全取消 */
-            text-shadow: none;
+            letter-spacing: 0.08em;
+            text-shadow: none;          /* ✅ 你要无阴影 */
         }
-        #intro-cinema-line {
-            font-size: clamp(26px, 3.6vw, 52px); /* ✅ 更大一点 */
-            line-height: 1.22;
-            opacity: 0;
-            transform: translateY(10px);
-            margin: 0;
-            padding: 0 10px;
-        }
-
-        /* ✅ 一进来就显示：CLICK TO START */
-        #intro-start {
-            position: absolute;
-            right: 4vw;
-            bottom: 6vh;
-            padding: 14px 18px;
-            border: 1px solid rgba(255,255,255,0.85);
-            color: rgba(255,255,255,0.95);
-            background: rgba(0,0,0,0.35);
-            backdrop-filter: blur(8px);
+        .tc-top{
             font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-            letter-spacing: 0.16em;
-            text-transform: uppercase;
-            font-size: 12px;
-            cursor: pointer;
-            display: block; /* ✅ 默认显示 */
-            user-select: none;
+            font-size: clamp(12px, 1.4vw, 16px);
+            font-weight: 700;
+            opacity: 0.95;
+            margin-bottom: 14px;
         }
-        #intro-start:hover { background: rgba(0,0,0,0.55); }
+        .tc-main{
+            font-size: clamp(56px, 9.5vw, 140px);
+            font-weight: 900;
+            letter-spacing: 0.02em;
+            line-height: 0.95;
+            margin: 0;
+        }
+        .tc-sub{
+            margin-top: 14px;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+            font-size: clamp(12px, 1.4vw, 16px);
+            font-weight: 700;
+            opacity: 0.9;
+        }
+        .tc-credits{
+            margin-top: 18px;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+            font-size: clamp(10px, 1.1vw, 13px);
+            line-height: 1.6;
+            opacity: 0.88;
+            letter-spacing: 0.14em;
+        }
 
-        /* Three.js 画布默认不可见 */
+        /* Three.js 画布默认不可见，等片头结束再显示 */
         canvas { opacity: 0; transition: opacity 0.8s ease; }
         canvas.visible { opacity: 1; }
 
@@ -119,6 +132,7 @@
         }
         #ui-layer.active { display: block; opacity: 1; }
 
+        /* 左侧数据面板 */
         .left-panel {
             position: absolute; left: 5%; top: 20%;
             display: flex; flex-direction: column; align-items: flex-start;
@@ -131,6 +145,7 @@
             box-shadow: 5px 5px 0px rgba(0,0,0,0.2);
             margin-bottom: 0;
         }
+
         .pollution-alert {
             background-color: #ffcc00; color: #222;
             padding: 15px 25px; margin-top: 15px; margin-bottom: 5px;
@@ -150,6 +165,7 @@
         }
         .stat-box span { color: #fff; margin-left: 10px; }
 
+        /* 右侧叙事面板 */
         .right-panel {
             position: absolute; right: 5%; bottom: 8%; top: 15%;
             width: 450px;
@@ -221,27 +237,30 @@
     </style>
 </head>
 
-<body>
+<body class="intro-mode">
 
-    <!-- ✅ 开场视频层 -->
-    <div id="intro-video-layer">
+    <!-- ✅ 开场层：先黑屏+按钮，点击后视频淡入+红字片头 -->
+    <div id="intro-layer">
         <video id="intro-video" muted playsinline preload="auto">
             <source src="./kaitou.mp4" type="video/mp4">
         </video>
 
-        <!-- ✅ 电影式字幕：一次一句 -->
-        <div id="intro-cinema">
-            <p id="intro-cinema-line"></p>
+        <div id="titlecard">
+            <div class="tc-wrap">
+                <div class="tc-top">A PLANETARY INCIDENT REPORT</div>
+                <h2 class="tc-main">ECO-MONITOR</h2>
+                <div class="tc-sub">WASTELAND SURVEILLANCE // SECTOR 7</div>
+                <div class="tc-credits">
+                    HUMAN EXCESS  ·  TOXIC RUNOFF  ·  PLASTIC BLOOM<br/>
+                    OIL SLICKS  ·  ACID RAIN  ·  RADIATION LEAKS<br/>
+                    MUTATION IS NOT FICTION — IT IS ADAPTATION
+                </div>
+            </div>
         </div>
 
-        <div id="intro-hud">
-            <div class="hud-title">ECO-MONITOR</div>
-            <div class="hud-sub">WASTELAND SURVEILLANCE // USER INIT REQUIRED</div>
-            <div class="hud-line" id="hud-line">...</div>
-            <div class="hud-warn">CLICK TO AUTHORIZE PLAYBACK</div>
+        <div id="intro-clickscreen">
+            <div id="intro-start">CLICK TO START</div>
         </div>
-
-        <div id="intro-start">CLICK TO START</div>
     </div>
 
     <div id="ui-header">
@@ -333,9 +352,7 @@
         import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
         import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 
-        /* =========================
-           0) 动物数据库（原样保留）
-        ========================= */
+        // --- 0. 动物数据库 ---
         const animalData = {
             "POLYMER TURTLE": {
                 video: "./wugui.mp4", name: "聚合体海龟", latin: "CHELONIA PLASTICUS", source: "海洋微塑料堆积", pollutant: "不可降解聚苯乙烯 (PS)", tox: "85%",
@@ -393,14 +410,22 @@
             }
         };
 
+        // --- 1. 场景 ---
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0xe6d8c3);
         scene.fog = new THREE.FogExp2(0xe6d8c3, 0.012);
 
-        const ambientLight = new THREE.AmbientLight(0xffeedd, 3.5); scene.add(ambientLight);
-        const dirLight = new THREE.DirectionalLight(0xffaa77, 3.0); dirLight.position.set(50, 80, 50); scene.add(dirLight);
-        const cameraLight = new THREE.DirectionalLight(0xffffff, 1.5); scene.add(cameraLight);
+        const ambientLight = new THREE.AmbientLight(0xffeedd, 3.5);
+        scene.add(ambientLight);
 
+        const dirLight = new THREE.DirectionalLight(0xffaa77, 3.0);
+        dirLight.position.set(50, 80, 50);
+        scene.add(dirLight);
+
+        const cameraLight = new THREE.DirectionalLight(0xffffff, 1.5);
+        scene.add(cameraLight);
+
+        // 开场镜头更远（等片头结束再拉近）
         const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
         camera.position.set(0, 160, 260);
 
@@ -409,13 +434,7 @@
         renderer.outputColorSpace = THREE.SRGBColorSpace;
         document.body.appendChild(renderer.domElement);
 
-        const raycaster = new THREE.Raycaster();
-        const mouse = new THREE.Vector2();
-        const mouseWorld = new THREE.Vector3();
-        const hitPlane = new THREE.Mesh(new THREE.PlaneGeometry(500, 500), new THREE.MeshBasicMaterial({ visible: false }));
-        hitPlane.rotation.x = -Math.PI / 2;
-        scene.add(hitPlane);
-
+        // --- 2. 光标 ---
         const cursorGroup = new THREE.Group();
         scene.add(cursorGroup);
         const hexGeometry = new THREE.RingGeometry(3.5, 4.2, 6);
@@ -429,6 +448,7 @@
         cursorTri.rotation.x = Math.PI; cursorTri.position.y = 6;
         cursorGroup.add(cursorTri);
 
+        // --- 3. 无人机 ---
         const droneGroup = new THREE.Group();
         scene.add(droneGroup);
         droneGroup.visible = false;
@@ -441,13 +461,24 @@
         recLight.position.set(0.6, 0.6, 1.0);
         droneGroup.add(recLight);
 
+        // --- 4. 射线 & 地形 ---
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+        const mouseWorld = new THREE.Vector3();
+        const hitPlane = new THREE.Mesh(new THREE.PlaneGeometry(500, 500), new THREE.MeshBasicMaterial({ visible: false }));
+        hitPlane.rotation.x = -Math.PI / 2;
+        scene.add(hitPlane);
+
         const geometry = new THREE.BufferGeometry();
         const positions = [], colors = [], sizes = [];
+
         const colWater = new THREE.Color("#668899");
         const colLand1 = new THREE.Color("#ccaa66");
         const colLand2 = new THREE.Color("#885533");
         const colCanopy = new THREE.Color("#444433");
-        const range = 180, gap = 2.5;
+
+        const range = 180;
+        const gap = 2.5;
 
         function getElevation(x, z) { return Math.sin(x * 0.05) * 8 + Math.cos(z * 0.05) * 8; }
 
@@ -488,6 +519,7 @@
         const terrain = new THREE.Points(geometry, shaderMaterial);
         scene.add(terrain);
 
+        // --- 5. 种群系统 ---
         const loader = new GLTFLoader();
         const dracoLoader = new DRACOLoader();
         dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
@@ -641,25 +673,19 @@
             new SpeciesSwarm("GHOST SEAL", "./bao.glb", "./bhaibao.glb", new THREE.Vector3(20, 0, -80))
         ];
 
+        // --- 6. 交互逻辑 ---
         const clock = new THREE.Clock();
         const uiLayer = document.getElementById('ui-layer');
-        const uiVideo = document.getElementById('ui-video');
+        const videoEl = document.getElementById('ui-video');
         let focusedSwarm = null;
-
-        const controls = new OrbitControls(camera, renderer.domElement);
-        controls.enableDamping = true;
-        controls.autoRotate = false;
-        controls.autoRotateSpeed = 0.5;
-        controls.maxPolarAngle = Math.PI / 2 - 0.1;
-        controls.enabled = false;
 
         window.closePanel = function() {
             if (focusedSwarm) {
                 focusedSwarm.unfocus();
                 focusedSwarm = null;
 
-                uiVideo.pause();
-                uiVideo.currentTime = 0;
+                videoEl.pause();
+                videoEl.currentTime = 0;
 
                 gsap.to(camera.position, {x: 0, y: 60, z: 80, duration: 1.5, ease: "power2.inOut"});
                 gsap.to(controls.target, {x: 0, y: 0, z: 0, duration: 1.5});
@@ -667,9 +693,17 @@
                 uiLayer.classList.remove('active');
                 document.getElementById('ui-header').style.opacity = 1;
                 document.body.classList.remove('active-mode');
+
                 droneGroup.visible = false;
             }
         };
+
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.autoRotate = false;
+        controls.autoRotateSpeed = 0.5;
+        controls.maxPolarAngle = Math.PI / 2 - 0.1;
+        controls.enabled = false;
 
         document.addEventListener('mousemove', (e) => {
             if (!controls.enabled) return;
@@ -726,7 +760,10 @@
                     gsap.to(controls.target, { x: targetPos.x, y: targetPos.y, z: targetPos.z, duration: 1.5 });
 
                     const data = animalData[focusedSwarm.name] || {};
-                    const safeSetText = (id, text) => { const el = document.getElementById(id); if(el) el.innerText = text; };
+                    const safeSetText = (id, text) => {
+                        const el = document.getElementById(id);
+                        if(el) el.innerText = text;
+                    };
 
                     safeSetText('ui-name', data.name || focusedSwarm.name);
                     safeSetText('ui-latin', data.latin || "Unknown");
@@ -737,14 +774,15 @@
                     safeSetText('ui-act', data.act || "...");
 
                     if (data.video) {
-                        uiVideo.src = data.video;
-                        uiVideo.load();
-                        uiVideo.oncanplay = () => { uiVideo.play().catch(()=>{}); };
+                        videoEl.src = data.video;
+                        videoEl.load();
+                        videoEl.oncanplay = () => { videoEl.play().catch(()=>{}); };
                     }
 
                     uiLayer.classList.add('active');
                     document.getElementById('ui-header').style.opacity = 0;
                     document.body.classList.add('active-mode');
+
                     droneGroup.visible = true;
                 }
             } else {
@@ -805,103 +843,57 @@
         });
 
         /* =========================
-           ✅ 开场：点击启动 + 电影字幕（逐句）+ 结束淡出/拉近
+           ✅ 开场：黑屏按钮 → 视频淡入 → 红字片头 → 最后1秒疯狂淡出 → 镜头拉近解锁地图
         ========================= */
-        const introLayer = document.getElementById('intro-video-layer');
-        const introVideo = document.getElementById('intro-video');
+        const introLayer = document.getElementById('intro-layer');
+        const introClickscreen = document.getElementById('intro-clickscreen');
         const introStart = document.getElementById('intro-start');
-        const hudLine = document.getElementById('hud-line');
+        const introVideo = document.getElementById('intro-video');
+        const titlecard = document.getElementById('titlecard');
         const canvas = renderer.domElement;
-        const cinemaEl = document.getElementById('intro-cinema-line');
-
-        const cinemaLines = [
-            "WE TOOK FROM THE EARTH AS IF IT WERE ENDLESS.",
-            "WE BURNED, DUMPED, AND DILUTED THE COST INTO AIR AND SEA.",
-            "PLASTIC. OIL. ACID. RADIATION. NOISE.",
-            "THE PLANET DID NOT FORGIVE — IT ADAPTED.",
-            "THESE MUTATIONS ARE NOT STORIES.",
-            "THEY ARE EVIDENCE."
-        ];
-
-        const CIN_IN = 0.55;
-        const CIN_HOLD = 1.45;
-        const CIN_OUT = 0.55;
-        const CIN_GAP = 0.25;
-
-        function playCinemaText(){
-            const tl = gsap.timeline();
-            cinemaLines.forEach((line) => {
-                tl.call(() => { cinemaEl.textContent = line; }, null, ">");
-                tl.fromTo(cinemaEl, { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: CIN_IN, ease: "power2.out" }, ">");
-                tl.to(cinemaEl, { opacity: 1, duration: CIN_HOLD, ease: "none" }, ">");
-                tl.to(cinemaEl, { opacity: 0, y: -6, duration: CIN_OUT, ease: "power2.in" }, ">");
-                tl.to({}, { duration: CIN_GAP }, ">");
-            });
-            return tl;
-        }
-
-        const hudLines = [
-            "LINK: ORBITAL RELAY // OK",
-            "AUTH: ARCHIVE ACCESS // PENDING",
-            "SYNC: ATMOSPHERIC MODEL // READY",
-            "SCAN: COASTLINE ANOMALY // DETECTED",
-            "READ: TOXICITY INDEX // HIGH",
-            "COMPRESS: EVIDENCE STREAM // STANDBY",
-            "MAP: SECTOR-7 GRID // LOCKED",
-            "ALERT: BIOSPHERE DEGRADATION // CRITICAL",
-            "LOCK: USER INPUT REQUIRED // CLICK"
-        ];
-
-        let hudTimer = null;
-        function startHudFlicker(){
-            hudTimer = setInterval(() => {
-                const txt = hudLines[Math.floor(Math.random()*hudLines.length)];
-                hudLine.textContent = txt;
-                gsap.killTweensOf(hudLine);
-                gsap.fromTo(hudLine,
-                    { opacity: 0.0, y: 8 },
-                    { opacity: 0.95, y: 0, duration: 0.08, ease: "none",
-                      onComplete: () => gsap.to(hudLine, { opacity: 0.15, duration: 0.18, ease: "none" })
-                    }
-                );
-            }, 180);
-        }
-        function stopHudFlicker(){
-            if(hudTimer) clearInterval(hudTimer);
-            hudTimer = null;
-        }
-        startHudFlicker();
 
         let started = false;
-        let cinemaTl = null;
         let revealed = false;
 
-        async function startIntro() {
+        async function startIntro(){
             if (started) return;
             started = true;
 
-            introStart.style.display = "none";
-            cinemaEl.textContent = "";
+            // 先关掉点击屏（黑屏按钮消失）
+            gsap.to(introClickscreen, { opacity: 0, duration: 0.25, ease: "power2.out", onComplete: () => introClickscreen.remove() });
 
+            // 视频淡入（从黑到视频）
+            gsap.to(introVideo, { opacity: 1, duration: 0.6, ease: "power2.out" });
+
+            // 播放
             try {
+                introVideo.currentTime = 0;
                 await introVideo.play();
             } catch(e) {
-                // 如果真的播不了（极少），就允许用户再点一次
+                // 极少数浏览器若拦截：恢复按钮（给用户再点一次）
                 started = false;
-                introStart.style.display = "block";
+                document.body.classList.add('intro-mode');
                 return;
             }
 
-            cinemaTl = playCinemaText();
+            // ✅ 你想要那种片头“猛一下出现的大红字”
+            const tc = gsap.timeline();
+            tc.to(titlecard, { opacity: 1, duration: 0.18, ease: "none" }, 0.25)
+              .fromTo(".tc-wrap", { scale: 1.03 }, { scale: 1.0, duration: 1.2, ease: "power2.out" }, 0.25)
+              .to(titlecard, { opacity: 1, duration: 1.6, ease: "none" }, 0.6)
+              .to(titlecard, { opacity: 0, duration: 0.35, ease: "power2.in" }, 2.4);
+
+            // 地图画布提前准备（但不让交互）
+            canvas.classList.add('visible');
         }
 
-        introStart.addEventListener('click', startIntro);
-        // 也允许点任意地方启动（更“互动”）
-        introLayer.addEventListener('click', (e) => {
-            if (e.target === introStart) return;
+        // ✅ 只要点按钮启动（更精准）
+        introStart.addEventListener('click', (e) => {
+            e.stopPropagation();
             startIntro();
         });
 
+        // 最后1秒：疯狂降低透明度（整个intro层一起淡）
         introVideo.addEventListener('timeupdate', () => {
             if (!introVideo.duration) return;
             const remain = introVideo.duration - introVideo.currentTime;
@@ -911,26 +903,31 @@
                 const op = Math.pow(1 - k, 6);
                 introLayer.style.opacity = String(op);
 
-                if (!revealed && k > 0.05) {
-                    revealed = true;
-                    canvas.classList.add('visible');
-                }
+                if (!revealed && k > 0.05) revealed = true;
             }
         });
 
         introVideo.addEventListener('ended', () => {
-            stopHudFlicker();
-            if (cinemaTl) cinemaTl.kill();
+            // 移除开场层
             introLayer.remove();
-            canvas.classList.add('visible');
 
+            // ✅ 进入地图阶段：隐藏系统鼠标（恢复你原本 cursor none）
+            document.body.classList.remove('intro-mode');
+
+            // 镜头从远到近拉近地图 + 解锁controls
             gsap.to(camera.position, { x: 0, y: 60, z: 80, duration: 2.6, ease: "power3.inOut" });
             gsap.to(controls.target, {
                 x: 0, y: 0, z: 0,
                 duration: 2.6, ease: "power3.inOut",
-                onComplete: () => { controls.enabled = true; controls.autoRotate = true; }
+                onComplete: () => {
+                    controls.enabled = true;
+                    controls.autoRotate = true;
+                }
             });
         });
+
+        // （可选）你想让用户按空格也能开始：取消注释
+        // window.addEventListener('keydown', (e) => { if(e.code === "Space") startIntro(); });
     </script>
 </body>
 </html>
