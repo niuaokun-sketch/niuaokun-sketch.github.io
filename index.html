@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>ECO-MONITOR | 废土档案版</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 
@@ -33,47 +33,103 @@
       object-fit:cover;
       opacity:1;
       background:#000;
+      filter: none;
     }
 
-    /* ✅ 逐句英文叠字（像电影字幕/片头卡） */
+    /* =========================
+       电影海报字卡（红字、无阴影）
+       参考你给的 L'INTRÚS 排版：
+       - 顶部：小一号导演/作者行
+       - 中间：巨大标题
+       - 下方：密集 credits 段落
+    ========================= */
+    #poster-card{
+      position:absolute;
+      inset:0;
+      z-index:22;
+      pointer-events:none;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      opacity:0; /* 动画控制 */
+    }
+    .poster-wrap{
+      width:min(1200px, 92vw);
+      color: rgba(255,0,0,0.98);
+      text-transform:uppercase;
+      text-shadow:none;
+      text-align:center;
+    }
+    .poster-top{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-weight:900;
+      letter-spacing:0.14em;
+      font-size: clamp(12px, 1.6vw, 18px);
+      opacity:0.98;
+      margin-bottom: 10px;
+    }
+    .poster-main{
+      font-weight: 1000;
+      letter-spacing: 0.01em;
+      font-size: clamp(60px, 10.8vw, 170px);
+      line-height: 0.92;
+      margin:0;
+    }
+    .poster-credits{
+      margin-top: 14px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      font-size: clamp(10px, 1.1vw, 14px);
+      line-height: 1.55;
+      opacity: 0.92;
+      white-space: pre-wrap;
+    }
+
+    /* =========================
+       逐句英文叠字（海报后出现）
+       - 全红色
+       - 无阴影
+       - 顶部居中
+    ========================= */
     #intro-text{
       position:absolute;
-      top:6.5vh;               /* 顶部区域 */
+      top:7vh;
       left:0;
       width:100%;
       display:flex;
       justify-content:center;
       pointer-events:none;
-      z-index:25;
-      opacity:1;
+      z-index:24;
+      opacity:0; /* 海报结束后再显示 */
     }
     #intro-text .wrap{
       width:min(1200px, 92vw);
       text-align:center;
-      color: rgba(255,0,0,0.96); /* 更显眼的红 */
-      text-shadow:none;          /* ✅ 无阴影 */
+      color: rgba(255,0,0,0.96);
+      text-shadow:none;
       text-transform:uppercase;
       letter-spacing:0.08em;
     }
     #intro-text .line{
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-      font-weight:900;
-      font-size: clamp(24px, 3.2vw, 52px); /* ✅ 大一点，电影感 */
-      line-height:1.05;
-      margin:0;
-      opacity:0;                 /* 动画控制显示 */
+      font-weight: 900;
+      font-size: clamp(24px, 3.2vw, 52px);
+      line-height: 1.05;
+      margin: 0;
+      opacity: 0;
       transform: translateY(10px);
     }
     #intro-text .sub{
-      margin-top:14px;
+      margin-top: 14px;
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-      font-weight:800;
+      font-weight: 800;
       font-size: clamp(12px, 1.4vw, 16px);
-      letter-spacing:0.16em;
-      opacity:0.92;
+      letter-spacing: 0.16em;
+      opacity: 0.92;
     }
 
-    /* 兜底按钮：autoplay 被拦截才出现 */
+    /* autoplay 被拦截才显示兜底 */
     #autoplay-fallback{
       position:absolute;
       inset:0;
@@ -219,10 +275,19 @@
       <source src="./kaitou.mp4" type="video/mp4">
     </video>
 
-    <!-- ✅ 播放中逐句出现的英文介绍 -->
+    <!-- 电影海报字卡（先出现） -->
+    <div id="poster-card">
+      <div class="poster-wrap">
+        <div class="poster-top" id="poster-top"></div>
+        <h2 class="poster-main" id="poster-main"></h2>
+        <div class="poster-credits" id="poster-credits"></div>
+      </div>
+    </div>
+
+    <!-- 逐句英文介绍（海报后出现） -->
     <div id="intro-text">
       <div class="wrap">
-        <p class="line" id="intro-line"> </p>
+        <p class="line" id="intro-line"></p>
         <div class="sub" id="intro-sub">ECO-MONITOR // INCIDENT LOG</div>
       </div>
     </div>
@@ -323,26 +388,44 @@
     import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 
     /* =========================
-       ✅ 逐句英文文案：你直接改这里
-       每句会：淡入(0.35s) → 停留(2.2s) → 淡出(0.35s)
+       1) 海报字卡文案（全红）
+    ========================= */
+    const POSTER_TOP_LINE   = "DIRECTED BY // ECO-MONITOR UNIT";
+    const POSTER_MAIN_TITLE = "ECO-MONITOR";
+    const POSTER_CREDITS_LINES = [
+      "AN INCIDENT REPORT ON HUMAN EXCESS",
+      "PLASTIC BLOOM  ·  OIL SLICKS  ·  TOXIC RUNOFF",
+      "ACID RAIN  ·  NOISE WEAPONS  ·  RADIATION LEAKS",
+      "MUTATION IS NOT FICTION — IT IS ADAPTATION"
+    ].join("\n");
+
+    /* =========================
+       2) 海报后逐句英文（全红）
+       （你可随时换成更绝望/更诗意的句子）
     ========================= */
     const INTRO_LINES = [
       "WE TOOK TOO MUCH.",
-      "WE BURNED WHAT WE COULD NOT REPLACE.",
-      "OCEANS FILLED WITH PLASTIC. SKIES THICK WITH POISON.",
+      "WE DUMPED IT BACK INTO THE SEA.",
+      "WE FILLED THE AIR WITH POISON.",
       "THE EARTH DID NOT FORGIVE.",
-      "IT ADAPTED.",
-      "MUTATION IS THE LAST SURVIVAL STRATEGY."
+      "IT MUTATED.",
+      "AND WE KEPT WATCHING."
     ];
 
-    // 动画参数（你要更快/更慢改这里）
     const LINE_FADE_IN  = 0.35;
-    const LINE_HOLD     = 2.20;
+    const LINE_HOLD     = 2.10;
     const LINE_FADE_OUT = 0.35;
-    const LINE_GAP      = 0.15;  // 句与句之间间隔
-    const INTRO_TEXT_END_OFFSET = 1.15; // 视频结束前多少秒停止出字（避免和最终淡出冲突）
+    const LINE_GAP      = 0.12;
 
-    /* --- 0. 动物数据库（保留你的原数据，你可自行替换成完整版） --- */
+    /* 海报显示时长（秒） */
+    const POSTER_IN   = 0.18;
+    const POSTER_HOLD = 2.10;
+    const POSTER_OUT  = 0.40;
+
+    /* 视频结束前多少秒停止出字，避免与最终淡出冲突 */
+    const TEXT_END_OFFSET = 1.15;
+
+    /* --- 动物数据（这里放你的完整版也行） --- */
     const animalData = {
       "POLYMER TURTLE": { video:"./wugui.mp4", name:"聚合体海龟", latin:"CHELONIA PLASTICUS", pollutant:"不可降解聚苯乙烯 (PS)", tox:"85%", desc:"...", look:"...", act:"..." },
       "PLASTIC CRAB": { video:"./xie.mp4", name:"工业寄居蟹", latin:"PAGURUS INDUSTRIALIS", pollutant:"聚氯乙烯 (PVC) / 塑化剂", tox:"45%", desc:"...", look:"...", act:"..." },
@@ -355,16 +438,18 @@
       "GHOST SEAL": { video:"./haibao.mp4", name:"幽灵网缚海豹", latin:"PHOCA LAQUEUS", pollutant:"聚酰胺纤维", tox:"50%", desc:"...", look:"...", act:"..." }
     };
 
-    /* --- 1. Three.js 场景 --- */
+    /* --- Three.js 场景 --- */
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0xe6d8c3);
     scene.fog = new THREE.FogExp2(0xe6d8c3, 0.012);
 
     const ambientLight = new THREE.AmbientLight(0xffeedd, 3.5);
     scene.add(ambientLight);
+
     const dirLight = new THREE.DirectionalLight(0xffaa77, 3.0);
     dirLight.position.set(50,80,50);
     scene.add(dirLight);
+
     const cameraLight = new THREE.DirectionalLight(0xffffff, 1.5);
     scene.add(cameraLight);
 
@@ -375,8 +460,10 @@
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     document.body.appendChild(renderer.domElement);
+    const canvas = renderer.domElement;
+    canvas.classList.add('visible');
 
-    /* 光标 */
+    /* 光标（仍保持原逻辑） */
     const cursorGroup = new THREE.Group();
     scene.add(cursorGroup);
     const hexGeometry = new THREE.RingGeometry(3.5, 4.2, 6);
@@ -420,7 +507,6 @@
     const colCanopy = new THREE.Color("#444433");
     const range = 180;
     const gap = 2.5;
-
     function getElevation(x,z){ return Math.sin(x*0.05)*8 + Math.cos(z*0.05)*8; }
 
     for(let x=-range; x<range; x+=gap){
@@ -446,7 +532,6 @@
         if(keep){ positions.push(x,y,z); colors.push(pColor.r,pColor.g,pColor.b); sizes.push(pSize); }
       }
     }
-
     geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions,3));
     geometry.setAttribute('customColor', new THREE.Float32BufferAttribute(colors,3));
     geometry.setAttribute('size', new THREE.Float32BufferAttribute(sizes,1));
@@ -460,7 +545,7 @@
     const terrain = new THREE.Points(geometry, shaderMaterial);
     scene.add(terrain);
 
-    /* 物种群（保留结构） */
+    /* 物种群（保持你的结构） */
     const loader = new GLTFLoader();
     const dracoLoader = new DRACOLoader();
     dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
@@ -476,7 +561,6 @@
 
         this.boids=[];
         this.state='swarm';
-
         this.modelGroup=new THREE.Group();
         this.turntable=new THREE.Group();
         this.group.add(this.modelGroup);
@@ -521,7 +605,6 @@
 
       update(delta){
         const time=Date.now()*0.001;
-
         this.boids.forEach((boid,i)=>{
           if(this.state==='focused'){
             boid.visible=false;
@@ -616,59 +699,59 @@
 
     const clock = new THREE.Clock();
     const uiLayer = document.getElementById('ui-layer');
-    const videoEl = document.getElementById('ui-video');
+    const uiVideo = document.getElementById('ui-video');
     let focusedSwarm = null;
 
     window.closePanel = function(){
       if(focusedSwarm){
         focusedSwarm.unfocus();
-        focusedSwarm=null;
-        videoEl.pause(); videoEl.currentTime=0;
+        focusedSwarm = null;
+        uiVideo.pause(); uiVideo.currentTime = 0;
         gsap.to(camera.position,{x:0,y:60,z:80,duration:1.5,ease:"power2.inOut"});
         gsap.to(controls.target,{x:0,y:0,z:0,duration:1.5});
         uiLayer.classList.remove('active');
-        document.getElementById('ui-header').style.opacity=1;
+        document.getElementById('ui-header').style.opacity = 1;
         document.body.classList.remove('active-mode');
-        droneGroup.visible=false;
+        droneGroup.visible = false;
       }
     };
 
     const controls = new OrbitControls(camera, renderer.domElement);
-    controls.enableDamping=true;
-    controls.autoRotate=false;
-    controls.autoRotateSpeed=0.5;
-    controls.maxPolarAngle=Math.PI/2-0.1;
-    controls.enabled=false;
+    controls.enableDamping = true;
+    controls.autoRotate = false;
+    controls.autoRotateSpeed = 0.5;
+    controls.maxPolarAngle = Math.PI/2 - 0.1;
+    controls.enabled = false;
 
     document.addEventListener('mousemove',(e)=>{
       if(!controls.enabled) return;
       if(!focusedSwarm){
-        mouse.x=(e.clientX/window.innerWidth)*2-1;
-        mouse.y=-(e.clientY/window.innerHeight)*2+1;
-        raycaster.setFromCamera(mouse,camera);
-        const intersects=raycaster.intersectObject(hitPlane);
-        if(intersects.length>0){
-          mouseWorld.copy(intersects[0].point);
-          shaderMaterial.uniforms.uMouse.value.copy(intersects[0].point);
+        mouse.x = (e.clientX/window.innerWidth)*2 - 1;
+        mouse.y = -(e.clientY/window.innerHeight)*2 + 1;
+        raycaster.setFromCamera(mouse, camera);
+        const hits = raycaster.intersectObject(hitPlane);
+        if(hits.length>0){
+          mouseWorld.copy(hits[0].point);
+          shaderMaterial.uniforms.uMouse.value.copy(hits[0].point);
         }
       }
     });
 
     document.addEventListener('click',(e)=>{
       if(!controls.enabled) return;
-      if(e.target.closest('.close-btn')||e.target.closest('.right-panel')||e.target.closest('.left-panel')) return;
+      if(e.target.closest('.close-btn') || e.target.closest('.right-panel') || e.target.closest('.left-panel')) return;
 
       let clickedSwarm=null;
-      mouse.x=(e.clientX/window.innerWidth)*2-1;
-      mouse.y=-(e.clientY/window.innerHeight)*2+1;
-      raycaster.setFromCamera(mouse,camera);
+      mouse.x = (e.clientX/window.innerWidth)*2 - 1;
+      mouse.y = -(e.clientY/window.innerHeight)*2 + 1;
+      raycaster.setFromCamera(mouse, camera);
 
-      const intersects=raycaster.intersectObjects(scene.children,true);
+      const intersects = raycaster.intersectObjects(scene.children,true);
       for(const hit of intersects){
         let obj=hit.object;
         while(obj){
           if(obj.userData && obj.userData.isSwarm){
-            clickedSwarm=swarms.find(s=>s.name===obj.userData.swarmName);
+            clickedSwarm = swarms.find(s=>s.name===obj.userData.swarmName);
             break;
           }
           obj=obj.parent;
@@ -677,7 +760,7 @@
       }
       if(!clickedSwarm){
         swarms.forEach(s=>{
-          const dist=new THREE.Vector2(s.center.x,s.center.z).distanceTo(new THREE.Vector2(mouseWorld.x,mouseWorld.z));
+          const dist = new THREE.Vector2(s.center.x,s.center.z).distanceTo(new THREE.Vector2(mouseWorld.x,mouseWorld.z));
           if(dist<15) clickedSwarm=s;
         });
       }
@@ -692,7 +775,7 @@
           gsap.to(camera.position,{x:targetPos.x+50,y:targetPos.y+30,z:targetPos.z+80,duration:1.5,ease:"power2.inOut"});
           gsap.to(controls.target,{x:targetPos.x,y:targetPos.y,z:targetPos.z,duration:1.5});
 
-          const data=animalData[focusedSwarm.name]||{};
+          const data = animalData[focusedSwarm.name] || {};
           const setText=(id,t)=>{ const el=document.getElementById(id); if(el) el.innerText=t; };
           setText('ui-name', data.name || focusedSwarm.name);
           setText('ui-latin', data.latin || "Unknown");
@@ -703,9 +786,9 @@
           setText('ui-act', data.act || "...");
 
           if(data.video){
-            videoEl.src=data.video;
-            videoEl.load();
-            videoEl.oncanplay=()=>{ videoEl.play().catch(()=>{}); };
+            uiVideo.src=data.video;
+            uiVideo.load();
+            uiVideo.oncanplay=()=>{ uiVideo.play().catch(()=>{}); };
           }
 
           uiLayer.classList.add('active');
@@ -721,31 +804,32 @@
     function animate(){
       requestAnimationFrame(animate);
       const delta=clock.getDelta();
-      const time=Date.now()*0.001;
+      const t=Date.now()*0.001;
       cameraLight.position.copy(camera.position);
 
       if(focusedSwarm){
         cursorGroup.scale.set(0,0,0);
-        const targetPos=focusedSwarm.modelGroup.position;
-        droneGroup.position.x=targetPos.x+Math.sin(time)*35;
-        droneGroup.position.z=targetPos.z+Math.cos(time)*35;
-        droneGroup.position.y=targetPos.y+25+Math.sin(time*2)*2;
-        droneGroup.lookAt(targetPos);
+        const target=focusedSwarm.modelGroup.position;
+        droneGroup.position.x = target.x + Math.sin(t)*35;
+        droneGroup.position.z = target.z + Math.cos(t)*35;
+        droneGroup.position.y = target.y + 25 + Math.sin(t*2)*2;
+        droneGroup.lookAt(target);
         recLight.material.color.setHex((Date.now()%1000<500)?0xff0000:0x330000);
       }else{
         cursorGroup.scale.lerp(new THREE.Vector3(1,1,1),0.1);
-        let hoverSwarm=null;
+        let hover=null;
         swarms.forEach(s=>{
           const dist=new THREE.Vector2(s.center.x,s.center.z).distanceTo(new THREE.Vector2(mouseWorld.x,mouseWorld.z));
-          if(dist<20) hoverSwarm=s;
+          if(dist<20) hover=s;
           s.hover(dist<20);
         });
-        if(hoverSwarm){
+        if(hover){
           hexMaterial.color.set(0xff4444);
           cursorGroup.scale.lerp(new THREE.Vector3(1.5,1.5,1.5),0.1);
         }else{
           hexMaterial.color.set(0x444444);
         }
+
         const targetY=getElevation(mouseWorld.x,mouseWorld.z);
         cursorGroup.position.x += (mouseWorld.x - cursorGroup.position.x)*0.2;
         cursorGroup.position.z += (mouseWorld.z - cursorGroup.position.z)*0.2;
@@ -768,19 +852,24 @@
     });
 
     /* =========================
-       ✅ 开场：自动播放 + 逐句英文 + 最后1秒疯淡出 + 镜头拉近
+       开场逻辑：海报 -> 逐句 -> 最后1秒淡出 -> 镜头拉近
     ========================= */
     const introLayer = document.getElementById('intro-layer');
     const introVideo = document.getElementById('intro-video');
     const fallback   = document.getElementById('autoplay-fallback');
     const fallbackBtn= document.getElementById('fallback-btn');
 
-    const introLineEl = document.getElementById('intro-line');
-    const introTextEl = document.getElementById('intro-text');
-    const canvas = renderer.domElement;
+    const posterCard = document.getElementById('poster-card');
+    const posterTop  = document.getElementById('poster-top');
+    const posterMain = document.getElementById('poster-main');
+    const posterCred = document.getElementById('poster-credits');
 
-    // 先让 canvas 准备好（但交互锁住）
-    canvas.classList.add('visible');
+    const introText  = document.getElementById('intro-text');
+    const introLine  = document.getElementById('intro-line');
+
+    posterTop.textContent  = POSTER_TOP_LINE;
+    posterMain.textContent = POSTER_MAIN_TITLE;
+    posterCred.textContent = POSTER_CREDITS_LINES;
 
     async function ensurePlay(){
       try{
@@ -802,29 +891,38 @@
       }
     });
 
-    // 逐句播放逻辑：按视频时长自动分配（更稳）
+    function playPosterThenLines(){
+      // 海报：淡入 -> 停留 -> 淡出
+      const tl = gsap.timeline();
+      tl.to(posterCard, { opacity:1, duration:POSTER_IN, ease:"none" }, 0.25)
+        .to(posterCard, { opacity:1, duration:POSTER_HOLD, ease:"none" })
+        .to(posterCard, { opacity:0, duration:POSTER_OUT, ease:"power2.inOut" })
+        .add(()=>{ gsap.to(introText,{opacity:1,duration:0.18,ease:"none"}); }, "+=0.05");
+    }
+
     function startLineSequence(){
       const total = INTRO_LINES.length;
       if(total === 0) return;
 
-      const usable = Math.max(0.1, (introVideo.duration || 8) - INTRO_TEXT_END_OFFSET);
+      const usable = Math.max(0.1, (introVideo.duration || 8) - TEXT_END_OFFSET);
       const per = usable / total;
 
-      let idx = 0;
-      const playOne = () => {
-        if(idx >= total) return;
+      let i = 0;
+      const playOne = ()=>{
+        if(i >= total) return;
 
-        introLineEl.textContent = INTRO_LINES[idx];
+        introLine.textContent = INTRO_LINES[i];
+        gsap.killTweensOf(introLine);
 
-        gsap.killTweensOf(introLineEl);
-        gsap.fromTo(introLineEl,
+        gsap.fromTo(introLine,
           { opacity:0, y:10 },
-          { opacity:1, y:0, duration:LINE_FADE_IN, ease:"power2.out",
-            onComplete: () => {
-              gsap.to(introLineEl, {
+          {
+            opacity:1, y:0, duration:LINE_FADE_IN, ease:"power2.out",
+            onComplete: ()=>{
+              gsap.to(introLine,{
                 opacity:0, y:-6, duration:LINE_FADE_OUT, ease:"power2.in",
                 delay: Math.max(0.1, Math.min(LINE_HOLD, per - LINE_FADE_IN - LINE_FADE_OUT - LINE_GAP)),
-                onComplete: () => { idx++; setTimeout(playOne, LINE_GAP*1000); }
+                onComplete: ()=>{ i++; setTimeout(playOne, LINE_GAP*1000); }
               });
             }
           }
@@ -833,18 +931,20 @@
       playOne();
     }
 
-    // 元数据就绪后启动字幕序列
+    // 视频元数据就绪：启动海报 & 逐句
     introVideo.addEventListener('loadedmetadata', ()=>{
-      startLineSequence();
+      playPosterThenLines();
+      // 海报总时长结束后再开始逐句（更符合“先海报后字幕”）
+      const posterTotal = 0.25 + POSTER_IN + POSTER_HOLD + POSTER_OUT + 0.05;
+      setTimeout(()=>{ startLineSequence(); }, Math.floor(posterTotal*1000));
     });
 
-    // 最后1秒：疯狂淡出整个intro层（包括字幕）
+    // 最后 1 秒：疯狂淡出整个 intro（包括海报/字幕/视频）
     introVideo.addEventListener('timeupdate', ()=>{
       if(!introVideo.duration) return;
       const remain = introVideo.duration - introVideo.currentTime;
-
       if(remain <= 1.0){
-        const k = Math.min(1, Math.max(0, 1 - remain / 1.0));
+        const k = Math.min(1, Math.max(0, 1 - remain/1.0));
         const op = Math.pow(1 - k, 6);
         introLayer.style.opacity = String(op);
       }
@@ -854,8 +954,9 @@
       introLayer.remove();
       document.body.classList.remove('intro-mode');
 
-      gsap.to(camera.position,{ x:0, y:60, z:80, duration:2.6, ease:"power3.inOut" });
-      gsap.to(controls.target,{
+      // 镜头从远到近
+      gsap.to(camera.position, { x:0, y:60, z:80, duration:2.6, ease:"power3.inOut" });
+      gsap.to(controls.target, {
         x:0, y:0, z:0,
         duration:2.6, ease:"power3.inOut",
         onComplete: ()=>{
