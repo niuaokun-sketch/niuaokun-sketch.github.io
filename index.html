@@ -1,878 +1,869 @@
 <!DOCTYPE html>
 <html lang="zh">
 <head>
-    <meta charset="UTF-8">
-    <title>ECO-MONITOR | 废土档案版</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <meta charset="UTF-8">
+  <title>ECO-MONITOR | 废土档案版</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 
-    <style>
-        body{
-            margin:0; overflow:hidden;
-            background-color:#e6d8c3;
-            cursor:none;
-            font-family:'Helvetica Neue', Helvetica, Arial, sans-serif;
-        }
-        body.intro-mode{ cursor:auto !important; }
+  <style>
+    body{
+      margin:0; overflow:hidden;
+      background-color:#e6d8c3;
+      cursor:none;
+      font-family:'Helvetica Neue', Helvetica, Arial, sans-serif;
+    }
+    body.intro-mode{ cursor:auto !important; }
 
-        /* =========================
-           开场视频层（直接播放）
-        ========================= */
-        #intro-layer{
-            position:fixed;
-            inset:0;
-            z-index:999999;
-            background:#000;
-            pointer-events:all;
-            opacity:1;
-        }
-        #intro-video{
-            position:absolute;
-            inset:0;
-            width:100%;
-            height:100%;
-            object-fit:cover;
-            opacity:1;
-            background:#000;
-        }
+    /* =========================
+       开场视频层
+    ========================= */
+    #intro-layer{
+      position:fixed;
+      inset:0;
+      z-index:999999;
+      background:#000;
+      pointer-events:all;
+      opacity:1;
+    }
+    #intro-video{
+      position:absolute;
+      inset:0;
+      width:100%;
+      height:100%;
+      object-fit:cover;
+      opacity:1;
+      background:#000;
+    }
 
-        /* 兜底按钮：只有 autoplay 被拦截时才显示 */
-        #autoplay-fallback{
-            position:absolute;
-            inset:0;
-            display:none;
-            align-items:center;
-            justify-content:center;
-            background:#000;
-            z-index:30;
-        }
-        #fallback-btn{
-            padding:18px 26px;
-            border:1px solid rgba(255,255,255,0.88);
-            color:rgba(255,255,255,0.95);
-            background:rgba(0,0,0,0.55);
-            backdrop-filter: blur(10px);
-            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-            letter-spacing:0.22em;
-            text-transform:uppercase;
-            font-size:14px;
-            cursor:pointer;
-            user-select:none;
-        }
-        #fallback-btn:hover{ background:rgba(255,255,255,0.08); }
+    /* ✅ 逐句英文叠字（像电影字幕/片头卡） */
+    #intro-text{
+      position:absolute;
+      top:6.5vh;               /* 顶部区域 */
+      left:0;
+      width:100%;
+      display:flex;
+      justify-content:center;
+      pointer-events:none;
+      z-index:25;
+      opacity:1;
+    }
+    #intro-text .wrap{
+      width:min(1200px, 92vw);
+      text-align:center;
+      color: rgba(255,0,0,0.96); /* 更显眼的红 */
+      text-shadow:none;          /* ✅ 无阴影 */
+      text-transform:uppercase;
+      letter-spacing:0.08em;
+    }
+    #intro-text .line{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-weight:900;
+      font-size: clamp(24px, 3.2vw, 52px); /* ✅ 大一点，电影感 */
+      line-height:1.05;
+      margin:0;
+      opacity:0;                 /* 动画控制显示 */
+      transform: translateY(10px);
+    }
+    #intro-text .sub{
+      margin-top:14px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-weight:800;
+      font-size: clamp(12px, 1.4vw, 16px);
+      letter-spacing:0.16em;
+      opacity:0.92;
+    }
 
-        /* 红色电影字卡（无阴影） */
-        #titlecard{
-            position:absolute;
-            inset:0;
-            display:flex;
-            align-items:center;
-            justify-content:center;
-            pointer-events:none;
-            z-index:20;
-            opacity:0;
-        }
-        .tc-wrap{
-            width:min(1200px,92vw);
-            text-align:center;
-            color:rgba(255,0,0,0.96);
-            text-transform:uppercase;
-            letter-spacing:0.08em;
-            text-shadow:none;
-        }
-        .tc-top{
-            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-            font-size: clamp(12px, 1.4vw, 16px);
-            font-weight:700;
-            opacity:0.95;
-            margin-bottom:14px;
-        }
-        .tc-main{
-            font-size: clamp(56px, 9.5vw, 140px);
-            font-weight:900;
-            letter-spacing:0.02em;
-            line-height:0.95;
-            margin:0;
-        }
-        .tc-sub{
-            margin-top:14px;
-            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-            font-size: clamp(12px, 1.4vw, 16px);
-            font-weight:700;
-            opacity:0.9;
-        }
-        .tc-credits{
-            margin-top:18px;
-            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-            font-size: clamp(10px, 1.1vw, 13px);
-            line-height:1.6;
-            opacity:0.88;
-            letter-spacing:0.14em;
-        }
+    /* 兜底按钮：autoplay 被拦截才出现 */
+    #autoplay-fallback{
+      position:absolute;
+      inset:0;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      background:#000;
+      z-index:30;
+    }
+    #fallback-btn{
+      padding:18px 26px;
+      border:1px solid rgba(255,255,255,0.88);
+      color:rgba(255,255,255,0.95);
+      background:rgba(0,0,0,0.55);
+      backdrop-filter: blur(10px);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      letter-spacing:0.22em;
+      text-transform:uppercase;
+      font-size:14px;
+      cursor:pointer;
+      user-select:none;
+    }
+    #fallback-btn:hover{ background:rgba(255,255,255,0.08); }
 
-        canvas{ opacity:0; transition:opacity 0.8s ease; }
-        canvas.visible{ opacity:1; }
+    canvas{ opacity:0; transition:opacity 0.8s ease; }
+    canvas.visible{ opacity:1; }
 
-        /* --- UI 层 --- */
-        #ui-layer{
-            position:absolute; top:0; left:0; width:100%; height:100%;
-            pointer-events:none;
-            display:none;
-            opacity:0; transition:opacity 0.5s;
-            z-index:999;
-        }
-        #ui-layer.active{ display:block; opacity:1; }
+    /* --- UI 层 --- */
+    #ui-layer{
+      position:absolute; top:0; left:0; width:100%; height:100%;
+      pointer-events:none;
+      display:none;
+      opacity:0; transition:opacity 0.5s;
+      z-index:999;
+    }
+    #ui-layer.active{ display:block; opacity:1; }
 
-        .left-panel{
-            position:absolute; left:5%; top:20%;
-            display:flex; flex-direction:column; align-items:flex-start;
-            pointer-events:auto;
-        }
-        .title-box{
-            background-color:#cc3333; color:white;
-            padding:15px 30px; font-size:32px; font-weight:900;
-            text-transform:uppercase; letter-spacing:2px;
-            box-shadow:5px 5px 0px rgba(0,0,0,0.2);
-            margin-bottom:0;
-        }
-        .pollution-alert{
-            background-color:#ffcc00; color:#222;
-            padding:15px 25px; margin-top:15px; margin-bottom:5px;
-            font-weight:900; font-size:14px; letter-spacing:1px;
-            border-left:8px solid #222;
-            box-shadow:0 5px 15px rgba(0,0,0,0.1);
-            max-width:350px;
-        }
-        .pollution-label{ display:block; font-size:10px; opacity:0.7; margin-bottom:5px; }
-        .pollution-value{ font-size:18px; text-transform:uppercase; }
-        .stat-box{
-            background-color:#333; color:#ccc;
-            padding:10px 20px; margin-top:2px;
-            font-size:12px; font-weight:600; letter-spacing:1px;
-            min-width:200px;
-        }
-        .stat-box span{ color:#fff; margin-left:10px; }
+    .left-panel{
+      position:absolute; left:5%; top:20%;
+      display:flex; flex-direction:column; align-items:flex-start;
+      pointer-events:auto;
+    }
+    .title-box{
+      background-color:#cc3333; color:white;
+      padding:15px 30px; font-size:32px; font-weight:900;
+      text-transform:uppercase; letter-spacing:2px;
+      box-shadow:5px 5px 0px rgba(0,0,0,0.2);
+      margin-bottom:0;
+    }
+    .pollution-alert{
+      background-color:#ffcc00; color:#222;
+      padding:15px 25px; margin-top:15px; margin-bottom:5px;
+      font-weight:900; font-size:14px; letter-spacing:1px;
+      border-left:8px solid #222;
+      box-shadow:0 5px 15px rgba(0,0,0,0.1);
+      max-width:350px;
+    }
+    .pollution-label{ display:block; font-size:10px; opacity:0.7; margin-bottom:5px; }
+    .pollution-value{ font-size:18px; text-transform:uppercase; }
+    .stat-box{
+      background-color:#333; color:#ccc;
+      padding:10px 20px; margin-top:2px;
+      font-size:12px; font-weight:600; letter-spacing:1px;
+      min-width:200px;
+    }
+    .stat-box span{ color:#fff; margin-left:10px; }
 
-        .right-panel{
-            position:absolute; right:5%; bottom:8%; top:15%;
-            width:450px;
-            background-color:rgba(30,30,30,0.95);
-            color:#ddd;
-            padding:0;
-            border-left:6px solid #cc3333;
-            pointer-events:auto;
-            backdrop-filter:blur(10px);
-            display:flex; flex-direction:column;
-            box-shadow:0 20px 50px rgba(0,0,0,0.3);
-        }
-        .video-box{
-            width:100%; height:260px;
-            background:#000;
-            border-bottom:1px solid #555;
-            overflow:hidden; position:relative; flex-shrink:0;
-        }
-        #ui-video{ width:100%; height:100%; object-fit:cover; opacity:0.95; }
-        .rec-tag{
-            position:absolute; top:15px; left:15px;
-            color:#ff0000; font-size:12px; font-weight:bold;
-            animation:blink 1s infinite; z-index:10; letter-spacing:1px;
-        }
-        @keyframes blink{ 50%{ opacity:0; } }
+    .right-panel{
+      position:absolute; right:5%; bottom:8%; top:15%;
+      width:450px;
+      background-color:rgba(30,30,30,0.95);
+      color:#ddd;
+      padding:0;
+      border-left:6px solid #cc3333;
+      pointer-events:auto;
+      backdrop-filter:blur(10px);
+      display:flex; flex-direction:column;
+      box-shadow:0 20px 50px rgba(0,0,0,0.3);
+    }
+    .video-box{
+      width:100%; height:260px;
+      background:#000;
+      border-bottom:1px solid #555;
+      overflow:hidden; position:relative; flex-shrink:0;
+    }
+    #ui-video{ width:100%; height:100%; object-fit:cover; opacity:0.95; }
+    .rec-tag{
+      position:absolute; top:15px; left:15px;
+      color:#ff0000; font-size:12px; font-weight:bold;
+      animation:blink 1s infinite; z-index:10; letter-spacing:1px;
+    }
+    @keyframes blink{ 50%{ opacity:0; } }
 
-        .scroll-container{ flex-grow:1; overflow-y:auto; padding:30px; padding-bottom:50px; }
-        .scroll-container::-webkit-scrollbar{ width:6px; }
-        .scroll-container::-webkit-scrollbar-track{ background:#222; }
-        .scroll-container::-webkit-scrollbar-thumb{ background:#cc3333; border-radius:3px; }
+    .scroll-container{ flex-grow:1; overflow-y:auto; padding:30px; padding-bottom:50px; }
+    .scroll-container::-webkit-scrollbar{ width:6px; }
+    .scroll-container::-webkit-scrollbar-track{ background:#222; }
+    .scroll-container::-webkit-scrollbar-thumb{ background:#cc3333; border-radius:3px; }
 
-        .desc-text{
-            font-size:14px; line-height:1.8; margin-bottom:25px;
-            color:#eee; text-align:justify;
-            border-bottom:1px solid #555; padding-bottom:25px;
-        }
-        .detail-list{ font-size:13px; color:#aaa; line-height:1.7; }
-        .detail-item{ margin-bottom:15px; }
-        .detail-label{
-            display:block; color:#ff6666; font-weight:800; margin-bottom:5px;
-            text-transform:uppercase; letter-spacing:1px; font-size:11px;
-        }
+    .desc-text{
+      font-size:14px; line-height:1.8; margin-bottom:25px;
+      color:#eee; text-align:justify;
+      border-bottom:1px solid #555; padding-bottom:25px;
+    }
+    .detail-list{ font-size:13px; color:#aaa; line-height:1.7; }
+    .detail-item{ margin-bottom:15px; }
+    .detail-label{
+      display:block; color:#ff6666; font-weight:800; margin-bottom:5px;
+      text-transform:uppercase; letter-spacing:1px; font-size:11px;
+    }
 
-        .close-btn{
-            position:absolute; top:20px; right:-70px;
-            width:50px; height:50px;
-            border:2px solid #333; border-radius:50%;
-            display:flex; justify-content:center; align-items:center;
-            cursor:pointer; color:#333; font-size:30px;
-            transition:all 0.3s; pointer-events:auto;
-            background:rgba(230,216,195,0.9);
-            box-shadow:0 5px 15px rgba(0,0,0,0.1); z-index:200;
-        }
-        .close-btn:hover{ background:#333; color:#fff; transform:rotate(90deg); }
+    .close-btn{
+      position:absolute; top:20px; right:-70px;
+      width:50px; height:50px;
+      border:2px solid #333; border-radius:50%;
+      display:flex; justify-content:center; align-items:center;
+      cursor:pointer; color:#333; font-size:30px;
+      transition:all 0.3s; pointer-events:auto;
+      background:rgba(230,216,195,0.9);
+      box-shadow:0 5px 15px rgba(0,0,0,0.1); z-index:200;
+    }
+    .close-btn:hover{ background:#333; color:#fff; transform:rotate(90deg); }
 
-        #ui-header{ position:absolute; top:30px; left:40px; color:#554433; pointer-events:none; z-index:10; transition:opacity 0.3s; }
-        h1{ margin:0; font-size:20px; font-weight:800; letter-spacing:1px; }
-        p{ margin:5px 0 0 0; font-size:11px; color:#886644; font-weight:600; }
+    #ui-header{ position:absolute; top:30px; left:40px; color:#554433; pointer-events:none; z-index:10; transition:opacity 0.3s; }
+    h1{ margin:0; font-size:20px; font-weight:800; letter-spacing:1px; }
+    p{ margin:5px 0 0 0; font-size:11px; color:#886644; font-weight:600; }
 
-        #loading{
-            position:absolute; top:50%; left:50%;
-            transform:translate(-50%,-50%);
-            color:#886644; font-size:12px;
-            pointer-events:none; transition:opacity 0.5s; font-weight:bold;
-        }
+    #loading{
+      position:absolute; top:50%; left:50%;
+      transform:translate(-50%,-50%);
+      color:#886644; font-size:12px;
+      pointer-events:none; transition:opacity 0.5s; font-weight:bold;
+    }
 
-        body.active-mode{ cursor:auto !important; }
-        #ui-layer:hover, .close-btn:hover{ cursor:default; }
-    </style>
+    body.active-mode{ cursor:auto !important; }
+    #ui-layer:hover, .close-btn:hover{ cursor:default; }
+  </style>
 </head>
 
 <body class="intro-mode">
 
-    <!-- 开场：直接播放视频 -->
-    <div id="intro-layer">
-        <video id="intro-video" muted playsinline autoplay preload="auto">
-            <source src="./kaitou.mp4" type="video/mp4">
-        </video>
+  <div id="intro-layer">
+    <video id="intro-video" muted playsinline autoplay preload="auto">
+      <source src="./kaitou.mp4" type="video/mp4">
+    </video>
 
-        <div id="titlecard">
-            <div class="tc-wrap">
-                <div class="tc-top">A PLANETARY INCIDENT REPORT</div>
-                <h2 class="tc-main">ECO-MONITOR</h2>
-                <div class="tc-sub">WASTELAND SURVEILLANCE // SECTOR 7</div>
-                <div class="tc-credits">
-                    HUMAN EXCESS  ·  TOXIC RUNOFF  ·  PLASTIC BLOOM<br/>
-                    OIL SLICKS  ·  ACID RAIN  ·  RADIATION LEAKS<br/>
-                    MUTATION IS NOT FICTION — IT IS ADAPTATION
-                </div>
-            </div>
-        </div>
-
-        <!-- 兜底层：只有 autoplay 真被拦截才出现 -->
-        <div id="autoplay-fallback">
-            <div id="fallback-btn">CLICK TO START</div>
-        </div>
+    <!-- ✅ 播放中逐句出现的英文介绍 -->
+    <div id="intro-text">
+      <div class="wrap">
+        <p class="line" id="intro-line"> </p>
+        <div class="sub" id="intro-sub">ECO-MONITOR // INCIDENT LOG</div>
+      </div>
     </div>
 
-    <div id="ui-header">
-        <h1>ECO-MONITOR</h1>
-        <p>Wasteland Surveillance // Sector 7</p>
+    <!-- autoplay 失败才显示 -->
+    <div id="autoplay-fallback">
+      <div id="fallback-btn">CLICK TO START</div>
+    </div>
+  </div>
+
+  <div id="ui-header">
+    <h1>ECO-MONITOR</h1>
+    <p>Wasteland Surveillance // Sector 7</p>
+  </div>
+
+  <div id="loading">CONNECTING TO SATELLITE...</div>
+
+  <div id="ui-layer">
+    <div class="left-panel">
+      <div class="title-box" id="ui-name">TARGET NAME</div>
+      <div class="pollution-alert">
+        <span class="pollution-label">MUTATION CAUSE / 异变诱因</span>
+        <span class="pollution-value" id="ui-pollutant">UNKNOWN</span>
+      </div>
+      <div class="stat-box">LATIN: <span id="ui-latin">Unknown</span></div>
+      <div class="stat-box">TOXICITY: <span id="ui-tox">0%</span></div>
+      <div class="stat-box">STATUS: <span style="color:#ff4444">CRITICAL</span></div>
     </div>
 
-    <div id="loading">CONNECTING TO SATELLITE...</div>
+    <div class="right-panel">
+      <div class="close-btn" onclick="closePanel()">×</div>
+      <div class="video-box">
+        <div class="rec-tag">● REC 00:14:23</div>
+        <video id="ui-video" loop muted playsinline></video>
+      </div>
 
-    <div id="ui-layer">
-        <div class="left-panel">
-            <div class="title-box" id="ui-name">TARGET NAME</div>
-            <div class="pollution-alert">
-                <span class="pollution-label">MUTATION CAUSE / 异变诱因</span>
-                <span class="pollution-value" id="ui-pollutant">UNKNOWN</span>
-            </div>
-            <div class="stat-box">LATIN: <span id="ui-latin">Unknown</span></div>
-            <div class="stat-box">TOXICITY: <span id="ui-tox">0%</span></div>
-            <div class="stat-box">STATUS: <span style="color:#ff4444">CRITICAL</span></div>
+      <div class="scroll-container">
+        <div class="desc-text" id="ui-desc">...</div>
+        <div class="detail-list">
+          <div class="detail-item">
+            <span class="detail-label">MORPHOLOGICAL DEFORMITY / 外貌畸变</span>
+            <span id="ui-look">...</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">BEHAVIORAL ANOMALY / 异常行为</span>
+            <span id="ui-act">...</span>
+          </div>
         </div>
-
-        <div class="right-panel">
-            <div class="close-btn" onclick="closePanel()">×</div>
-            <div class="video-box">
-                <div class="rec-tag">● REC 00:14:23</div>
-                <video id="ui-video" loop muted playsinline></video>
-            </div>
-
-            <div class="scroll-container">
-                <div class="desc-text" id="ui-desc">...</div>
-                <div class="detail-list">
-                    <div class="detail-item">
-                        <span class="detail-label">MORPHOLOGICAL DEFORMITY / 外貌畸变</span>
-                        <span id="ui-look">...</span>
-                    </div>
-                    <div class="detail-item">
-                        <span class="detail-label">BEHAVIORAL ANOMALY / 异常行为</span>
-                        <span id="ui-act">...</span>
-                    </div>
-                </div>
-            </div>
-        </div>
+      </div>
     </div>
+  </div>
 
-    <script type="importmap">
-        {
-            "imports": {
-                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
-            }
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+
+  <script type="x-shader/x-vertex" id="vertexShader">
+    uniform vec3 uMouse;
+    attribute float size;
+    attribute vec3 customColor;
+    varying vec3 vColor;
+    void main() {
+      vColor = customColor;
+      vec3 pos = position;
+      float dist = distance(pos.xz, uMouse.xz);
+      float radius = 7.0;
+      if (dist < radius) {
+        vec3 dir = normalize(pos - uMouse);
+        float force = (radius - dist) / radius;
+        pos.x += dir.x * force * 3.0;
+        pos.z += dir.z * force * 3.0;
+      }
+      vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
+      gl_PointSize = size * (200.0 / -mvPosition.z);
+      gl_Position = projectionMatrix * mvPosition;
+    }
+  </script>
+
+  <script type="x-shader/x-fragment" id="fragmentShader">
+    varying vec3 vColor;
+    void main() {
+      float dist = length(gl_PointCoord - vec2(0.5));
+      float alpha = 1.0 - smoothstep(0.4, 0.5, dist);
+      if (alpha < 0.01) discard;
+      gl_FragColor = vec4(vColor, alpha);
+    }
+  </script>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+    import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+
+    /* =========================
+       ✅ 逐句英文文案：你直接改这里
+       每句会：淡入(0.35s) → 停留(2.2s) → 淡出(0.35s)
+    ========================= */
+    const INTRO_LINES = [
+      "WE TOOK TOO MUCH.",
+      "WE BURNED WHAT WE COULD NOT REPLACE.",
+      "OCEANS FILLED WITH PLASTIC. SKIES THICK WITH POISON.",
+      "THE EARTH DID NOT FORGIVE.",
+      "IT ADAPTED.",
+      "MUTATION IS THE LAST SURVIVAL STRATEGY."
+    ];
+
+    // 动画参数（你要更快/更慢改这里）
+    const LINE_FADE_IN  = 0.35;
+    const LINE_HOLD     = 2.20;
+    const LINE_FADE_OUT = 0.35;
+    const LINE_GAP      = 0.15;  // 句与句之间间隔
+    const INTRO_TEXT_END_OFFSET = 1.15; // 视频结束前多少秒停止出字（避免和最终淡出冲突）
+
+    /* --- 0. 动物数据库（保留你的原数据，你可自行替换成完整版） --- */
+    const animalData = {
+      "POLYMER TURTLE": { video:"./wugui.mp4", name:"聚合体海龟", latin:"CHELONIA PLASTICUS", pollutant:"不可降解聚苯乙烯 (PS)", tox:"85%", desc:"...", look:"...", act:"..." },
+      "PLASTIC CRAB": { video:"./xie.mp4", name:"工业寄居蟹", latin:"PAGURUS INDUSTRIALIS", pollutant:"聚氯乙烯 (PVC) / 塑化剂", tox:"45%", desc:"...", look:"...", act:"..." },
+      "OIL BIRD": { video:"./niao.mp4", name:"油污鸬鹚", latin:"PHALACROCORAX OLEUM", pollutant:"重质原油 / 多环芳烃", tox:"92%", desc:"...", look:"...", act:"..." },
+      "FIBER JELLY": { video:"./shuimu.mp4", name:"光纤水母", latin:"MEDUSA FIBEROPTICUS", pollutant:"电磁辐射 / 铜离子泄漏", tox:"60%", desc:"...", look:"...", act:"..." },
+      "SONAR DOLPHIN": { video:"./haitun.mp4", name:"声呐海豚", latin:"DELPHINUS SONARIS", pollutant:"高频声波污染", tox:"30%", desc:"...", look:"...", act:"..." },
+      "TOXIC SNAKE": { video:"./she.mp4", name:"荧光环蛇", latin:"BUNGARUS RADIUM", pollutant:"强酸 / 放射性同位素", tox:"99%", desc:"...", look:"...", act:"..." },
+      "ACID FROG": { video:"./wa.mp4", name:"酸蚀箭毒蛙", latin:"DENDROBATES ACIDUS", pollutant:"硫酸/硝酸 (pH<3)", tox:"75%", desc:"...", look:"...", act:"..." },
+      "RADIOACTIVE FISH": { video:"./yu.mp4", name:"核辐射鱼", latin:"PISCES NUCLEARIS", pollutant:"铯-137 / 锶-90", tox:"100%", desc:"...", look:"...", act:"..." },
+      "GHOST SEAL": { video:"./haibao.mp4", name:"幽灵网缚海豹", latin:"PHOCA LAQUEUS", pollutant:"聚酰胺纤维", tox:"50%", desc:"...", look:"...", act:"..." }
+    };
+
+    /* --- 1. Three.js 场景 --- */
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xe6d8c3);
+    scene.fog = new THREE.FogExp2(0xe6d8c3, 0.012);
+
+    const ambientLight = new THREE.AmbientLight(0xffeedd, 3.5);
+    scene.add(ambientLight);
+    const dirLight = new THREE.DirectionalLight(0xffaa77, 3.0);
+    dirLight.position.set(50,80,50);
+    scene.add(dirLight);
+    const cameraLight = new THREE.DirectionalLight(0xffffff, 1.5);
+    scene.add(cameraLight);
+
+    const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 1000);
+    camera.position.set(0, 160, 260); // 开场更远
+
+    const renderer = new THREE.WebGLRenderer({ antialias:true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    document.body.appendChild(renderer.domElement);
+
+    /* 光标 */
+    const cursorGroup = new THREE.Group();
+    scene.add(cursorGroup);
+    const hexGeometry = new THREE.RingGeometry(3.5, 4.2, 6);
+    const hexMaterial = new THREE.MeshBasicMaterial({ color:0x444444, side:THREE.DoubleSide, transparent:true, opacity:0.8 });
+    const cursorHex = new THREE.Mesh(hexGeometry, hexMaterial);
+    cursorHex.rotation.x = -Math.PI/2;
+    cursorGroup.add(cursorHex);
+    const triGeo = new THREE.ConeGeometry(0.8, 2, 3);
+    const triMat = new THREE.MeshBasicMaterial({ color:0x222222 });
+    const cursorTri = new THREE.Mesh(triGeo, triMat);
+    cursorTri.rotation.x = Math.PI;
+    cursorTri.position.y = 6;
+    cursorGroup.add(cursorTri);
+
+    /* 无人机 */
+    const droneGroup = new THREE.Group();
+    scene.add(droneGroup);
+    droneGroup.visible = false;
+    const camBody = new THREE.Mesh(new THREE.BoxGeometry(1.5,1,2), new THREE.MeshBasicMaterial({ color:0x222222 }));
+    droneGroup.add(camBody);
+    const camLens = new THREE.Mesh(new THREE.CylinderGeometry(0.6,0.6,0.8,16), new THREE.MeshBasicMaterial({ color:0x666666 }));
+    camLens.rotation.x = Math.PI/2; camLens.position.z = 1.2;
+    droneGroup.add(camLens);
+    const recLight = new THREE.Mesh(new THREE.SphereGeometry(0.25), new THREE.MeshBasicMaterial({ color:0xff0000 }));
+    recLight.position.set(0.6,0.6,1.0);
+    droneGroup.add(recLight);
+
+    /* 射线与地形 */
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+    const mouseWorld = new THREE.Vector3();
+    const hitPlane = new THREE.Mesh(new THREE.PlaneGeometry(500,500), new THREE.MeshBasicMaterial({ visible:false }));
+    hitPlane.rotation.x = -Math.PI/2;
+    scene.add(hitPlane);
+
+    const geometry = new THREE.BufferGeometry();
+    const positions = [], colors = [], sizes = [];
+    const colWater = new THREE.Color("#668899");
+    const colLand1 = new THREE.Color("#ccaa66");
+    const colLand2 = new THREE.Color("#885533");
+    const colCanopy = new THREE.Color("#444433");
+    const range = 180;
+    const gap = 2.5;
+
+    function getElevation(x,z){ return Math.sin(x*0.05)*8 + Math.cos(z*0.05)*8; }
+
+    for(let x=-range; x<range; x+=gap){
+      for(let z=-range; z<range; z+=gap){
+        const distToCenter = Math.sqrt(x*x+z*z);
+        const maxRadius = 120 + Math.sin(Math.atan2(z,x)*5.0)*15.0 + Math.cos(x*0.1)*10.0;
+        if(distToCenter>maxRadius) continue;
+
+        let y=getElevation(x,z);
+        let pSize=0, pColor=new THREE.Color(), keep=false;
+
+        if(y<-3){
+          if(Math.random()>0.4){ pSize=4.0; pColor=colWater; keep=true; }
+        }else{
+          if(Math.random()>0.5){
+            keep=true;
+            const r=Math.random();
+            if(r>0.96){ pSize=7.0; pColor=colCanopy; y+=3.0; }
+            else if(r>0.6){ pSize=2.5; pColor=colLand2; }
+            else { pSize=1.5; pColor=colLand1; }
+          }
         }
-    </script>
+        if(keep){ positions.push(x,y,z); colors.push(pColor.r,pColor.g,pColor.b); sizes.push(pSize); }
+      }
+    }
 
-    <script type="x-shader/x-vertex" id="vertexShader">
-        uniform vec3 uMouse;
-        attribute float size;
-        attribute vec3 customColor;
-        varying vec3 vColor;
-        void main() {
-            vColor = customColor;
-            vec3 pos = position;
-            float dist = distance(pos.xz, uMouse.xz);
-            float radius = 7.0;
-            if (dist < radius) {
-                vec3 dir = normalize(pos - uMouse);
-                float force = (radius - dist) / radius;
-                pos.x += dir.x * force * 3.0;
-                pos.z += dir.z * force * 3.0;
-            }
-            vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
-            gl_PointSize = size * (200.0 / -mvPosition.z);
-            gl_Position = projectionMatrix * mvPosition;
-        }
-    </script>
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions,3));
+    geometry.setAttribute('customColor', new THREE.Float32BufferAttribute(colors,3));
+    geometry.setAttribute('size', new THREE.Float32BufferAttribute(sizes,1));
 
-    <script type="x-shader/x-fragment" id="fragmentShader">
-        varying vec3 vColor;
-        void main() {
-            float dist = length(gl_PointCoord - vec2(0.5));
-            float alpha = 1.0 - smoothstep(0.4, 0.5, dist);
-            if (alpha < 0.01) discard;
-            gl_FragColor = vec4(vColor, alpha);
-        }
-    </script>
+    const shaderMaterial = new THREE.ShaderMaterial({
+      uniforms:{ uMouse:{ value:new THREE.Vector3(0,0,0) } },
+      vertexShader: document.getElementById('vertexShader').textContent,
+      fragmentShader: document.getElementById('fragmentShader').textContent,
+      transparent:true, depthTest:true, depthWrite:false
+    });
+    const terrain = new THREE.Points(geometry, shaderMaterial);
+    scene.add(terrain);
 
-    <script type="module">
-        import * as THREE from 'three';
-        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-        import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+    /* 物种群（保留结构） */
+    const loader = new GLTFLoader();
+    const dracoLoader = new DRACOLoader();
+    dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
+    loader.setDRACOLoader(dracoLoader);
 
-        const animalData = {
-            "POLYMER TURTLE": {
-                video: "./wugui.mp4", name: "聚合体海龟", latin: "CHELONIA PLASTICUS", pollutant: "不可降解聚苯乙烯 (PS)", tox: "85%",
-                desc: "该样本是在太平洋垃圾带核心区被捕获的。解剖显示，这只海龟的消化系统已经发生了不可逆的退化。它不再具备消化水母或海草的能力，而是通过皮肤上进化出的粗糙滤孔，直接从海水中吸附并整合微塑料颗粒。最令人震惊的病理改变发生在它的背甲上：其骨骼组织与海洋中漂浮的聚乙烯废料在细胞层面发生了融合，形成了一层五颜六色的、永远无法降解的合成装甲。这种“塑料骨骼”虽然提供了极高的物理防御力，但其密度是正常骨骼的三倍，导致它无法潜入深海避难，只能终生漂浮在充满辐射的表层水域。",
-                look: "背甲呈现出破碎且混乱的马赛克纹理，那是无数打火机碎片、瓶盖残渣与有机骨骼强行生长在一起的痕迹。四肢关节处有明显的塑料纤维增生。",
-                act: "行动极其迟缓，仿佛背负着巨大的枷锁。"
-            },
-            "PLASTIC CRAB": {
-                video: "./xie.mp4", name: "工业寄居蟹", latin: "PAGURUS INDUSTRIALIS", pollutant: "聚氯乙烯 (PVC) / 塑化剂", tox: "45%",
-                desc: "随着海洋酸化加剧，碳酸钙构成的天然贝壳在海水中迅速溶解。这一亚种展现出了惊人的适应能力：它们不再寻找贝壳，而是寄生于人类遗弃的塑料瓶盖、喷头甚至生锈的易拉罐中。",
-                look: "终生背负着瓶盖或破碎玩偶头部。",
-                act: "为争夺更完好的塑料壳而互相攻击。"
-            },
-            "OIL BIRD": {
-                video: "./niao.mp4", name: "油污鸬鹚", latin: "PHALACROCORAX OLEUM", pollutant: "重质原油 / 多环芳烃", tox: "92%",
-                desc: "原油渗透进基因表达，尾脂腺分泌沥青状黑色粘液，丧失飞行能力。",
-                look: "浑身漆黑粘稠，反射彩虹油膜光泽。",
-                act: "吞食油污尸体，甚至吸食浮油。"
-            },
-            "FIBER JELLY": {
-                video: "./shuimu.mp4", name: "光纤水母", latin: "MEDUSA FIBEROPTICUS", pollutant: "电磁辐射 / 铜离子泄漏", tox: "60%",
-                desc: "触须与断裂光纤网络共生纠缠，窃取微弱电流作为能量来源。",
-                look: "触须像发冷蓝光的数据线。",
-                act: "成群时可造成强电磁干扰。"
-            },
-            "SONAR DOLPHIN": {
-                video: "./haitun.mp4", name: "声呐海豚", latin: "DELPHINUS SONARIS", pollutant: "高频声波污染", tox: "30%",
-                desc: "听觉系统崩溃并重组，声带进化出高强冲击波能力。",
-                look: "额隆增生如雷达接收器。",
-                act: "主动发射高频声波驱逐靠近者。"
-            },
-            "TOXIC SNAKE": {
-                video: "./she.mp4", name: "荧光环蛇", latin: "BUNGARUS RADIUM", pollutant: "强酸 / 放射性同位素", tox: "99%",
-                desc: "毒液腺体吸收强酸与放射性同位素，环纹变为剧毒荧光绿。",
-                look: "鳞片缝隙渗出荧光体液。",
-                act: "所经之处草木瞬间枯死。"
-            },
-            "ACID FROG": {
-                video: "./wa.mp4", name: "酸蚀箭毒蛙", latin: "DENDROBATES ACIDUS", pollutant: "硫酸/硝酸 (pH<3)", tox: "75%",
-                desc: "皮肤角质化耐酸，背部长出晶体状排毒结构。",
-                look: "皮肤粗糙灰白，背部晶体簇。",
-                act: "鸣叫如金属刮擦。"
-            },
-            "RADIOACTIVE FISH": {
-                video: "./yu.mp4", name: "核辐射鱼", latin: "PISCES NUCLEARIS", pollutant: "铯-137 / 锶-90", tox: "100%",
-                desc: "DNA 不断破碎与重组，形态不稳定。",
-                look: "半透明，骨架幽蓝发光，多眼畸变。",
-                act: "游动抽搐，对强光痉挛。"
-            },
-            "GHOST SEAL": {
-                video: "./haibao.mp4", name: "幽灵网缚海豹", latin: "PHOCA LAQUEUS", pollutant: "聚酰胺纤维", tox: "50%",
-                desc: "渔网勒入皮肉与骨骼，被组织包裹成为痛苦外骨骼。",
-                look: "颈部躯干嵌着尼龙绳索，增生肉瘤。",
-                act: "暴躁，攻击任何绳索状物体。"
-            }
-        };
+    class SpeciesSwarm{
+      constructor(name, normalFile, mutantFile, centerPos){
+        this.name=name;
+        this.center=centerPos.clone();
+        this.group=new THREE.Group();
+        scene.add(this.group);
+        this.group.userData={ isSwarm:true, swarmName:name };
 
-        const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0xe6d8c3);
-        scene.fog = new THREE.FogExp2(0xe6d8c3, 0.012);
+        this.boids=[];
+        this.state='swarm';
 
-        const ambientLight = new THREE.AmbientLight(0xffeedd, 3.5);
-        scene.add(ambientLight);
-        const dirLight = new THREE.DirectionalLight(0xffaa77, 3.0);
-        dirLight.position.set(50, 80, 50);
-        scene.add(dirLight);
-        const cameraLight = new THREE.DirectionalLight(0xffffff, 1.5);
-        scene.add(cameraLight);
+        this.modelGroup=new THREE.Group();
+        this.turntable=new THREE.Group();
+        this.group.add(this.modelGroup);
+        this.modelGroup.add(this.turntable);
+        this.modelGroup.visible=false;
 
-        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.set(0, 160, 260); // 片头更远
-
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.outputColorSpace = THREE.SRGBColorSpace;
-        document.body.appendChild(renderer.domElement);
-
-        const cursorGroup = new THREE.Group();
-        scene.add(cursorGroup);
-        const hexGeometry = new THREE.RingGeometry(3.5, 4.2, 6);
-        const hexMaterial = new THREE.MeshBasicMaterial({ color: 0x444444, side: THREE.DoubleSide, transparent: true, opacity: 0.8 });
-        const cursorHex = new THREE.Mesh(hexGeometry, hexMaterial);
-        cursorHex.rotation.x = -Math.PI / 2;
-        cursorGroup.add(cursorHex);
-        const triGeo = new THREE.ConeGeometry(0.8, 2, 3);
-        const triMat = new THREE.MeshBasicMaterial({ color: 0x222222 });
-        const cursorTri = new THREE.Mesh(triGeo, triMat);
-        cursorTri.rotation.x = Math.PI; cursorTri.position.y = 6;
-        cursorGroup.add(cursorTri);
-
-        const droneGroup = new THREE.Group();
-        scene.add(droneGroup);
-        droneGroup.visible = false;
-        const camBody = new THREE.Mesh(new THREE.BoxGeometry(1.5, 1, 2), new THREE.MeshBasicMaterial({ color: 0x222222 }));
-        droneGroup.add(camBody);
-        const camLens = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.6, 0.8, 16), new THREE.MeshBasicMaterial({ color: 0x666666 }));
-        camLens.rotation.x = Math.PI / 2; camLens.position.z = 1.2;
-        droneGroup.add(camLens);
-        const recLight = new THREE.Mesh(new THREE.SphereGeometry(0.25), new THREE.MeshBasicMaterial({ color: 0xff0000 }));
-        recLight.position.set(0.6, 0.6, 1.0);
-        droneGroup.add(recLight);
-
-        const raycaster = new THREE.Raycaster();
-        const mouse = new THREE.Vector2();
-        const mouseWorld = new THREE.Vector3();
-        const hitPlane = new THREE.Mesh(new THREE.PlaneGeometry(500, 500), new THREE.MeshBasicMaterial({ visible: false }));
-        hitPlane.rotation.x = -Math.PI / 2;
-        scene.add(hitPlane);
-
-        const geometry = new THREE.BufferGeometry();
-        const positions = [], colors = [], sizes = [];
-
-        const colWater = new THREE.Color("#668899");
-        const colLand1 = new THREE.Color("#ccaa66");
-        const colLand2 = new THREE.Color("#885533");
-        const colCanopy = new THREE.Color("#444433");
-
-        const range = 180;
-        const gap = 2.5;
-        function getElevation(x,z){ return Math.sin(x*0.05)*8 + Math.cos(z*0.05)*8; }
-
-        for(let x=-range; x<range; x+=gap){
-            for(let z=-range; z<range; z+=gap){
-                const distToCenter = Math.sqrt(x*x + z*z);
-                const maxRadius = 120 + Math.sin(Math.atan2(z,x)*5.0)*15.0 + Math.cos(x*0.1)*10.0;
-                if(distToCenter > maxRadius) continue;
-
-                let y = getElevation(x,z);
-                let pSize=0, pColor=new THREE.Color(), keep=false;
-
-                if(y < -3){
-                    if(Math.random() > 0.4){ pSize=4.0; pColor=colWater; keep=true; }
-                }else{
-                    if(Math.random() > 0.5){
-                        keep=true;
-                        const r = Math.random();
-                        if(r > 0.96){ pSize=7.0; pColor=colCanopy; y += 3.0; }
-                        else if(r > 0.6){ pSize=2.5; pColor=colLand2; }
-                        else { pSize=1.5; pColor=colLand1; }
-                    }
-                }
-                if(keep){ positions.push(x,y,z); colors.push(pColor.r,pColor.g,pColor.b); sizes.push(pSize); }
-            }
-        }
-
-        geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions,3));
-        geometry.setAttribute('customColor', new THREE.Float32BufferAttribute(colors,3));
-        geometry.setAttribute('size', new THREE.Float32BufferAttribute(sizes,1));
-
-        const shaderMaterial = new THREE.ShaderMaterial({
-            uniforms:{ uMouse:{ value:new THREE.Vector3(0,0,0)} },
-            vertexShader: document.getElementById('vertexShader').textContent,
-            fragmentShader: document.getElementById('fragmentShader').textContent,
-            transparent:true, depthTest:true, depthWrite:false
-        });
-        const terrain = new THREE.Points(geometry, shaderMaterial);
-        scene.add(terrain);
-
-        const loader = new GLTFLoader();
-        const dracoLoader = new DRACOLoader();
-        dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
-        loader.setDRACOLoader(dracoLoader);
-
-        class SpeciesSwarm{
-            constructor(name, normalFile, mutantFile, centerPos){
-                this.name=name;
-                this.center=centerPos.clone();
-                this.group=new THREE.Group();
-                scene.add(this.group);
-                this.group.userData={ isSwarm:true, swarmName:name };
-
-                this.boids=[];
-                this.state='swarm';
-
-                this.modelGroup=new THREE.Group();
-                this.turntable=new THREE.Group();
-                this.group.add(this.modelGroup);
-                this.modelGroup.add(this.turntable);
-                this.modelGroup.visible=false;
-
-                const count=10;
-                const boidGeo=new THREE.ConeGeometry(0.8,2,4);
-                for(let i=0;i<count;i++){
-                    const isMutant=Math.random()>0.8;
-                    const color=isMutant?0xcc3333:(Math.random()>0.5?0x666666:0x333333);
-                    const mat=new THREE.MeshBasicMaterial({ color, wireframe:true });
-                    const mesh=new THREE.Mesh(boidGeo, mat);
-                    const offset=new THREE.Vector3((Math.random()-0.5)*20,(Math.random()-0.5)*10,(Math.random()-0.5)*20);
-                    mesh.position.copy(this.center).add(offset);
-                    mesh.userData={ offset, phase:Math.random()*Math.PI };
-                    scene.add(mesh);
-                    this.boids.push(mesh);
-                }
-
-                loader.load(normalFile,(gltf)=>{
-                    this.normalMesh=gltf.scene;
-                    this.normalMesh.scale.set(5,5,5);
-                    this.turntable.add(this.normalMesh);
-                    if(gltf.animations.length>0){
-                        this.nmMixer=new THREE.AnimationMixer(this.normalMesh);
-                        this.nmMixer.clipAction(gltf.animations[0]).play();
-                    }
-                },undefined,()=>{});
-
-                loader.load(mutantFile,(gltf)=>{
-                    this.mutantMesh=gltf.scene;
-                    this.mutantMesh.scale.set(0.1,0.1,0.1);
-                    this.mutantMesh.visible=false;
-                    this.turntable.add(this.mutantMesh);
-                    if(gltf.animations.length>0){
-                        this.mmMixer=new THREE.AnimationMixer(this.mutantMesh);
-                        this.mmMixer.clipAction(gltf.animations[0]).play();
-                    }
-                },undefined,()=>{});
-            }
-
-            update(delta){
-                const time=Date.now()*0.001;
-
-                this.boids.forEach((boid,i)=>{
-                    if(this.state==='focused'){
-                        boid.visible=false;
-                    }else{
-                        boid.visible=true;
-                        boid.position.x=this.center.x + boid.userData.offset.x + Math.sin(time+boid.userData.phase)*5;
-                        boid.position.z=this.center.z + boid.userData.offset.z + Math.cos(time+boid.userData.phase*0.5)*5;
-                        const y=getElevation(boid.position.x, boid.position.z);
-                        boid.position.y=y+5+Math.sin(time*2+i)*2;
-                        boid.rotation.y += 0.02;
-                    }
-                });
-
-                const centerY=getElevation(this.center.x,this.center.z);
-                this.modelGroup.position.set(this.center.x, centerY+5, this.center.z);
-
-                if(this.state==='focused'){
-                    this.turntable.rotation.y -= 0.015;
-                    this.modelGroup.position.y = centerY + 12 + Math.sin(time*1.5)*1.5;
-                }else{
-                    this.turntable.rotation.y = 0;
-                }
-
-                if(this.nmMixer) this.nmMixer.update(delta);
-                if(this.mmMixer) this.mmMixer.update(delta);
-            }
-
-            hover(isHovering){
-                if(this.state==='focused') return;
-                if(isHovering && this.state!=='hover'){
-                    this.state='hover';
-                    this.modelGroup.visible=true;
-                    this.turntable.scale.set(1,1,1);
-                    gsap.to(this.turntable.scale,{x:1,y:1,z:1,duration:0.5});
-                    this.boids.forEach(b=>gsap.to(b.scale,{x:0,y:0,z:0,duration:0.3}));
-                }else if(!isHovering && this.state==='hover'){
-                    this.state='swarm';
-                    this.modelGroup.visible=false;
-                    this.boids.forEach(b=>gsap.to(b.scale,{x:1,y:1,z:1,duration:0.5,delay:0.2}));
-                }
-            }
-
-            focus(){
-                if(this.state==='focused') return;
-                this.state='focused';
-                this.modelGroup.visible=true;
-                const tl=gsap.timeline();
-                if(this.normalMesh){
-                    tl.to(this.normalMesh.position,{x:0.5,duration:0.05,yoyo:true,repeat:5})
-                      .to(this.normalMesh.scale,{x:0.1,y:0.1,z:0.1,duration:0.2});
-                }
-                tl.add(()=>{
-                    if(this.normalMesh) this.normalMesh.visible=false;
-                    if(this.mutantMesh) this.mutantMesh.visible=true;
-                });
-                if(this.mutantMesh){
-                    tl.fromTo(this.mutantMesh.scale,{x:0.1,y:0.1,z:0.1},{x:30,y:30,z:30,duration:0.8,ease:"back.out(1.2)"});
-                }
-            }
-
-            unfocus(){
-                if(this.state!=='focused') return;
-                this.state='swarm';
-                const tl=gsap.timeline();
-                if(this.mutantMesh) tl.to(this.mutantMesh.scale,{x:0.1,y:0.1,z:0.1,duration:0.3});
-                tl.add(()=>{
-                    if(this.mutantMesh) this.mutantMesh.visible=false;
-                    if(this.normalMesh){
-                        this.normalMesh.visible=true;
-                        this.normalMesh.scale.set(5,5,5);
-                    }
-                    this.modelGroup.visible=false;
-                });
-                this.boids.forEach(b=>{
-                    b.visible=true;
-                    gsap.to(b.scale,{x:1,y:1,z:1,duration:0.5});
-                });
-            }
+        const count=10;
+        const boidGeo=new THREE.ConeGeometry(0.8,2,4);
+        for(let i=0;i<count;i++){
+          const isMutant=Math.random()>0.8;
+          const color=isMutant?0xcc3333:(Math.random()>0.5?0x666666:0x333333);
+          const mat=new THREE.MeshBasicMaterial({ color, wireframe:true });
+          const mesh=new THREE.Mesh(boidGeo, mat);
+          const offset=new THREE.Vector3((Math.random()-0.5)*20,(Math.random()-0.5)*10,(Math.random()-0.5)*20);
+          mesh.position.copy(this.center).add(offset);
+          mesh.userData={ offset, phase:Math.random()*Math.PI };
+          scene.add(mesh);
+          this.boids.push(mesh);
         }
 
-        const swarms=[
-            new SpeciesSwarm("POLYMER TURTLE","./wugui.glb","./bwugui.glb",new THREE.Vector3(0,0,0)),
-            new SpeciesSwarm("PLASTIC CRAB","./xie.glb","./bxie.glb",new THREE.Vector3(30,0,30)),
-            new SpeciesSwarm("OIL BIRD","./niao.glb","./bniao.glb",new THREE.Vector3(-40,0,-40)),
-            new SpeciesSwarm("FIBER JELLY","./shuimu.glb","./bshuimu.glb",new THREE.Vector3(0,0,-60)),
-            new SpeciesSwarm("SONAR DOLPHIN","./haitun.glb","./bhaitun.glb",new THREE.Vector3(-50,0,20)),
-            new SpeciesSwarm("TOXIC SNAKE","./she.glb","./bshe.glb",new THREE.Vector3(50,0,50)),
-            new SpeciesSwarm("ACID FROG","./wa.glb","./bwa.glb",new THREE.Vector3(-60,0,0)),
-            new SpeciesSwarm("RADIOACTIVE FISH","./yu.glb","./byu.glb",new THREE.Vector3(60,0,-20)),
-            new SpeciesSwarm("GHOST SEAL","./bao.glb","./bhaibao.glb",new THREE.Vector3(20,0,-80))
-        ];
-
-        const clock=new THREE.Clock();
-        const uiLayer=document.getElementById('ui-layer');
-        const videoEl=document.getElementById('ui-video');
-        let focusedSwarm=null;
-
-        window.closePanel=function(){
-            if(focusedSwarm){
-                focusedSwarm.unfocus();
-                focusedSwarm=null;
-                videoEl.pause(); videoEl.currentTime=0;
-
-                gsap.to(camera.position,{x:0,y:60,z:80,duration:1.5,ease:"power2.inOut"});
-                gsap.to(controls.target,{x:0,y:0,z:0,duration:1.5});
-
-                uiLayer.classList.remove('active');
-                document.getElementById('ui-header').style.opacity=1;
-                document.body.classList.remove('active-mode');
-                droneGroup.visible=false;
-            }
-        };
-
-        const controls=new OrbitControls(camera, renderer.domElement);
-        controls.enableDamping=true;
-        controls.autoRotate=false;
-        controls.autoRotateSpeed=0.5;
-        controls.maxPolarAngle=Math.PI/2-0.1;
-        controls.enabled=false;
-
-        document.addEventListener('mousemove',(e)=>{
-            if(!controls.enabled) return;
-            if(!focusedSwarm){
-                mouse.x=(e.clientX/window.innerWidth)*2-1;
-                mouse.y=-(e.clientY/window.innerHeight)*2+1;
-                raycaster.setFromCamera(mouse,camera);
-                const intersects=raycaster.intersectObject(hitPlane);
-                if(intersects.length>0){
-                    mouseWorld.copy(intersects[0].point);
-                    shaderMaterial.uniforms.uMouse.value.copy(intersects[0].point);
-                }
-            }
+        loader.load(normalFile,(gltf)=>{
+          this.normalMesh=gltf.scene;
+          this.normalMesh.scale.set(5,5,5);
+          this.turntable.add(this.normalMesh);
+          if(gltf.animations.length>0){
+            this.nmMixer=new THREE.AnimationMixer(this.normalMesh);
+            this.nmMixer.clipAction(gltf.animations[0]).play();
+          }
         });
 
-        document.addEventListener('click',(e)=>{
-            if(!controls.enabled) return;
-            if(e.target.closest('.close-btn')||e.target.closest('.right-panel')||e.target.closest('.left-panel')) return;
+        loader.load(mutantFile,(gltf)=>{
+          this.mutantMesh=gltf.scene;
+          this.mutantMesh.scale.set(0.1,0.1,0.1);
+          this.mutantMesh.visible=false;
+          this.turntable.add(this.mutantMesh);
+          if(gltf.animations.length>0){
+            this.mmMixer=new THREE.AnimationMixer(this.mutantMesh);
+            this.mmMixer.clipAction(gltf.animations[0]).play();
+          }
+        });
+      }
 
-            let clickedSwarm=null;
-            mouse.x=(e.clientX/window.innerWidth)*2-1;
-            mouse.y=-(e.clientY/window.innerHeight)*2+1;
-            raycaster.setFromCamera(mouse,camera);
+      update(delta){
+        const time=Date.now()*0.001;
 
-            const intersects=raycaster.intersectObjects(scene.children,true);
-            for(const hit of intersects){
-                let obj=hit.object;
-                while(obj){
-                    if(obj.userData && obj.userData.isSwarm){
-                        clickedSwarm=swarms.find(s=>s.name===obj.userData.swarmName);
-                        break;
-                    }
-                    obj=obj.parent;
-                }
-                if(clickedSwarm) break;
-            }
-            if(!clickedSwarm){
-                swarms.forEach(s=>{
-                    const dist=new THREE.Vector2(s.center.x,s.center.z).distanceTo(new THREE.Vector2(mouseWorld.x,mouseWorld.z));
-                    if(dist<15) clickedSwarm=s;
-                });
-            }
-
-            if(clickedSwarm){
-                if(focusedSwarm!==clickedSwarm){
-                    if(focusedSwarm) focusedSwarm.unfocus();
-                    focusedSwarm=clickedSwarm;
-                    focusedSwarm.focus();
-
-                    const targetPos=focusedSwarm.modelGroup.position;
-                    gsap.to(camera.position,{x:targetPos.x+50,y:targetPos.y+30,z:targetPos.z+80,duration:1.5,ease:"power2.inOut"});
-                    gsap.to(controls.target,{x:targetPos.x,y:targetPos.y,z:targetPos.z,duration:1.5});
-
-                    const data=animalData[focusedSwarm.name]||{};
-                    const setText=(id,t)=>{ const el=document.getElementById(id); if(el) el.innerText=t; };
-
-                    setText('ui-name', data.name || focusedSwarm.name);
-                    setText('ui-latin', data.latin || "Unknown");
-                    setText('ui-pollutant', data.pollutant || "UNKNOWN");
-                    setText('ui-tox', data.tox || "0%");
-                    setText('ui-desc', data.desc || "...");
-                    setText('ui-look', data.look || "...");
-                    setText('ui-act', data.act || "...");
-
-                    if(data.video){
-                        videoEl.src=data.video;
-                        videoEl.load();
-                        videoEl.oncanplay=()=>{ videoEl.play().catch(()=>{}); };
-                    }
-
-                    uiLayer.classList.add('active');
-                    document.getElementById('ui-header').style.opacity=0;
-                    document.body.classList.add('active-mode');
-                    droneGroup.visible=true;
-                }
-            }else{
-                if(focusedSwarm) window.closePanel();
-            }
+        this.boids.forEach((boid,i)=>{
+          if(this.state==='focused'){
+            boid.visible=false;
+          }else{
+            boid.visible=true;
+            boid.position.x=this.center.x + boid.userData.offset.x + Math.sin(time+boid.userData.phase)*5;
+            boid.position.z=this.center.z + boid.userData.offset.z + Math.cos(time+boid.userData.phase*0.5)*5;
+            const y=getElevation(boid.position.x, boid.position.z);
+            boid.position.y=y+5+Math.sin(time*2+i)*2;
+            boid.rotation.y += 0.02;
+          }
         });
 
-        function animate(){
-            requestAnimationFrame(animate);
-            const delta=clock.getDelta();
-            const time=Date.now()*0.001;
+        const centerY=getElevation(this.center.x,this.center.z);
+        this.modelGroup.position.set(this.center.x, centerY+5, this.center.z);
 
-            cameraLight.position.copy(camera.position);
-
-            if(focusedSwarm){
-                cursorGroup.scale.set(0,0,0);
-                const targetPos=focusedSwarm.modelGroup.position;
-                droneGroup.position.x=targetPos.x+Math.sin(time)*35;
-                droneGroup.position.z=targetPos.z+Math.cos(time)*35;
-                droneGroup.position.y=targetPos.y+25+Math.sin(time*2)*2;
-                droneGroup.lookAt(targetPos);
-                recLight.material.color.setHex((Date.now()%1000<500)?0xff0000:0x330000);
-            }else{
-                cursorGroup.scale.lerp(new THREE.Vector3(1,1,1),0.1);
-                let hoverSwarm=null;
-                swarms.forEach(s=>{
-                    const dist=new THREE.Vector2(s.center.x,s.center.z).distanceTo(new THREE.Vector2(mouseWorld.x,mouseWorld.z));
-                    if(dist<20) hoverSwarm=s;
-                    s.hover(dist<20);
-                });
-                if(hoverSwarm){
-                    hexMaterial.color.set(0xff4444);
-                    cursorGroup.scale.lerp(new THREE.Vector3(1.5,1.5,1.5),0.1);
-                }else{
-                    hexMaterial.color.set(0x444444);
-                }
-                const targetY=getElevation(mouseWorld.x,mouseWorld.z);
-                cursorGroup.position.x += (mouseWorld.x - cursorGroup.position.x)*0.2;
-                cursorGroup.position.z += (mouseWorld.z - cursorGroup.position.z)*0.2;
-                cursorGroup.position.y += (targetY - cursorGroup.position.y)*0.2;
-                cursorHex.rotation.z += 0.01;
-            }
-
-            swarms.forEach(s=>s.update(delta));
-            controls.update();
-            renderer.render(scene,camera);
+        if(this.state==='focused'){
+          this.turntable.rotation.y -= 0.015;
+          this.modelGroup.position.y = centerY + 12 + Math.sin(time*1.5)*1.5;
+        }else{
+          this.turntable.rotation.y = 0;
         }
 
-        setTimeout(()=>{ document.getElementById('loading').style.opacity=0; },2000);
-        animate();
+        if(this.nmMixer) this.nmMixer.update(delta);
+        if(this.mmMixer) this.mmMixer.update(delta);
+      }
 
-        window.addEventListener('resize',()=>{
-            camera.aspect=window.innerWidth/window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth,window.innerHeight);
-        });
-
-        /* =========================
-           开场逻辑：直接播放 + 红字卡 + 最后1秒疯狂淡出 + 镜头拉近
-        ========================= */
-        const introLayer = document.getElementById('intro-layer');
-        const introVideo = document.getElementById('intro-video');
-        const titlecard  = document.getElementById('titlecard');
-        const fallback   = document.getElementById('autoplay-fallback');
-        const fallbackBtn= document.getElementById('fallback-btn');
-        const canvas = renderer.domElement;
-
-        // 地图画布先准备（不开放交互）
-        canvas.classList.add('visible');
-
-        // 红字卡的节奏（可按你喜好微调时间点）
-        const tc = gsap.timeline();
-        tc.to(titlecard, { opacity: 1, duration: 0.18, ease: "none" }, 0.25)
-          .fromTo(".tc-wrap", { scale: 1.03 }, { scale: 1.0, duration: 1.2, ease: "power2.out" }, 0.25)
-          .to(titlecard, { opacity: 1, duration: 1.6, ease: "none" }, 0.6)
-          .to(titlecard, { opacity: 0, duration: 0.35, ease: "power2.in" }, 2.4);
-
-        // 尝试自动播放：失败就弹兜底按钮（否则有些设备就是黑屏）
-        async function ensurePlay(){
-            try{
-                introVideo.currentTime = 0;
-                await introVideo.play();
-            }catch(e){
-                fallback.style.display = "flex";
-            }
+      hover(isHovering){
+        if(this.state==='focused') return;
+        if(isHovering && this.state!=='hover'){
+          this.state='hover';
+          this.modelGroup.visible=true;
+          this.turntable.scale.set(1,1,1);
+          gsap.to(this.turntable.scale,{x:1,y:1,z:1,duration:0.5});
+          this.boids.forEach(b=>gsap.to(b.scale,{x:0,y:0,z:0,duration:0.3}));
+        }else if(!isHovering && this.state==='hover'){
+          this.state='swarm';
+          this.modelGroup.visible=false;
+          this.boids.forEach(b=>gsap.to(b.scale,{x:1,y:1,z:1,duration:0.5,delay:0.2}));
         }
-        ensurePlay();
+      }
 
-        fallbackBtn.addEventListener('click', async ()=>{
-            fallback.style.display = "none";
-            try{
-                introVideo.currentTime = 0;
-                await introVideo.play();
-            }catch(e){
-                fallback.style.display = "flex";
+      focus(){
+        if(this.state==='focused') return;
+        this.state='focused';
+        this.modelGroup.visible=true;
+        const tl=gsap.timeline();
+        if(this.normalMesh){
+          tl.to(this.normalMesh.position,{x:0.5,duration:0.05,yoyo:true,repeat:5})
+            .to(this.normalMesh.scale,{x:0.1,y:0.1,z:0.1,duration:0.2});
+        }
+        tl.add(()=>{
+          if(this.normalMesh) this.normalMesh.visible=false;
+          if(this.mutantMesh) this.mutantMesh.visible=true;
+        });
+        if(this.mutantMesh){
+          tl.fromTo(this.mutantMesh.scale,{x:0.1,y:0.1,z:0.1},{x:30,y:30,z:30,duration:0.8,ease:"back.out(1.2)"});
+        }
+      }
+
+      unfocus(){
+        if(this.state!=='focused') return;
+        this.state='swarm';
+        const tl=gsap.timeline();
+        if(this.mutantMesh) tl.to(this.mutantMesh.scale,{x:0.1,y:0.1,z:0.1,duration:0.3});
+        tl.add(()=>{
+          if(this.mutantMesh) this.mutantMesh.visible=false;
+          if(this.normalMesh){
+            this.normalMesh.visible=true;
+            this.normalMesh.scale.set(5,5,5);
+          }
+          this.modelGroup.visible=false;
+        });
+        this.boids.forEach(b=>{
+          b.visible=true;
+          gsap.to(b.scale,{x:1,y:1,z:1,duration:0.5});
+        });
+      }
+    }
+
+    const swarms = [
+      new SpeciesSwarm("POLYMER TURTLE","./wugui.glb","./bwugui.glb",new THREE.Vector3(0,0,0)),
+      new SpeciesSwarm("PLASTIC CRAB","./xie.glb","./bxie.glb",new THREE.Vector3(30,0,30)),
+      new SpeciesSwarm("OIL BIRD","./niao.glb","./bniao.glb",new THREE.Vector3(-40,0,-40)),
+      new SpeciesSwarm("FIBER JELLY","./shuimu.glb","./bshuimu.glb",new THREE.Vector3(0,0,-60)),
+      new SpeciesSwarm("SONAR DOLPHIN","./haitun.glb","./bhaitun.glb",new THREE.Vector3(-50,0,20)),
+      new SpeciesSwarm("TOXIC SNAKE","./she.glb","./bshe.glb",new THREE.Vector3(50,0,50)),
+      new SpeciesSwarm("ACID FROG","./wa.glb","./bwa.glb",new THREE.Vector3(-60,0,0)),
+      new SpeciesSwarm("RADIOACTIVE FISH","./yu.glb","./byu.glb",new THREE.Vector3(60,0,-20)),
+      new SpeciesSwarm("GHOST SEAL","./bao.glb","./bhaibao.glb",new THREE.Vector3(20,0,-80))
+    ];
+
+    const clock = new THREE.Clock();
+    const uiLayer = document.getElementById('ui-layer');
+    const videoEl = document.getElementById('ui-video');
+    let focusedSwarm = null;
+
+    window.closePanel = function(){
+      if(focusedSwarm){
+        focusedSwarm.unfocus();
+        focusedSwarm=null;
+        videoEl.pause(); videoEl.currentTime=0;
+        gsap.to(camera.position,{x:0,y:60,z:80,duration:1.5,ease:"power2.inOut"});
+        gsap.to(controls.target,{x:0,y:0,z:0,duration:1.5});
+        uiLayer.classList.remove('active');
+        document.getElementById('ui-header').style.opacity=1;
+        document.body.classList.remove('active-mode');
+        droneGroup.visible=false;
+      }
+    };
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping=true;
+    controls.autoRotate=false;
+    controls.autoRotateSpeed=0.5;
+    controls.maxPolarAngle=Math.PI/2-0.1;
+    controls.enabled=false;
+
+    document.addEventListener('mousemove',(e)=>{
+      if(!controls.enabled) return;
+      if(!focusedSwarm){
+        mouse.x=(e.clientX/window.innerWidth)*2-1;
+        mouse.y=-(e.clientY/window.innerHeight)*2+1;
+        raycaster.setFromCamera(mouse,camera);
+        const intersects=raycaster.intersectObject(hitPlane);
+        if(intersects.length>0){
+          mouseWorld.copy(intersects[0].point);
+          shaderMaterial.uniforms.uMouse.value.copy(intersects[0].point);
+        }
+      }
+    });
+
+    document.addEventListener('click',(e)=>{
+      if(!controls.enabled) return;
+      if(e.target.closest('.close-btn')||e.target.closest('.right-panel')||e.target.closest('.left-panel')) return;
+
+      let clickedSwarm=null;
+      mouse.x=(e.clientX/window.innerWidth)*2-1;
+      mouse.y=-(e.clientY/window.innerHeight)*2+1;
+      raycaster.setFromCamera(mouse,camera);
+
+      const intersects=raycaster.intersectObjects(scene.children,true);
+      for(const hit of intersects){
+        let obj=hit.object;
+        while(obj){
+          if(obj.userData && obj.userData.isSwarm){
+            clickedSwarm=swarms.find(s=>s.name===obj.userData.swarmName);
+            break;
+          }
+          obj=obj.parent;
+        }
+        if(clickedSwarm) break;
+      }
+      if(!clickedSwarm){
+        swarms.forEach(s=>{
+          const dist=new THREE.Vector2(s.center.x,s.center.z).distanceTo(new THREE.Vector2(mouseWorld.x,mouseWorld.z));
+          if(dist<15) clickedSwarm=s;
+        });
+      }
+
+      if(clickedSwarm){
+        if(focusedSwarm!==clickedSwarm){
+          if(focusedSwarm) focusedSwarm.unfocus();
+          focusedSwarm=clickedSwarm;
+          focusedSwarm.focus();
+
+          const targetPos=focusedSwarm.modelGroup.position;
+          gsap.to(camera.position,{x:targetPos.x+50,y:targetPos.y+30,z:targetPos.z+80,duration:1.5,ease:"power2.inOut"});
+          gsap.to(controls.target,{x:targetPos.x,y:targetPos.y,z:targetPos.z,duration:1.5});
+
+          const data=animalData[focusedSwarm.name]||{};
+          const setText=(id,t)=>{ const el=document.getElementById(id); if(el) el.innerText=t; };
+          setText('ui-name', data.name || focusedSwarm.name);
+          setText('ui-latin', data.latin || "Unknown");
+          setText('ui-pollutant', data.pollutant || "UNKNOWN");
+          setText('ui-tox', data.tox || "0%");
+          setText('ui-desc', data.desc || "...");
+          setText('ui-look', data.look || "...");
+          setText('ui-act', data.act || "...");
+
+          if(data.video){
+            videoEl.src=data.video;
+            videoEl.load();
+            videoEl.oncanplay=()=>{ videoEl.play().catch(()=>{}); };
+          }
+
+          uiLayer.classList.add('active');
+          document.getElementById('ui-header').style.opacity=0;
+          document.body.classList.add('active-mode');
+          droneGroup.visible=true;
+        }
+      }else{
+        if(focusedSwarm) window.closePanel();
+      }
+    });
+
+    function animate(){
+      requestAnimationFrame(animate);
+      const delta=clock.getDelta();
+      const time=Date.now()*0.001;
+      cameraLight.position.copy(camera.position);
+
+      if(focusedSwarm){
+        cursorGroup.scale.set(0,0,0);
+        const targetPos=focusedSwarm.modelGroup.position;
+        droneGroup.position.x=targetPos.x+Math.sin(time)*35;
+        droneGroup.position.z=targetPos.z+Math.cos(time)*35;
+        droneGroup.position.y=targetPos.y+25+Math.sin(time*2)*2;
+        droneGroup.lookAt(targetPos);
+        recLight.material.color.setHex((Date.now()%1000<500)?0xff0000:0x330000);
+      }else{
+        cursorGroup.scale.lerp(new THREE.Vector3(1,1,1),0.1);
+        let hoverSwarm=null;
+        swarms.forEach(s=>{
+          const dist=new THREE.Vector2(s.center.x,s.center.z).distanceTo(new THREE.Vector2(mouseWorld.x,mouseWorld.z));
+          if(dist<20) hoverSwarm=s;
+          s.hover(dist<20);
+        });
+        if(hoverSwarm){
+          hexMaterial.color.set(0xff4444);
+          cursorGroup.scale.lerp(new THREE.Vector3(1.5,1.5,1.5),0.1);
+        }else{
+          hexMaterial.color.set(0x444444);
+        }
+        const targetY=getElevation(mouseWorld.x,mouseWorld.z);
+        cursorGroup.position.x += (mouseWorld.x - cursorGroup.position.x)*0.2;
+        cursorGroup.position.z += (mouseWorld.z - cursorGroup.position.z)*0.2;
+        cursorGroup.position.y += (targetY - cursorGroup.position.y)*0.2;
+        cursorHex.rotation.z += 0.01;
+      }
+
+      swarms.forEach(s=>s.update(delta));
+      controls.update();
+      renderer.render(scene,camera);
+    }
+
+    setTimeout(()=>{ document.getElementById('loading').style.opacity=0; },2000);
+    animate();
+
+    window.addEventListener('resize',()=>{
+      camera.aspect=window.innerWidth/window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth,window.innerHeight);
+    });
+
+    /* =========================
+       ✅ 开场：自动播放 + 逐句英文 + 最后1秒疯淡出 + 镜头拉近
+    ========================= */
+    const introLayer = document.getElementById('intro-layer');
+    const introVideo = document.getElementById('intro-video');
+    const fallback   = document.getElementById('autoplay-fallback');
+    const fallbackBtn= document.getElementById('fallback-btn');
+
+    const introLineEl = document.getElementById('intro-line');
+    const introTextEl = document.getElementById('intro-text');
+    const canvas = renderer.domElement;
+
+    // 先让 canvas 准备好（但交互锁住）
+    canvas.classList.add('visible');
+
+    async function ensurePlay(){
+      try{
+        introVideo.currentTime = 0;
+        await introVideo.play();
+      }catch(e){
+        fallback.style.display="flex";
+      }
+    }
+    ensurePlay();
+
+    fallbackBtn.addEventListener('click', async ()=>{
+      fallback.style.display="none";
+      try{
+        introVideo.currentTime = 0;
+        await introVideo.play();
+      }catch(e){
+        fallback.style.display="flex";
+      }
+    });
+
+    // 逐句播放逻辑：按视频时长自动分配（更稳）
+    function startLineSequence(){
+      const total = INTRO_LINES.length;
+      if(total === 0) return;
+
+      const usable = Math.max(0.1, (introVideo.duration || 8) - INTRO_TEXT_END_OFFSET);
+      const per = usable / total;
+
+      let idx = 0;
+      const playOne = () => {
+        if(idx >= total) return;
+
+        introLineEl.textContent = INTRO_LINES[idx];
+
+        gsap.killTweensOf(introLineEl);
+        gsap.fromTo(introLineEl,
+          { opacity:0, y:10 },
+          { opacity:1, y:0, duration:LINE_FADE_IN, ease:"power2.out",
+            onComplete: () => {
+              gsap.to(introLineEl, {
+                opacity:0, y:-6, duration:LINE_FADE_OUT, ease:"power2.in",
+                delay: Math.max(0.1, Math.min(LINE_HOLD, per - LINE_FADE_IN - LINE_FADE_OUT - LINE_GAP)),
+                onComplete: () => { idx++; setTimeout(playOne, LINE_GAP*1000); }
+              });
             }
-        });
+          }
+        );
+      };
+      playOne();
+    }
 
-        introVideo.addEventListener('timeupdate', ()=>{
-            if(!introVideo.duration) return;
-            const remain = introVideo.duration - introVideo.currentTime;
+    // 元数据就绪后启动字幕序列
+    introVideo.addEventListener('loadedmetadata', ()=>{
+      startLineSequence();
+    });
 
-            if(remain <= 1.0){
-                const k = Math.min(1, Math.max(0, 1 - remain / 1.0));
-                const op = Math.pow(1 - k, 6);
-                introLayer.style.opacity = String(op);
-            }
-        });
+    // 最后1秒：疯狂淡出整个intro层（包括字幕）
+    introVideo.addEventListener('timeupdate', ()=>{
+      if(!introVideo.duration) return;
+      const remain = introVideo.duration - introVideo.currentTime;
 
-        introVideo.addEventListener('ended', ()=>{
-            introLayer.remove();
-            document.body.classList.remove('intro-mode');
+      if(remain <= 1.0){
+        const k = Math.min(1, Math.max(0, 1 - remain / 1.0));
+        const op = Math.pow(1 - k, 6);
+        introLayer.style.opacity = String(op);
+      }
+    });
 
-            gsap.to(camera.position, { x: 0, y: 60, z: 80, duration: 2.6, ease: "power3.inOut" });
-            gsap.to(controls.target, {
-                x: 0, y: 0, z: 0,
-                duration: 2.6, ease: "power3.inOut",
-                onComplete: ()=>{
-                    controls.enabled = true;
-                    controls.autoRotate = true;
-                }
-            });
-        });
-    </script>
+    introVideo.addEventListener('ended', ()=>{
+      introLayer.remove();
+      document.body.classList.remove('intro-mode');
+
+      gsap.to(camera.position,{ x:0, y:60, z:80, duration:2.6, ease:"power3.inOut" });
+      gsap.to(controls.target,{
+        x:0, y:0, z:0,
+        duration:2.6, ease:"power3.inOut",
+        onComplete: ()=>{
+          controls.enabled = true;
+          controls.autoRotate = true;
+        }
+      });
+    });
+  </script>
 </body>
 </html>
