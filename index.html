@@ -2,7 +2,7 @@
 <html lang="zh">
 <head>
   <meta charset="UTF-8" />
-  <title>ECO-MONITOR | 未来动物档案</title>
+  <title>ECO-MONITOR | 废土档案版</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 
   <style>
@@ -82,10 +82,7 @@
     }
 
     /* =========================
-       ✅ 逐句英文字幕（全红色 + 小两号）
-       关键修复点：
-       - 颜色直接绑在 #intro-line 上（避免被其它 CSS 覆盖）
-       - 用 !important 强制红色（你遇到的“没变红”就是被覆盖）
+       ✅ 逐句英文字幕：强制红色 + 小两号
     ========================= */
     #intro-text{
       position:absolute;
@@ -105,13 +102,12 @@
       letter-spacing:0.08em;
       text-shadow:none;
     }
-    /* ✅ 字幕本体：强制红色 + 小两号 */
     #intro-line{
       color: rgba(255,0,0,0.96) !important;
       text-shadow:none !important;
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
       font-weight: 900;
-      /* 小两号：整体 clamp 下调 */
+      /* 小两号 */
       font-size: clamp(18px, 2.4vw, 36px);
       line-height: 1.08;
       margin: 0;
@@ -124,7 +120,6 @@
       text-shadow:none !important;
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
       font-weight: 800;
-      /* 也小两号 */
       font-size: clamp(10px, 1.1vw, 14px);
       letter-spacing: 0.16em;
       opacity: 0.92;
@@ -262,6 +257,7 @@
       transform:translate(-50%,-50%);
       color:#886644; font-size:12px;
       pointer-events:none; transition:opacity 0.5s; font-weight:bold;
+      z-index:50;
     }
 
     body.active-mode{ cursor:auto !important; }
@@ -270,12 +266,12 @@
 </head>
 
 <body class="intro-mode">
+
   <div id="intro-layer">
     <video id="intro-video" muted playsinline autoplay preload="auto">
       <source src="./kaitou.mp4" type="video/mp4">
     </video>
 
-    <!-- 海报字卡 -->
     <div id="poster-card">
       <div class="poster-wrap">
         <div class="poster-top" id="poster-top"></div>
@@ -284,7 +280,6 @@
       </div>
     </div>
 
-    <!-- 逐句字幕（全红、小两号） -->
     <div id="intro-text">
       <div class="wrap">
         <p class="line" id="intro-line"></p>
@@ -349,6 +344,7 @@
   </script>
 
   <script type="x-shader/x-vertex" id="vertexShader">
+
     uniform vec3 uMouse;
     attribute float size;
     attribute vec3 customColor;
@@ -387,7 +383,7 @@
     import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 
     /* =========================
-       海报字卡文案（红）
+       开场文案
     ========================= */
     const POSTER_TOP_LINE   = "DIRECTED BY // ECO-MONITOR UNIT";
     const POSTER_MAIN_TITLE = "ECO-MONITOR";
@@ -398,9 +394,6 @@
       "MUTATION IS NOT FICTION — IT IS ADAPTATION"
     ].join("\n");
 
-    /* =========================
-       逐句字幕文案（红）
-    ========================= */
     const INTRO_LINES = [
       "WE TOOK TOO MUCH.",
       "WE DUMPED IT BACK INTO THE SEA.",
@@ -421,12 +414,98 @@
 
     const TEXT_END_OFFSET = 1.15;
 
-    /* --- 动物数据（保留结构） --- */
+    /* =========================
+       ✅ Loading 强制隐藏（防止一直卡着）
+    ========================= */
+    const loadingEl = document.getElementById('loading');
+    function hideLoading(force=false){
+      if(!loadingEl) return;
+      if(force){
+        loadingEl.style.opacity = 0;
+        setTimeout(()=>{ loadingEl.style.display="none"; }, 600);
+        return;
+      }
+      // 如果还在显示，就淡出
+      if(loadingEl.style.display !== "none"){
+        loadingEl.style.opacity = 0;
+        setTimeout(()=>{ loadingEl.style.display="none"; }, 600);
+      }
+    }
+    // 无论如何，3秒后强制隐藏一次，避免“永远加载”的观感
+    setTimeout(()=>hideLoading(true), 3000);
+
+    /* =========================
+       动物数据库（你原版）
+    ========================= */
     const animalData = {
-      "POLYMER TURTLE": { video:"./wugui.mp4", name:"聚合体海龟", latin:"CHELONIA PLASTICUS", pollutant:"不可降解聚苯乙烯 (PS)", tox:"85%", desc:"...", look:"...", act:"..." }
+      "POLYMER TURTLE": {
+        video: "./wugui.mp4", name: "聚合体海龟", latin: "CHELONIA PLASTICUS",
+        pollutant: "不可降解聚苯乙烯 (PS)", tox: "85%",
+        desc: "该样本是在太平洋垃圾带核心区被捕获的。解剖显示，这只海龟的消化系统已经发生了不可逆的退化……",
+        look: "背甲呈现出破碎且混乱的马赛克纹理……",
+        act: "行动极其迟缓……"
+      },
+      "PLASTIC CRAB": {
+        video: "./xie.mp4", name: "工业寄居蟹", latin: "PAGURUS INDUSTRIALIS",
+        pollutant: "聚氯乙烯 (PVC) / 塑化剂", tox: "45%",
+        desc: "随着海洋酸化加剧……",
+        look: "终生背负着鲜红色的瓶盖……",
+        act: "在垃圾堆中快速穿梭……"
+      },
+      "OIL BIRD": {
+        video: "./niao.mp4", name: "油污鸬鹚", latin: "PHALACROCORAX OLEUM",
+        pollutant: "重质原油 / 多环芳烃", tox: "92%",
+        desc: "这不仅仅是体表的沾染……",
+        look: "浑身漆黑粘稠……",
+        act: "彻底放弃了天空……"
+      },
+      "FIBER JELLY": {
+        video: "./shuimu.mp4", name: "光纤水母", latin: "MEDUSA FIBEROPTICUS",
+        pollutant: "电磁辐射 / 铜离子泄漏", tox: "60%",
+        desc: "栖息在海底数据中心废墟附近……",
+        look: "触须像发冷蓝光的数据线……",
+        act: "会形成强大的电磁干扰场……"
+      },
+      "SONAR DOLPHIN": {
+        video: "./haitun.mp4", name: "声呐海豚", latin: "DELPHINUS SONARIS",
+        pollutant: "高频声波污染 (Noise Pollution)", tox: "30%",
+        desc: "长期暴露在军事级声呐……",
+        look: "额隆处增生，形状类似雷达……",
+        act: "孤独游动，会主动发射高频声波……"
+      },
+      "TOXIC SNAKE": {
+        video: "./she.mp4", name: "荧光环蛇", latin: "BUNGARUS RADIUM",
+        pollutant: "强酸 / 放射性同位素", tox: "99%",
+        desc: "发现于被非法倾倒化工废料的湿地……",
+        look: "鳞片缝隙中不断渗出绿色荧光体液……",
+        act: "夜行性，不需要主动捕猎……"
+      },
+      "ACID FROG": {
+        video: "./wa.mp4", name: "酸蚀箭毒蛙", latin: "DENDROBATES ACIDUS",
+        pollutant: "硫酸 / 硝酸 (pH < 3.0)", tox: "75%",
+        desc: "在 pH 值低于 3 的强酸性废水池中发现……",
+        look: "背部簇生透明晶体簇……",
+        act: "极少移动，鸣叫如金属刮擦……"
+      },
+      "RADIOACTIVE FISH": {
+        video: "./yu.mp4", name: "核辐射鱼", latin: "PISCES NUCLEARIS",
+        pollutant: "铯-137 / 锶-90", tox: "100%",
+        desc: "直接暴露在高剂量核辐射区……",
+        look: "骨架发出幽幽蓝光，眼睛随机分布……",
+        act: "游动抽搐不规律，对光极敏感……"
+      },
+      "GHOST SEAL": {
+        video: "./haibao.mp4", name: "幽灵网缚海豹", latin: "PHOCA LAQUEUS",
+        pollutant: "聚酰胺纤维 (Polyamide)", tox: "50%",
+        desc: "幼年钻入废弃尼龙渔网……",
+        look: "颈部和躯干嵌着彩色尼龙绳索……",
+        act: "极度暴躁，会攻击绳索状物体……"
+      }
     };
 
-    /* --- Three.js 场景 --- */
+    /* =========================
+       Three.js 场景
+    ========================= */
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0xe6d8c3);
     scene.fog = new THREE.FogExp2(0xe6d8c3, 0.012);
@@ -435,144 +514,456 @@
     scene.add(ambientLight);
 
     const dirLight = new THREE.DirectionalLight(0xffaa77, 3.0);
-    dirLight.position.set(50,80,50);
+    dirLight.position.set(50, 80, 50);
     scene.add(dirLight);
 
     const cameraLight = new THREE.DirectionalLight(0xffffff, 1.5);
     scene.add(cameraLight);
 
-    const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 1000);
+    const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
     camera.position.set(0, 160, 260);
 
-    const renderer = new THREE.WebGLRenderer({ antialias:true });
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     document.body.appendChild(renderer.domElement);
     renderer.domElement.classList.add('visible');
 
+    // 只要渲染器创建成功，说明“至少画面能出来”，就可以把 loading 淡掉
+    setTimeout(()=>hideLoading(false), 1200);
+
+    /* 光标 */
     const cursorGroup = new THREE.Group();
     scene.add(cursorGroup);
     const hexGeometry = new THREE.RingGeometry(3.5, 4.2, 6);
-    const hexMaterial = new THREE.MeshBasicMaterial({ color:0x444444, side:THREE.DoubleSide, transparent:true, opacity:0.8 });
+    const hexMaterial = new THREE.MeshBasicMaterial({ color: 0x444444, side: THREE.DoubleSide, transparent: true, opacity: 0.8 });
     const cursorHex = new THREE.Mesh(hexGeometry, hexMaterial);
-    cursorHex.rotation.x = -Math.PI/2;
+    cursorHex.rotation.x = -Math.PI / 2;
     cursorGroup.add(cursorHex);
     const triGeo = new THREE.ConeGeometry(0.8, 2, 3);
-    const triMat = new THREE.MeshBasicMaterial({ color:0x222222 });
+    const triMat = new THREE.MeshBasicMaterial({ color: 0x222222 });
     const cursorTri = new THREE.Mesh(triGeo, triMat);
     cursorTri.rotation.x = Math.PI;
     cursorTri.position.y = 6;
     cursorGroup.add(cursorTri);
 
+    /* 无人机 */
     const droneGroup = new THREE.Group();
     scene.add(droneGroup);
     droneGroup.visible = false;
-    const camBody = new THREE.Mesh(new THREE.BoxGeometry(1.5,1,2), new THREE.MeshBasicMaterial({ color:0x222222 }));
+    const camBody = new THREE.Mesh(new THREE.BoxGeometry(1.5, 1, 2), new THREE.MeshBasicMaterial({ color: 0x222222 }));
     droneGroup.add(camBody);
-    const camLens = new THREE.Mesh(new THREE.CylinderGeometry(0.6,0.6,0.8,16), new THREE.MeshBasicMaterial({ color:0x666666 }));
-    camLens.rotation.x = Math.PI/2; camLens.position.z = 1.2;
+    const camLens = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.6, 0.8, 16), new THREE.MeshBasicMaterial({ color: 0x666666 }));
+    camLens.rotation.x = Math.PI / 2;
+    camLens.position.z = 1.2;
     droneGroup.add(camLens);
-    const recLight = new THREE.Mesh(new THREE.SphereGeometry(0.25), new THREE.MeshBasicMaterial({ color:0xff0000 }));
-    recLight.position.set(0.6,0.6,1.0);
+    const recLight = new THREE.Mesh(new THREE.SphereGeometry(0.25), new THREE.MeshBasicMaterial({ color: 0xff0000 }));
+    recLight.position.set(0.6, 0.6, 1.0);
     droneGroup.add(recLight);
 
+    /* 射线 & 地形 */
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
     const mouseWorld = new THREE.Vector3();
-    const hitPlane = new THREE.Mesh(new THREE.PlaneGeometry(500,500), new THREE.MeshBasicMaterial({ visible:false }));
-    hitPlane.rotation.x = -Math.PI/2;
+    const hitPlane = new THREE.Mesh(new THREE.PlaneGeometry(500, 500), new THREE.MeshBasicMaterial({ visible: false }));
+    hitPlane.rotation.x = -Math.PI / 2;
     scene.add(hitPlane);
 
     const geometry = new THREE.BufferGeometry();
     const positions = [], colors = [], sizes = [];
+
     const colWater = new THREE.Color("#668899");
     const colLand1 = new THREE.Color("#ccaa66");
     const colLand2 = new THREE.Color("#885533");
     const colCanopy = new THREE.Color("#444433");
+
     const range = 180;
     const gap = 2.5;
-    function getElevation(x,z){ return Math.sin(x*0.05)*8 + Math.cos(z*0.05)*8; }
 
-    for(let x=-range; x<range; x+=gap){
-      for(let z=-range; z<range; z+=gap){
-        const distToCenter = Math.sqrt(x*x+z*z);
-        const maxRadius = 120 + Math.sin(Math.atan2(z,x)*5.0)*15.0 + Math.cos(x*0.1)*10.0;
-        if(distToCenter>maxRadius) continue;
+    function getElevation(x, z) { return Math.sin(x * 0.05) * 8 + Math.cos(z * 0.05) * 8; }
 
-        let y=getElevation(x,z);
-        let pSize=0, pColor=new THREE.Color(), keep=false;
+    for (let x = -range; x < range; x += gap) {
+      for (let z = -range; z < range; z += gap) {
+        const distToCenter = Math.sqrt(x * x + z * z);
+        const maxRadius = 120 + Math.sin(Math.atan2(z, x) * 5.0) * 15.0 + Math.cos(x * 0.1) * 10.0;
+        if (distToCenter > maxRadius) continue;
 
-        if(y<-3){
-          if(Math.random()>0.4){ pSize=4.0; pColor=colWater; keep=true; }
-        }else{
-          if(Math.random()>0.5){
-            keep=true;
-            const r=Math.random();
-            if(r>0.96){ pSize=7.0; pColor=colCanopy; y+=3.0; }
-            else if(r>0.6){ pSize=2.5; pColor=colLand2; }
-            else { pSize=1.5; pColor=colLand1; }
+        let y = getElevation(x, z);
+        let pSize = 0;
+        let pColor = new THREE.Color();
+        let keepPoint = false;
+
+        if (y < -3) {
+          if (Math.random() > 0.4) { pSize = 4.0; pColor = colWater; keepPoint = true; }
+        } else {
+          if (Math.random() > 0.5) {
+            keepPoint = true;
+            const r = Math.random();
+            if (r > 0.96) { pSize = 7.0; pColor = colCanopy; y += 3.0; }
+            else if (r > 0.6) { pSize = 2.5; pColor = colLand2; }
+            else { pSize = 1.5; pColor = colLand1; }
           }
         }
-        if(keep){ positions.push(x,y,z); colors.push(pColor.r,pColor.g,pColor.b); sizes.push(pSize); }
+
+        if (keepPoint) {
+          positions.push(x, y, z);
+          colors.push(pColor.r, pColor.g, pColor.b);
+          sizes.push(pSize);
+        }
       }
     }
-    geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions,3));
-    geometry.setAttribute('customColor', new THREE.Float32BufferAttribute(colors,3));
-    geometry.setAttribute('size', new THREE.Float32BufferAttribute(sizes,1));
+
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    geometry.setAttribute('customColor', new THREE.Float32BufferAttribute(colors, 3));
+    geometry.setAttribute('size', new THREE.Float32BufferAttribute(sizes, 1));
 
     const shaderMaterial = new THREE.ShaderMaterial({
-      uniforms:{ uMouse:{ value:new THREE.Vector3(0,0,0) } },
+      uniforms: { uMouse: { value: new THREE.Vector3(0, 0, 0) } },
       vertexShader: document.getElementById('vertexShader').textContent,
       fragmentShader: document.getElementById('fragmentShader').textContent,
-      transparent:true, depthTest:true, depthWrite:false
+      transparent: true, depthTest: true, depthWrite: false
     });
+
     const terrain = new THREE.Points(geometry, shaderMaterial);
     scene.add(terrain);
 
+    /* 物种系统 */
     const loader = new GLTFLoader();
     const dracoLoader = new DRACOLoader();
     dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
     loader.setDRACOLoader(dracoLoader);
 
-    class SpeciesSwarm{
-      constructor(name, normalFile, mutantFile, centerPos){
-        this.name=name;
-        this.center=centerPos.clone();
-        this.group=new THREE.Group();
+    class SpeciesSwarm {
+      constructor(name, normalFile, mutantFile, centerPos) {
+        this.name = name;
+        this.center = centerPos.clone();
+        this.group = new THREE.Group();
         scene.add(this.group);
-        this.group.userData={ isSwarm:true, swarmName:name };
-        this.boids=[];
-        this.state='swarm';
-        this.modelGroup=new THREE.Group();
-        this.turntable=new THREE.Group();
+
+        this.group.userData = { isSwarm: true, swarmName: name };
+
+        this.boids = [];
+        this.state = 'swarm';
+
+        this.modelGroup = new THREE.Group();
+        this.turntable = new THREE.Group();
+
         this.group.add(this.modelGroup);
         this.modelGroup.add(this.turntable);
-        this.modelGroup.visible=false;
-      }
-      update(){}
-      hover(){}
-      focus(){}
-      unfocus(){}
-    }
-    const swarms = [];
+        this.modelGroup.visible = false;
 
-    const clock = new THREE.Clock();
+        const count = 10;
+        const boidGeo = new THREE.ConeGeometry(0.8, 2, 4);
+        for (let i = 0; i < count; i++) {
+          const isMutant = Math.random() > 0.8;
+          const color = isMutant ? 0xcc3333 : (Math.random() > 0.5 ? 0x666666 : 0x333333);
+          const mat = new THREE.MeshBasicMaterial({ color: color, wireframe: true });
+          const mesh = new THREE.Mesh(boidGeo, mat);
+          const offset = new THREE.Vector3((Math.random() - 0.5) * 20, (Math.random() - 0.5) * 10, (Math.random() - 0.5) * 20);
+          mesh.position.copy(this.center).add(offset);
+          mesh.userData = { offset: offset, phase: Math.random() * Math.PI };
+          scene.add(mesh);
+          this.boids.push(mesh);
+        }
+
+        loader.load(normalFile, (gltf) => {
+          this.normalMesh = gltf.scene;
+          this.normalMesh.scale.set(5, 5, 5);
+          this.turntable.add(this.normalMesh);
+          if (gltf.animations.length > 0) {
+            this.nmMixer = new THREE.AnimationMixer(this.normalMesh);
+            this.nmMixer.clipAction(gltf.animations[0]).play();
+          }
+        });
+
+        loader.load(mutantFile, (gltf) => {
+          this.mutantMesh = gltf.scene;
+          this.mutantMesh.scale.set(0.1, 0.1, 0.1);
+          this.mutantMesh.visible = false;
+          this.turntable.add(this.mutantMesh);
+          if (gltf.animations.length > 0) {
+            this.mmMixer = new THREE.AnimationMixer(this.mutantMesh);
+            this.mmMixer.clipAction(gltf.animations[0]).play();
+          }
+        });
+      }
+
+      update(delta) {
+        const time = Date.now() * 0.001;
+
+        this.boids.forEach((boid, i) => {
+          if (this.state === 'focused') {
+            boid.visible = false;
+          } else {
+            boid.visible = true;
+            boid.position.x = this.center.x + boid.userData.offset.x + Math.sin(time + boid.userData.phase) * 5;
+            boid.position.z = this.center.z + boid.userData.offset.z + Math.cos(time + boid.userData.phase * 0.5) * 5;
+            const y = getElevation(boid.position.x, boid.position.z);
+            boid.position.y = y + 5 + Math.sin(time * 2 + i) * 2;
+            boid.rotation.y += 0.02;
+          }
+        });
+
+        const centerY = getElevation(this.center.x, this.center.z);
+        this.modelGroup.position.set(this.center.x, centerY + 5, this.center.z);
+
+        if (this.state === 'focused') {
+          this.turntable.rotation.y -= 0.015;
+          this.modelGroup.position.y = centerY + 12 + Math.sin(time * 1.5) * 1.5;
+        } else {
+          this.turntable.rotation.y = 0;
+        }
+
+        if (this.nmMixer) this.nmMixer.update(delta);
+        if (this.mmMixer) this.mmMixer.update(delta);
+      }
+
+      hover(isHovering) {
+        if (this.state === 'focused') return;
+        if (isHovering && this.state !== 'hover') {
+          this.state = 'hover';
+          this.modelGroup.visible = true;
+          this.turntable.scale.set(1, 1, 1);
+          gsap.to(this.turntable.scale, { x: 1, y: 1, z: 1, duration: 0.5 });
+          this.boids.forEach(b => gsap.to(b.scale, { x: 0, y: 0, z: 0, duration: 0.3 }));
+        }
+        else if (!isHovering && this.state === 'hover') {
+          this.state = 'swarm';
+          this.modelGroup.visible = false;
+          this.boids.forEach(b => gsap.to(b.scale, { x: 1, y: 1, z: 1, duration: 0.5, delay: 0.2 }));
+        }
+      }
+
+      focus() {
+        if (this.state === 'focused') return;
+        this.state = 'focused';
+        this.modelGroup.visible = true;
+        const tl = gsap.timeline();
+        if (this.normalMesh) {
+          tl.to(this.normalMesh.position, { x: 0.5, duration: 0.05, yoyo: true, repeat: 5 })
+            .to(this.normalMesh.scale, { x: 0.1, y: 0.1, z: 0.1, duration: 0.2 });
+        }
+        tl.add(() => {
+          if (this.normalMesh) this.normalMesh.visible = false;
+          if (this.mutantMesh) this.mutantMesh.visible = true;
+        });
+        if (this.mutantMesh) {
+          tl.fromTo(this.mutantMesh.scale,
+            { x: 0.1, y: 0.1, z: 0.1 },
+            { x: 30, y: 30, z: 30, duration: 0.8, ease: "back.out(1.2)" }
+          );
+        }
+      }
+
+      unfocus() {
+        if (this.state !== 'focused') return;
+        this.state = 'swarm';
+        const tl = gsap.timeline();
+        if (this.mutantMesh) tl.to(this.mutantMesh.scale, { x: 0.1, y: 0.1, z: 0.1, duration: 0.3 });
+        tl.add(() => {
+          if (this.mutantMesh) this.mutantMesh.visible = false;
+          if (this.normalMesh) {
+            this.normalMesh.visible = true;
+            this.normalMesh.scale.set(5, 5, 5);
+          }
+          this.modelGroup.visible = false;
+        });
+        this.boids.forEach(b => {
+          b.visible = true;
+          gsap.to(b.scale, { x: 1, y: 1, z: 1, duration: 0.5 });
+        });
+      }
+    }
+
+    const swarms = [
+      new SpeciesSwarm("POLYMER TURTLE", "./wugui.glb", "./bwugui.glb", new THREE.Vector3(0, 0, 0)),
+      new SpeciesSwarm("PLASTIC CRAB", "./xie.glb", "./bxie.glb", new THREE.Vector3(30, 0, 30)),
+      new SpeciesSwarm("OIL BIRD", "./niao.glb", "./bniao.glb", new THREE.Vector3(-40, 0, -40)),
+      new SpeciesSwarm("FIBER JELLY", "./shuimu.glb", "./bshuimu.glb", new THREE.Vector3(0, 0, -60)),
+      new SpeciesSwarm("SONAR DOLPHIN", "./haitun.glb", "./bhaitun.glb", new THREE.Vector3(-50, 0, 20)),
+      new SpeciesSwarm("TOXIC SNAKE", "./she.glb", "./bshe.glb", new THREE.Vector3(50, 0, 50)),
+      new SpeciesSwarm("ACID FROG", "./wa.glb", "./bwa.glb", new THREE.Vector3(-60, 0, 0)),
+      new SpeciesSwarm("RADIOACTIVE FISH", "./yu.glb", "./byu.glb", new THREE.Vector3(60, 0, -20)),
+      new SpeciesSwarm("GHOST SEAL", "./bao.glb", "./bhaibao.glb", new THREE.Vector3(20, 0, -80))
+    ];
+
+    /* =========================
+       交互逻辑
+    ========================= */
+    const uiLayer = document.getElementById('ui-layer');
+    const uiVideo = document.getElementById('ui-video');
+    let focusedSwarm = null;
+
+    window.closePanel = function () {
+      if (focusedSwarm) {
+        focusedSwarm.unfocus();
+        focusedSwarm = null;
+
+        uiVideo.pause();
+        uiVideo.currentTime = 0;
+
+        gsap.to(camera.position, { x: 0, y: 60, z: 80, duration: 1.5, ease: "power2.inOut" });
+        gsap.to(controls.target, { x: 0, y: 0, z: 0, duration: 1.5 });
+
+        uiLayer.classList.remove('active');
+        document.getElementById('ui-header').style.opacity = 1;
+        document.body.classList.remove('active-mode');
+
+        droneGroup.visible = false;
+      }
+    };
+
+    document.addEventListener('mousemove', (e) => {
+      if (!controls.enabled) return;
+      if (!focusedSwarm) {
+        mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+        mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+        raycaster.setFromCamera(mouse, camera);
+        const intersects = raycaster.intersectObject(hitPlane);
+        if (intersects.length > 0) {
+          mouseWorld.copy(intersects[0].point);
+          shaderMaterial.uniforms.uMouse.value.copy(intersects[0].point);
+        }
+      }
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!controls.enabled) return;
+      if (e.target.closest('.close-btn') || e.target.closest('.right-panel') || e.target.closest('.left-panel')) return;
+
+      let clickedSwarm = null;
+      mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+      raycaster.setFromCamera(mouse, camera);
+
+      const intersects = raycaster.intersectObjects(scene.children, true);
+
+      for (let hit of intersects) {
+        let obj = hit.object;
+        while (obj) {
+          if (obj.userData && obj.userData.isSwarm) {
+            clickedSwarm = swarms.find(s => s.name === obj.userData.swarmName);
+            break;
+          }
+          obj = obj.parent;
+        }
+        if (clickedSwarm) break;
+      }
+
+      if (!clickedSwarm) {
+        swarms.forEach(swarm => {
+          const dist = new THREE.Vector2(swarm.center.x, swarm.center.z)
+            .distanceTo(new THREE.Vector2(mouseWorld.x, mouseWorld.z));
+          if (dist < 15) clickedSwarm = swarm;
+        });
+      }
+
+      if (clickedSwarm) {
+        if (focusedSwarm !== clickedSwarm) {
+          if (focusedSwarm) focusedSwarm.unfocus();
+          focusedSwarm = clickedSwarm;
+          focusedSwarm.focus();
+
+          const targetPos = focusedSwarm.modelGroup.position;
+          gsap.to(camera.position, {
+            x: targetPos.x + 50,
+            y: targetPos.y + 30,
+            z: targetPos.z + 80,
+            duration: 1.5,
+            ease: "power2.inOut"
+          });
+          gsap.to(controls.target, { x: targetPos.x, y: targetPos.y, z: targetPos.z, duration: 1.5 });
+
+          const data = animalData[focusedSwarm.name] || {};
+          const setText = (id, text) => {
+            const el = document.getElementById(id);
+            if (el) el.innerText = text;
+          };
+
+          setText('ui-name', data.name || focusedSwarm.name);
+          setText('ui-latin', data.latin || "Unknown");
+          setText('ui-pollutant', data.pollutant || "UNKNOWN");
+          setText('ui-tox', data.tox || "0%");
+          setText('ui-desc', data.desc || "...");
+          setText('ui-look', data.look || "...");
+          setText('ui-act', data.act || "...");
+
+          if (data.video) {
+            uiVideo.src = data.video;
+            uiVideo.load();
+            uiVideo.oncanplay = () => { uiVideo.play().catch(() => { }); };
+          }
+
+          uiLayer.classList.add('active');
+          document.getElementById('ui-header').style.opacity = 0;
+          document.body.classList.add('active-mode');
+
+          droneGroup.visible = true;
+        }
+      } else {
+        if (focusedSwarm) window.closePanel();
+      }
+    });
+
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
+    controls.autoRotate = false;
+    controls.autoRotateSpeed = 0.5;
+    controls.maxPolarAngle = Math.PI / 2 - 0.1;
     controls.enabled = false;
+    controls.addEventListener('start', () => { controls.autoRotate = false; });
 
-    function animate(){
+    const clock = new THREE.Clock();
+
+    function animate() {
       requestAnimationFrame(animate);
+      const delta = clock.getDelta();
+      const time = Date.now() * 0.001;
+
       cameraLight.position.copy(camera.position);
+
+      if (focusedSwarm) {
+        cursorGroup.scale.set(0, 0, 0);
+        const targetPos = focusedSwarm.modelGroup.position;
+        droneGroup.position.x = targetPos.x + Math.sin(time) * 35;
+        droneGroup.position.z = targetPos.z + Math.cos(time) * 35;
+        droneGroup.position.y = targetPos.y + 25 + Math.sin(time * 2) * 2;
+        droneGroup.lookAt(targetPos);
+        recLight.material.color.setHex((Date.now() % 1000 < 500) ? 0xff0000 : 0x330000);
+      } else {
+        cursorGroup.scale.lerp(new THREE.Vector3(1, 1, 1), 0.1);
+        let hoverSwarm = null;
+        swarms.forEach(swarm => {
+          const dist = new THREE.Vector2(swarm.center.x, swarm.center.z)
+            .distanceTo(new THREE.Vector2(mouseWorld.x, mouseWorld.z));
+          if (dist < 20) hoverSwarm = swarm;
+          swarm.hover(dist < 20);
+        });
+
+        if (hoverSwarm) {
+          hexMaterial.color.set(0xff4444);
+          cursorGroup.scale.lerp(new THREE.Vector3(1.5, 1.5, 1.5), 0.1);
+        } else {
+          hexMaterial.color.set(0x444444);
+        }
+
+        const targetY = getElevation(mouseWorld.x, mouseWorld.z);
+        cursorGroup.position.x += (mouseWorld.x - cursorGroup.position.x) * 0.2;
+        cursorGroup.position.z += (mouseWorld.z - cursorGroup.position.z) * 0.2;
+        cursorGroup.position.y += (targetY - cursorGroup.position.y) * 0.2;
+        cursorHex.rotation.z += 0.01;
+      }
+
+      swarms.forEach(swarm => swarm.update(delta));
       controls.update();
-      renderer.render(scene,camera);
+      renderer.render(scene, camera);
     }
     animate();
 
-    window.addEventListener('resize',()=>{
-      camera.aspect=window.innerWidth/window.innerHeight;
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth,window.innerHeight);
+      renderer.setSize(window.innerWidth, window.innerHeight);
     });
 
     /* =========================
@@ -580,72 +971,72 @@
     ========================= */
     const introLayer = document.getElementById('intro-layer');
     const introVideo = document.getElementById('intro-video');
-    const fallback   = document.getElementById('autoplay-fallback');
-    const fallbackBtn= document.getElementById('fallback-btn');
+    const fallback = document.getElementById('autoplay-fallback');
+    const fallbackBtn = document.getElementById('fallback-btn');
 
     const posterCard = document.getElementById('poster-card');
-    const posterTop  = document.getElementById('poster-top');
+    const posterTop = document.getElementById('poster-top');
     const posterMain = document.getElementById('poster-main');
     const posterCred = document.getElementById('poster-credits');
 
-    const introText  = document.getElementById('intro-text');
-    const introLine  = document.getElementById('intro-line');
+    const introText = document.getElementById('intro-text');
+    const introLine = document.getElementById('intro-line');
 
-    posterTop.textContent  = POSTER_TOP_LINE;
+    posterTop.textContent = POSTER_TOP_LINE;
     posterMain.textContent = POSTER_MAIN_TITLE;
     posterCred.textContent = POSTER_CREDITS_LINES;
 
-    async function ensurePlay(){
-      try{
+    async function ensurePlay() {
+      try {
         introVideo.currentTime = 0;
         await introVideo.play();
-      }catch(e){
-        fallback.style.display="flex";
+      } catch (e) {
+        fallback.style.display = "flex";
       }
     }
     ensurePlay();
 
-    fallbackBtn.addEventListener('click', async ()=>{
-      fallback.style.display="none";
-      try{
+    fallbackBtn.addEventListener('click', async () => {
+      fallback.style.display = "none";
+      try {
         introVideo.currentTime = 0;
         await introVideo.play();
-      }catch(e){
-        fallback.style.display="flex";
+      } catch (e) {
+        fallback.style.display = "flex";
       }
     });
 
-    function playPosterThenLines(){
+    function playPosterThenLines() {
       const tl = gsap.timeline();
-      tl.to(posterCard, { opacity:1, duration:POSTER_IN, ease:"none" }, 0.25)
-        .to(posterCard, { opacity:1, duration:POSTER_HOLD, ease:"none" })
-        .to(posterCard, { opacity:0, duration:POSTER_OUT, ease:"power2.inOut" })
-        .add(()=>{ gsap.to(introText,{opacity:1,duration:0.18,ease:"none"}); }, "+=0.05");
+      tl.to(posterCard, { opacity: 1, duration: POSTER_IN, ease: "none" }, 0.25)
+        .to(posterCard, { opacity: 1, duration: POSTER_HOLD, ease: "none" })
+        .to(posterCard, { opacity: 0, duration: POSTER_OUT, ease: "power2.inOut" })
+        .add(() => { gsap.to(introText, { opacity: 1, duration: 0.18, ease: "none" }); }, "+=0.05");
     }
 
-    function startLineSequence(){
+    function startLineSequence() {
       const total = INTRO_LINES.length;
-      if(total === 0) return;
+      if (total === 0) return;
 
       const usable = Math.max(0.1, (introVideo.duration || 8) - TEXT_END_OFFSET);
       const per = usable / total;
 
       let i = 0;
-      const playOne = ()=>{
-        if(i >= total) return;
+      const playOne = () => {
+        if (i >= total) return;
 
         introLine.textContent = INTRO_LINES[i];
-
         gsap.killTweensOf(introLine);
+
         gsap.fromTo(introLine,
-          { opacity:0, y:10 },
+          { opacity: 0, y: 10 },
           {
-            opacity:1, y:0, duration:LINE_FADE_IN, ease:"power2.out",
-            onComplete: ()=>{
-              gsap.to(introLine,{
-                opacity:0, y:-6, duration:LINE_FADE_OUT, ease:"power2.in",
+            opacity: 1, y: 0, duration: LINE_FADE_IN, ease: "power2.out",
+            onComplete: () => {
+              gsap.to(introLine, {
+                opacity: 0, y: -6, duration: LINE_FADE_OUT, ease: "power2.in",
                 delay: Math.max(0.1, Math.min(LINE_HOLD, per - LINE_FADE_IN - LINE_FADE_OUT - LINE_GAP)),
-                onComplete: ()=>{ i++; setTimeout(playOne, LINE_GAP*1000); }
+                onComplete: () => { i++; setTimeout(playOne, LINE_GAP * 1000); }
               });
             }
           }
@@ -654,36 +1045,41 @@
       playOne();
     }
 
-    introVideo.addEventListener('loadedmetadata', ()=>{
+    introVideo.addEventListener('loadedmetadata', () => {
       playPosterThenLines();
       const posterTotal = 0.25 + POSTER_IN + POSTER_HOLD + POSTER_OUT + 0.05;
-      setTimeout(()=>{ startLineSequence(); }, Math.floor(posterTotal*1000));
+      setTimeout(() => { startLineSequence(); }, Math.floor(posterTotal * 1000));
     });
 
-    introVideo.addEventListener('timeupdate', ()=>{
-      if(!introVideo.duration) return;
+    introVideo.addEventListener('timeupdate', () => {
+      if (!introVideo.duration) return;
       const remain = introVideo.duration - introVideo.currentTime;
-      if(remain <= 1.0){
-        const k = Math.min(1, Math.max(0, 1 - remain/1.0));
+      if (remain <= 1.0) {
+        const k = Math.min(1, Math.max(0, 1 - remain / 1.0));
         const op = Math.pow(1 - k, 6);
         introLayer.style.opacity = String(op);
       }
     });
 
-    introVideo.addEventListener('ended', ()=>{
+    introVideo.addEventListener('ended', () => {
       introLayer.remove();
       document.body.classList.remove('intro-mode');
 
-      gsap.to(camera.position, { x:0, y:60, z:80, duration:2.6, ease:"power3.inOut" });
+      // intro 完毕后：把 loading 再强制关一次（防止你看到“永远连接中”）
+      hideLoading(true);
+
+      // 镜头从远到近
+      gsap.to(camera.position, { x: 0, y: 60, z: 80, duration: 2.6, ease: "power3.inOut" });
       gsap.to(controls.target, {
-        x:0, y:0, z:0,
-        duration:2.6, ease:"power3.inOut",
-        onComplete: ()=>{
+        x: 0, y: 0, z: 0,
+        duration: 2.6, ease: "power3.inOut",
+        onComplete: () => {
           controls.enabled = true;
           controls.autoRotate = true;
         }
       });
     });
+
   </script>
 </body>
 </html>
