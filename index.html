@@ -2,7 +2,7 @@
 <html lang="zh">
 <head>
     <meta charset="UTF-8">
-    <title>ECO-MONITOR | 废土档案版</title>
+    <title>ECO-MONITOR | 未来动物档案</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 
     <style>
@@ -34,7 +34,7 @@
             background: #000;
         }
 
-        /* HUD / 系统文字 */
+        /* HUD / 系统文字（你原来的那套） */
         #intro-hud {
             position: absolute;
             left: 4vw;
@@ -53,34 +53,36 @@
         #intro-hud .hud-line { font-size: 12px; opacity: 0.0; transform: translateY(6px); white-space: pre; }
         #intro-hud .hud-warn { margin-top: 14px; font-size: 11px; opacity: 0.6; color: rgba(255, 120, 80, 0.95); }
 
-        /* ✅ 新增：英文叙事层（更像档案叙述，而不是字幕） */
-        #intro-narrative {
+        /* ✅ 电影式字幕（顶部居中 / 大字体 / 一句一句） */
+        #intro-cinema {
             position: absolute;
+            top: 6vh;              /* ✅ 顶部位置 */
             left: 50%;
-            top: 12vh;
             transform: translateX(-50%);
-            width: min(980px, 86vw);
-            color: rgba(255, 245, 230, 0.92);
-            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
+            width: min(1100px, 90vw);
+            text-align: center;
             pointer-events: none;
             user-select: none;
-            mix-blend-mode: screen;
-            text-shadow: 0 0 18px rgba(0,0,0,0.55);
+            z-index: 5;
+
+            color: rgba(255, 245, 235, 0.92);
+            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+
+            /* 电影质感：一点柔和阴影 */
+            text-shadow:
+                0 2px 18px rgba(0,0,0,0.75),
+                0 0 30px rgba(0,0,0,0.35);
         }
-        #intro-narrative .line {
-            font-size: 12px;
-            line-height: 1.9;
+        #intro-cinema-line {
+            font-size: clamp(22px, 3.2vw, 40px); /* ✅ 大一点，自动适配屏幕 */
+            line-height: 1.25;
             opacity: 0;
             transform: translateY(10px);
             margin: 0;
-            padding: 0;
-            white-space: pre-wrap;
-        }
-        #intro-narrative .line strong{
-            color: rgba(255, 140, 90, 0.95);
-            font-weight: 800;
+            padding: 0 10px;
         }
 
         /* ✅ 自动播放失败按钮 */
@@ -227,17 +229,12 @@
             <source src="./kaitou.mp4" type="video/mp4">
         </video>
 
-        <!-- ✅ 英文叙事（新增） -->
-        <div id="intro-narrative">
-            <p class="line" id="n1">WE BUILT SYSTEMS TO FEED COMFORT, NOT CONSEQUENCE.</p>
-            <p class="line" id="n2">OCEANS BECAME DUMPSITES. SKIES BECAME FILTERS. SOIL BECAME STORAGE.</p>
-            <p class="line" id="n3">EACH CONVENIENCE LEFT A TRACE — <strong>PLASTIC</strong>, <strong>OIL</strong>, <strong>ACID</strong>, <strong>RADIATION</strong>, <strong>NOISE</strong>.</p>
-            <p class="line" id="n4">LIFE DID NOT END. IT ADAPTED.</p>
-            <p class="line" id="n5">NOT AS EVOLUTION — AS A COMPROMISE.</p>
-            <p class="line" id="n6">THIS ARCHIVE RECORDS WHAT WE TURNED THE EARTH INTO.</p>
+        <!-- ✅ 电影式字幕：一次一句 -->
+        <div id="intro-cinema">
+            <p id="intro-cinema-line"></p>
         </div>
 
-        <!-- HUD -->
+        <!-- HUD（你也可以不要，我保留） -->
         <div id="intro-hud">
             <div class="hud-title">ECO-MONITOR</div>
             <div class="hud-sub">WASTELAND SURVEILLANCE // BOOT SEQUENCE</div>
@@ -339,7 +336,7 @@
         import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 
         /* =========================
-           原程序开始（尽量不动你的逻辑）
+           0) 动物数据库（原样保留）
         ========================= */
         const animalData = {
             "POLYMER TURTLE": {
@@ -810,7 +807,7 @@
         });
 
         /* =========================
-           ✅ 开场播放 + HUD + Narrative 动画
+           ✅ 开场：视频播放 + HUD + 电影字幕（逐句）
         ========================= */
         const introLayer = document.getElementById('intro-video-layer');
         const introVideo = document.getElementById('intro-video');
@@ -818,17 +815,40 @@
         const hudLine = document.getElementById('hud-line');
         const canvas = renderer.domElement;
 
-        // Narrative 逐行出现（像系统在宣读背景）
-        const narrativeIds = ["n1","n2","n3","n4","n5","n6"].map(id => document.getElementById(id));
-        function startNarrativeSequence(){
-            // 先全隐藏
-            narrativeIds.forEach(el => { el.style.opacity = 0; el.style.transform = "translateY(10px)"; });
+        const cinemaEl = document.getElementById('intro-cinema-line');
 
-            const tl = gsap.timeline({ delay: 0.2 });
-            narrativeIds.forEach((el, i) => {
-                tl.to(el, { opacity: 0.92, y: 0, duration: 0.45, ease: "power2.out" }, i * 0.55);
-                // 轻微呼吸闪烁（很克制）
-                tl.to(el, { opacity: 0.78, duration: 0.35, ease: "none" }, i * 0.55 + 0.6);
+        // ✅ 你要的背景介绍句子（可直接改这里）
+        const cinemaLines = [
+            "WE TOOK FROM THE EARTH AS IF IT WERE ENDLESS.",
+            "WE BURNED, DUMPED, AND DILUTED THE COST INTO AIR AND SEA.",
+            "PLASTIC. OIL. ACID. RADIATION. NOISE.",
+            "THE PLANET DID NOT FORGIVE — IT ADAPTED.",
+            "THESE MUTATIONS ARE NOT MYTHS.",
+            "THEY ARE EVIDENCE."
+        ];
+
+        // ✅ 每句的节奏（秒）：淡入/停留/淡出
+        const CIN_IN = 0.55;
+        const CIN_HOLD = 1.35;
+        const CIN_OUT = 0.55;
+        const CIN_GAP = 0.25;
+
+        function playCinemaText(){
+            // 总时长根据句子数量自动排
+            const tl = gsap.timeline();
+            cinemaLines.forEach((line, i) => {
+                tl.call(() => {
+                    cinemaEl.textContent = line;
+                }, null, ">");
+
+                tl.fromTo(cinemaEl,
+                    { opacity: 0, y: 10 },
+                    { opacity: 0.95, y: 0, duration: CIN_IN, ease: "power2.out" },
+                    ">"
+                );
+                tl.to(cinemaEl, { opacity: 0.95, duration: CIN_HOLD, ease: "none" }, ">");
+                tl.to(cinemaEl, { opacity: 0, y: -6, duration: CIN_OUT, ease: "power2.in" }, ">");
+                tl.to({}, { duration: CIN_GAP }, ">");
             });
             return tl;
         }
@@ -865,7 +885,12 @@
         }
 
         startHudFlicker();
-        startNarrativeSequence();
+
+        let cinemaTl = null;
+        function startCinema(){
+            if (cinemaTl) cinemaTl.kill();
+            cinemaTl = playCinemaText();
+        }
 
         let revealed = false;
         let started = false;
@@ -881,6 +906,7 @@
                 await introVideo.play();
                 started = true;
                 introStart.style.display = "none";
+                startCinema(); // ✅ 视频真正开始播时再跑字幕
             } catch (err) {
                 introStart.style.display = "block";
             }
@@ -892,15 +918,28 @@
 
         introStart.addEventListener('click', async () => {
             introStart.style.display = "none";
-            try { await introVideo.play(); started = true; } catch(e) { introStart.style.display = "block"; }
+            try {
+                await introVideo.play();
+                started = true;
+                startCinema();
+            } catch(e) {
+                introStart.style.display = "block";
+            }
         });
 
         introLayer.addEventListener('click', async () => {
             if (started) return;
-            try { await introVideo.play(); started = true; introStart.style.display = "none"; } catch(e) { introStart.style.display = "block"; }
+            try {
+                await introVideo.play();
+                started = true;
+                introStart.style.display = "none";
+                startCinema();
+            } catch(e) {
+                introStart.style.display = "block";
+            }
         });
 
-        // 最后1秒：疯狂淡出（叙事+HUD+视频整体一起淡出）并让 canvas 渐显
+        // 最后1秒：疯狂淡出（字幕+HUD+视频整体一起淡出）并让 canvas 渐显
         introVideo.addEventListener('timeupdate', () => {
             if (!introVideo.duration) return;
             const remain = introVideo.duration - introVideo.currentTime;
