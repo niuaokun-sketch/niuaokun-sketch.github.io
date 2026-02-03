@@ -34,7 +34,7 @@
             background: #000;
         }
 
-        /* ✅ HUD */
+        /* HUD / 系统文字 */
         #intro-hud {
             position: absolute;
             left: 4vw;
@@ -53,7 +53,37 @@
         #intro-hud .hud-line { font-size: 12px; opacity: 0.0; transform: translateY(6px); white-space: pre; }
         #intro-hud .hud-warn { margin-top: 14px; font-size: 11px; opacity: 0.6; color: rgba(255, 120, 80, 0.95); }
 
-        /* ✅ 自动播放失败时的点击启动按钮 */
+        /* ✅ 新增：英文叙事层（更像档案叙述，而不是字幕） */
+        #intro-narrative {
+            position: absolute;
+            left: 50%;
+            top: 12vh;
+            transform: translateX(-50%);
+            width: min(980px, 86vw);
+            color: rgba(255, 245, 230, 0.92);
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            pointer-events: none;
+            user-select: none;
+            mix-blend-mode: screen;
+            text-shadow: 0 0 18px rgba(0,0,0,0.55);
+        }
+        #intro-narrative .line {
+            font-size: 12px;
+            line-height: 1.9;
+            opacity: 0;
+            transform: translateY(10px);
+            margin: 0;
+            padding: 0;
+            white-space: pre-wrap;
+        }
+        #intro-narrative .line strong{
+            color: rgba(255, 140, 90, 0.95);
+            font-weight: 800;
+        }
+
+        /* ✅ 自动播放失败按钮 */
         #intro-start {
             position: absolute;
             right: 4vw;
@@ -68,7 +98,7 @@
             text-transform: uppercase;
             font-size: 12px;
             cursor: pointer;
-            display: none; /* 默认不显示，失败才出现 */
+            display: none;
             user-select: none;
         }
         #intro-start:hover { background: rgba(0,0,0,0.55); }
@@ -197,6 +227,17 @@
             <source src="./kaitou.mp4" type="video/mp4">
         </video>
 
+        <!-- ✅ 英文叙事（新增） -->
+        <div id="intro-narrative">
+            <p class="line" id="n1">WE BUILT SYSTEMS TO FEED COMFORT, NOT CONSEQUENCE.</p>
+            <p class="line" id="n2">OCEANS BECAME DUMPSITES. SKIES BECAME FILTERS. SOIL BECAME STORAGE.</p>
+            <p class="line" id="n3">EACH CONVENIENCE LEFT A TRACE — <strong>PLASTIC</strong>, <strong>OIL</strong>, <strong>ACID</strong>, <strong>RADIATION</strong>, <strong>NOISE</strong>.</p>
+            <p class="line" id="n4">LIFE DID NOT END. IT ADAPTED.</p>
+            <p class="line" id="n5">NOT AS EVOLUTION — AS A COMPROMISE.</p>
+            <p class="line" id="n6">THIS ARCHIVE RECORDS WHAT WE TURNED THE EARTH INTO.</p>
+        </div>
+
+        <!-- HUD -->
         <div id="intro-hud">
             <div class="hud-title">ECO-MONITOR</div>
             <div class="hud-sub">WASTELAND SURVEILLANCE // BOOT SEQUENCE</div>
@@ -298,7 +339,7 @@
         import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 
         /* =========================
-           0) 动物数据库（原样保留）
+           原程序开始（尽量不动你的逻辑）
         ========================= */
         const animalData = {
             "POLYMER TURTLE": {
@@ -357,34 +398,29 @@
             }
         };
 
-        /* =========================
-           1) 场景
-        ========================= */
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0xe6d8c3);
         scene.fog = new THREE.FogExp2(0xe6d8c3, 0.012);
 
-        const ambientLight = new THREE.AmbientLight(0xffeedd, 3.5);
-        scene.add(ambientLight);
-
-        const dirLight = new THREE.DirectionalLight(0xffaa77, 3.0);
-        dirLight.position.set(50, 80, 50);
-        scene.add(dirLight);
-
-        const cameraLight = new THREE.DirectionalLight(0xffffff, 1.5);
-        scene.add(cameraLight);
+        const ambientLight = new THREE.AmbientLight(0xffeedd, 3.5); scene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0xffaa77, 3.0); dirLight.position.set(50, 80, 50); scene.add(dirLight);
+        const cameraLight = new THREE.DirectionalLight(0xffffff, 1.5); scene.add(cameraLight);
 
         const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.set(0, 160, 260); // 开场远景
+        camera.position.set(0, 160, 260);
 
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.outputColorSpace = THREE.SRGBColorSpace;
         document.body.appendChild(renderer.domElement);
 
-        /* =========================
-           2) 光标
-        ========================= */
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+        const mouseWorld = new THREE.Vector3();
+        const hitPlane = new THREE.Mesh(new THREE.PlaneGeometry(500, 500), new THREE.MeshBasicMaterial({ visible: false }));
+        hitPlane.rotation.x = -Math.PI / 2;
+        scene.add(hitPlane);
+
         const cursorGroup = new THREE.Group();
         scene.add(cursorGroup);
         const hexGeometry = new THREE.RingGeometry(3.5, 4.2, 6);
@@ -398,9 +434,6 @@
         cursorTri.rotation.x = Math.PI; cursorTri.position.y = 6;
         cursorGroup.add(cursorTri);
 
-        /* =========================
-           3) 无人机
-        ========================= */
         const droneGroup = new THREE.Group();
         scene.add(droneGroup);
         droneGroup.visible = false;
@@ -413,25 +446,14 @@
         recLight.position.set(0.6, 0.6, 1.0);
         droneGroup.add(recLight);
 
-        /* =========================
-           4) 射线 & 地形
-        ========================= */
-        const raycaster = new THREE.Raycaster();
-        const mouse = new THREE.Vector2();
-        const mouseWorld = new THREE.Vector3();
-        const hitPlane = new THREE.Mesh(new THREE.PlaneGeometry(500, 500), new THREE.MeshBasicMaterial({ visible: false }));
-        hitPlane.rotation.x = -Math.PI / 2;
-        scene.add(hitPlane);
-
         const geometry = new THREE.BufferGeometry();
-        const positions = []; const colors = []; const sizes = [];
-
+        const positions = [], colors = [], sizes = [];
         const colWater = new THREE.Color("#668899");
         const colLand1 = new THREE.Color("#ccaa66");
         const colLand2 = new THREE.Color("#885533");
         const colCanopy = new THREE.Color("#444433");
+        const range = 180, gap = 2.5;
 
-        const range = 180; const gap = 2.5;
         function getElevation(x, z) { return Math.sin(x * 0.05) * 8 + Math.cos(z * 0.05) * 8; }
 
         for (let x = -range; x < range; x += gap) {
@@ -441,7 +463,7 @@
                 if (distToCenter > maxRadius) continue;
 
                 let y = getElevation(x, z);
-                let pSize = 0.0; let pColor = new THREE.Color(); let keepPoint = false;
+                let pSize = 0.0, pColor = new THREE.Color(), keepPoint = false;
 
                 if (y < -3) {
                     if (Math.random() > 0.4) { pSize = 4.0; pColor = colWater; keepPoint = true; }
@@ -468,13 +490,9 @@
             fragmentShader: document.getElementById('fragmentShader').textContent,
             transparent: true, depthTest: true, depthWrite: false
         });
-
         const terrain = new THREE.Points(geometry, shaderMaterial);
         scene.add(terrain);
 
-        /* =========================
-           5) 种群系统
-        ========================= */
         const loader = new GLTFLoader();
         const dracoLoader = new DRACOLoader();
         dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
@@ -628,9 +646,6 @@
             new SpeciesSwarm("GHOST SEAL", "./bao.glb", "./bhaibao.glb", new THREE.Vector3(20, 0, -80))
         ];
 
-        /* =========================
-           6) 交互逻辑（开场期间锁死）
-        ========================= */
         const clock = new THREE.Clock();
         const uiLayer = document.getElementById('ui-layer');
         const uiVideo = document.getElementById('ui-video');
@@ -685,6 +700,7 @@
             raycaster.setFromCamera(mouse, camera);
 
             const intersects = raycaster.intersectObjects(scene.children, true);
+
             for(let hit of intersects) {
                 let obj = hit.object;
                 while(obj) {
@@ -696,6 +712,7 @@
                 }
                 if (clickedSwarm) break;
             }
+
             if (!clickedSwarm) {
                 swarms.forEach(swarm => {
                     const dist = new THREE.Vector2(swarm.center.x, swarm.center.z).distanceTo(new THREE.Vector2(mouseWorld.x, mouseWorld.z));
@@ -763,6 +780,7 @@
                     if (dist < 20) hoverSwarm = swarm;
                     swarm.hover(dist < 20);
                 });
+
                 if (hoverSwarm) {
                     hexMaterial.color.set(0xff4444);
                     cursorGroup.scale.lerp(new THREE.Vector3(1.5, 1.5, 1.5), 0.1);
@@ -792,13 +810,28 @@
         });
 
         /* =========================
-           ✅ 开场播放（强制可用版）
+           ✅ 开场播放 + HUD + Narrative 动画
         ========================= */
         const introLayer = document.getElementById('intro-video-layer');
         const introVideo = document.getElementById('intro-video');
         const introStart = document.getElementById('intro-start');
         const hudLine = document.getElementById('hud-line');
         const canvas = renderer.domElement;
+
+        // Narrative 逐行出现（像系统在宣读背景）
+        const narrativeIds = ["n1","n2","n3","n4","n5","n6"].map(id => document.getElementById(id));
+        function startNarrativeSequence(){
+            // 先全隐藏
+            narrativeIds.forEach(el => { el.style.opacity = 0; el.style.transform = "translateY(10px)"; });
+
+            const tl = gsap.timeline({ delay: 0.2 });
+            narrativeIds.forEach((el, i) => {
+                tl.to(el, { opacity: 0.92, y: 0, duration: 0.45, ease: "power2.out" }, i * 0.55);
+                // 轻微呼吸闪烁（很克制）
+                tl.to(el, { opacity: 0.78, duration: 0.35, ease: "none" }, i * 0.55 + 0.6);
+            });
+            return tl;
+        }
 
         const hudLines = [
             "LINK: ORBITAL RELAY // OK",
@@ -832,13 +865,13 @@
         }
 
         startHudFlicker();
+        startNarrativeSequence();
 
         let revealed = false;
         let started = false;
 
         async function tryPlayVideo() {
             try {
-                // 等待到有数据可播，避免黑屏
                 if (introVideo.readyState < 2) {
                     await new Promise((resolve) => {
                         const onCanPlay = () => { introVideo.removeEventListener('canplay', onCanPlay); resolve(); };
@@ -849,29 +882,25 @@
                 started = true;
                 introStart.style.display = "none";
             } catch (err) {
-                // 自动播放失败：显示按钮让用户触发播放（必定成功）
                 introStart.style.display = "block";
             }
         }
 
-        // 多次重试：GitHub Pages 首次加载慢时也能成功
         tryPlayVideo();
         setTimeout(tryPlayVideo, 500);
         setTimeout(tryPlayVideo, 1200);
 
-        // 用户点击启动
         introStart.addEventListener('click', async () => {
             introStart.style.display = "none";
             try { await introVideo.play(); started = true; } catch(e) { introStart.style.display = "block"; }
         });
 
-        // 你也可以点击任意位置启动（更方便）
         introLayer.addEventListener('click', async () => {
             if (started) return;
             try { await introVideo.play(); started = true; introStart.style.display = "none"; } catch(e) { introStart.style.display = "block"; }
         });
 
-        // 最后1秒疯狂淡出 + 显示canvas
+        // 最后1秒：疯狂淡出（叙事+HUD+视频整体一起淡出）并让 canvas 渐显
         introVideo.addEventListener('timeupdate', () => {
             if (!introVideo.duration) return;
             const remain = introVideo.duration - introVideo.currentTime;
